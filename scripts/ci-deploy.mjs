@@ -143,6 +143,9 @@ const dbName = "song-an-40-db";
 const kvTitle = "song-an-40-config";
 const r2Name = "song-an-40-sources";
 
+console.log("→ Installing deps…");
+run("pnpm", ["install", "--frozen-lockfile"], { stdio: "inherit" });
+
 console.log("→ Authenticating…");
 wrangler(["whoami"], { stdio: "inherit" });
 
@@ -175,9 +178,6 @@ for (const q of [
 }
 
 patchWrangler({ d1Id, kvId, environment });
-
-console.log("→ Installing deps…");
-run("pnpm", ["install", "--frozen-lockfile"], { stdio: "inherit" });
 
 console.log("→ Building…");
 run("pnpm", ["build"], { stdio: "inherit" });

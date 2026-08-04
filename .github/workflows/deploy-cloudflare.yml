@@ -38,7 +38,7 @@ jobs:
       ADMIN_SHARED_SECRET: ${{ secrets.ADMIN_SHARED_SECRET }}
       SESSION_SIGNING_SECRET: ${{ secrets.SESSION_SIGNING_SECRET }}
       DEPLOY_ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
-      SEED_REMOTE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.seed || '1' }}
+      SEED_REMOTE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.seed || 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
