@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="sa-mark-bg" x1="12" y1="4" x2="52" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#246B50"/>
+      <stop offset="1" stop-color="#1A4F3A"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#sa-mark-bg)"/>
+  <circle cx="32" cy="22" r="6.2" fill="#F7F4EF"/>
+  <path
+    d="M18.5 42.5c4.2-10.5 22.8-10.5 27 0"
+    fill="none"
+    stroke="#F7F4EF"
+    stroke-width="4.2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M41.5 27.5c4.8 1.2 8.2 5.2 8.8 10.2-5.1-.4-9.3-3.5-11.2-8.2 1-.9 1.7-1.5 2.4-2z"
+    fill="#D8EBE2"
+  />
+  <path
+    d="M40.2 30.8c1.8 1.7 3.3 3.8 4.1 6.2"
+    fill="none"
+    stroke="#1F5C45"
+    stroke-width="1.4"
+    stroke-linecap="round"
+    opacity="0.55"
+  />
+</svg>
