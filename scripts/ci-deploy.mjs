@@ -191,7 +191,7 @@ wrangler(
   { stdio: "inherit" },
 );
 
-if (process.env.SEED_REMOTE === "1") {
+if (process.env.SEED_REMOTE === "1" || process.env.SEED_REMOTE === "true") {
   const seed = resolve(root, "seed/demo.sql");
   if (existsSync(seed)) {
     console.log("→ Seeding demo data…");
