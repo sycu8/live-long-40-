@@ -16,22 +16,28 @@ test.describe("inventory — anonymous learner", () => {
     await expect(page.getByRole("link", { name: /quỹ dự phòng/i })).toBeVisible();
   });
 
-  test("bottom nav reaches six destinations", async ({ page }) => {
+  test("primary nav reaches six destinations", async ({ page }, testInfo) => {
     await page.goto("/hom-nay");
-    for (const label of [
-      "Hôm nay",
-      "Kế hoạch",
-      "Hỏi",
-      "Động viên",
-      "Thư viện",
-      "Hồ sơ",
-    ]) {
-      await page
-        .getByRole("navigation", { name: /Điều hướng chính/i })
-        .getByRole("link", { name: label })
-        .click();
+    const isDesktop = testInfo.project.name.includes("desktop");
+    const labels = isDesktop
+      ? [
+          "Hôm nay",
+          "Kế hoạch",
+          "Hỏi Sống An",
+          "Góc động viên",
+          "Thư viện",
+          "Hồ sơ",
+        ]
+      : ["Hôm nay", "Kế hoạch", "Hỏi", "Động viên", "Thư viện", "Hồ sơ"];
+    const nav = page.getByRole("navigation", { name: /Điều hướng chính/i });
+    await expect(nav).toBeVisible();
+    for (const label of labels) {
+      await nav.getByRole("link", { name: label }).click();
+      await expect(nav).toBeVisible();
+    }
+    if (isDesktop) {
       await expect(
-        page.getByRole("navigation", { name: /Điều hướng chính/i }),
+        page.getByRole("complementary", { name: /Điều hướng máy tính/i }),
       ).toBeVisible();
     }
   });

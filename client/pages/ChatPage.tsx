@@ -243,107 +243,135 @@ export function ChatPage() {
 
   return (
     <AppShell>
-      <div className="flex min-h-[70dvh] flex-col gap-4">
-        <div>
-          <h1 className="font-display text-3xl">Hỏi Sống An</h1>
-          <p className="mt-2 text-[var(--color-ink-muted)]">
-            Câu trả lời dựa trên nguồn đã duyệt. Có thể gõ tiếng Việt không dấu.
-          </p>
-          <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
-            {historyOptIn
-              ? "Đang lưu hội thoại theo lựa chọn của bạn."
-              : "Hội thoại không được lưu đầy đủ trên máy chủ."}{" "}
-            <Link className="text-[var(--color-green)] underline" to="/ho-so">
-              Đổi trong Hồ sơ
-            </Link>
-          </p>
+      <div className="flex min-h-[70dvh] flex-col gap-4 lg:min-h-[calc(100dvh-12rem)] lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+          <div>
+            <h1 className="font-display text-3xl lg:text-4xl">Hỏi Sống An</h1>
+            <p className="mt-2 text-[var(--color-ink-muted)]">
+              Câu trả lời dựa trên nguồn đã duyệt. Có thể gõ tiếng Việt không dấu.
+            </p>
+            <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
+              {historyOptIn
+                ? "Đang lưu hội thoại theo lựa chọn của bạn."
+                : "Hội thoại không được lưu đầy đủ trên máy chủ."}{" "}
+              <Link className="text-[var(--color-green)] underline" to="/ho-so">
+                Đổi trong Hồ sơ
+              </Link>
+            </p>
+          </div>
+
+          {messages.length === 0 ? (
+            <div className="space-y-2 lg:hidden">
+              <p className="text-sm font-medium">Gợi ý câu hỏi</p>
+              {EXAMPLE_QUESTIONS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  className="block w-full rounded-lg bg-white/70 px-3 py-3 text-left text-[var(--color-blue)]"
+                  onClick={() => send(q)}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div
+              className="flex-1 space-y-4 lg:overflow-y-auto lg:pr-2"
+              aria-live="polite"
+            >
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={`rounded-2xl px-4 py-3 ${
+                    m.role === "user"
+                      ? "ml-6 bg-[var(--color-green-soft)] lg:ml-16"
+                      : "mr-2 bg-white/80 lg:mr-8"
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                  {m.sources && m.sources.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {m.sources.map((s) => (
+                        <button
+                          key={s.key}
+                          type="button"
+                          className="rounded-md bg-[var(--color-blue-soft)] px-2 py-1 text-sm text-[var(--color-blue)]"
+                          onClick={() => setDrawerSource(s)}
+                        >
+                          [{s.key}] {s.title}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+          )}
+
+          {feedbackFor ? (
+            <div className="flex items-center gap-2 text-sm">
+              <span>Câu trả lời này hữu ích?</span>
+              <Button variant="secondary" onClick={() => sendFeedback(true)}>
+                Có
+              </Button>
+              <Button variant="ghost" onClick={() => sendFeedback(false)}>
+                Chưa
+              </Button>
+            </div>
+          ) : null}
+
+          <form
+            className="sticky bottom-20 flex gap-2 lg:bottom-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void send();
+            }}
+          >
+            <label className="sr-only" htmlFor="chat-input">
+              Câu hỏi của bạn
+            </label>
+            <input
+              id="chat-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Nhập câu hỏi…"
+              className="min-h-12 flex-1 rounded-xl border border-[var(--color-sand)] bg-white px-4 text-base"
+              disabled={streaming || !sessionId}
+            />
+            <Button type="submit" disabled={streaming || !sessionId || !input.trim()}>
+              Gửi
+            </Button>
+          </form>
+          {error ? (
+            <p role="alert" className="text-sm text-[var(--color-danger)]">
+              {error}
+            </p>
+          ) : null}
         </div>
 
-        {messages.length === 0 ? (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Gợi ý câu hỏi</p>
-            {EXAMPLE_QUESTIONS.map((q) => (
-              <button
-                key={q}
-                type="button"
-                className="block w-full rounded-lg bg-white/70 px-3 py-3 text-left text-[var(--color-blue)]"
-                onClick={() => send(q)}
-              >
-                {q}
-              </button>
-            ))}
+        <aside className="hidden lg:block">
+          <div className="sticky top-8 rounded-2xl bg-white/70 p-5">
+            <p className="font-display text-lg">Gợi ý câu hỏi</p>
+            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+              Chọn một câu hoặc tự hỏi theo cách của bạn.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {EXAMPLE_QUESTIONS.map((q) => (
+                <li key={q}>
+                  <button
+                    type="button"
+                    className="w-full rounded-lg px-3 py-2.5 text-left text-sm text-[var(--color-blue)] transition hover:bg-[var(--color-blue-soft)]"
+                    onClick={() => send(q)}
+                    disabled={streaming || !sessionId}
+                  >
+                    {q}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
-        ) : (
-          <div className="flex-1 space-y-4" aria-live="polite">
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`rounded-2xl px-4 py-3 ${
-                  m.role === "user"
-                    ? "ml-6 bg-[var(--color-green-soft)]"
-                    : "mr-2 bg-white/80"
-                }`}
-              >
-                <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
-                {m.sources && m.sources.length > 0 ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {m.sources.map((s) => (
-                      <button
-                        key={s.key}
-                        type="button"
-                        className="rounded-md bg-[var(--color-blue-soft)] px-2 py-1 text-sm text-[var(--color-blue)]"
-                        onClick={() => setDrawerSource(s)}
-                      >
-                        [{s.key}] {s.title}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-            <div ref={bottomRef} />
-          </div>
-        )}
-
-        {feedbackFor ? (
-          <div className="flex items-center gap-2 text-sm">
-            <span>Câu trả lời này hữu ích?</span>
-            <Button variant="secondary" onClick={() => sendFeedback(true)}>
-              Có
-            </Button>
-            <Button variant="ghost" onClick={() => sendFeedback(false)}>
-              Chưa
-            </Button>
-          </div>
-        ) : null}
-
-        <form
-          className="sticky bottom-20 flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void send();
-          }}
-        >
-          <label className="sr-only" htmlFor="chat-input">
-            Câu hỏi của bạn
-          </label>
-          <input
-            id="chat-input"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Nhập câu hỏi…"
-            className="min-h-12 flex-1 rounded-xl border border-[var(--color-sand)] bg-white px-4 text-base"
-            disabled={streaming || !sessionId}
-          />
-          <Button type="submit" disabled={streaming || !sessionId || !input.trim()}>
-            Gửi
-          </Button>
-        </form>
-        {error ? (
-          <p role="alert" className="text-sm text-[var(--color-danger)]">
-            {error}
-          </p>
-        ) : null}
+        </aside>
       </div>
 
       {drawerSource ? (
@@ -355,7 +383,7 @@ export function ChatPage() {
           onClick={() => setDrawerSource(null)}
         >
           <div
-            className="max-h-[80dvh] w-full max-w-lg overflow-auto rounded-t-2xl bg-[var(--color-cream)] p-5 sm:rounded-2xl"
+            className="max-h-[80dvh] w-full max-w-lg overflow-auto rounded-t-2xl bg-[var(--color-cream)] p-5 sm:rounded-2xl lg:max-w-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="font-display text-xl">{drawerSource.title}</h2>

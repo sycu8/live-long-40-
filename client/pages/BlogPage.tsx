@@ -112,12 +112,12 @@ export function BlogPage() {
         ) : null}
 
         {!loading && items.length > 0 ? (
-          <ul className="space-y-5">
+          <ul className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
             {items.map((item) => (
-              <li key={item.slug}>
+              <li key={item.slug} className="lg:rounded-2xl lg:bg-white/60 lg:p-5">
                 <Link
                   to={`/blog/${item.slug}`}
-                  className="block border-b border-[var(--color-sand)]/45 pb-5 transition hover:opacity-90"
+                  className="block border-b border-[var(--color-sand)]/45 pb-5 transition hover:opacity-90 lg:border-0 lg:pb-0"
                 >
                   <p className="text-xs text-[var(--color-ink-muted)]">
                     {item.themeLabel} · {item.readingMinutes} phút đọc ·{" "}
@@ -182,50 +182,52 @@ export function BlogDetailPage() {
 
   return (
     <AppShell>
-      <article className="fade-up space-y-5">
-        <Link to="/blog" className="text-sm text-[var(--color-blue)]">
-          ← Góc động viên
-        </Link>
-        <p className="text-xs text-[var(--color-ink-muted)]">
-          {item.themeLabel} · {item.readingMinutes} phút ·{" "}
-          {formatDate(item.publishedAt)} · {item.authorName}
-        </p>
-        <h1 className="font-display text-3xl leading-snug">{item.title}</h1>
-        <p className="text-lg text-[var(--color-ink-muted)]">{item.excerpt}</p>
-        <div className="border-t border-[var(--color-sand)]/40 pt-5">
-          <MarkdownBody source={item.bodyMarkdown ?? ""} />
-        </div>
-        <div className="border-t border-[var(--color-sand)]/40 pt-6">
-          <p className="text-sm text-[var(--color-ink-muted)]">
-            Nếu bài viết này chạm đến bạn, hãy làm một việc nhỏ hôm nay — hoặc hỏi
-            Sống An một câu đang khiến bạn băn khoăn.
+      <article className="fade-up lg:grid lg:grid-cols-[minmax(0,42rem)_16rem] lg:justify-between lg:gap-14">
+        <div className="space-y-5">
+          <Link to="/blog" className="text-sm text-[var(--color-blue)]">
+            ← Góc động viên
+          </Link>
+          <p className="text-xs text-[var(--color-ink-muted)]">
+            {item.themeLabel} · {item.readingMinutes} phút ·{" "}
+            {formatDate(item.publishedAt)} · {item.authorName}
           </p>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-            <Link to="/danh-gia">
-              <Button>Kiểm tra mức độ sẵn sàng</Button>
-            </Link>
-            <Link to="/hoi">
-              <Button variant="secondary">Hỏi Sống An</Button>
-            </Link>
+          <h1 className="font-display text-3xl leading-snug lg:text-4xl">{item.title}</h1>
+          <p className="text-lg text-[var(--color-ink-muted)]">{item.excerpt}</p>
+          <div className="border-t border-[var(--color-sand)]/40 pt-5">
+            <MarkdownBody source={item.bodyMarkdown ?? ""} />
+          </div>
+          <div className="border-t border-[var(--color-sand)]/40 pt-6">
+            <p className="text-sm text-[var(--color-ink-muted)]">
+              Nếu bài viết này chạm đến bạn, hãy làm một việc nhỏ hôm nay — hoặc hỏi
+              Sống An một câu đang khiến bạn băn khoăn.
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <Link to="/danh-gia">
+                <Button>Kiểm tra mức độ sẵn sàng</Button>
+              </Link>
+              <Link to="/hoi">
+                <Button variant="secondary">Hỏi Sống An</Button>
+              </Link>
+            </div>
           </div>
         </div>
 
         {related.length > 0 ? (
-          <section className="border-t border-[var(--color-sand)]/40 pt-6">
+          <aside className="mt-8 border-t border-[var(--color-sand)]/40 pt-6 lg:mt-0 lg:border-t-0 lg:pt-10">
             <h2 className="font-display text-xl">Bạn có thể thích</h2>
-            <ul className="mt-3 space-y-3">
+            <ul className="mt-3 space-y-4">
               {related.map((r) => (
                 <li key={r.slug}>
                   <Link
                     to={`/blog/${r.slug}`}
-                    className="font-medium text-[var(--color-green)]"
+                    className="font-medium text-[var(--color-green)] hover:underline"
                   >
                     {r.title}
                   </Link>
                 </li>
               ))}
             </ul>
-          </section>
+          </aside>
         ) : null}
       </article>
     </AppShell>

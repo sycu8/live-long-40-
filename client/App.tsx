@@ -26,8 +26,8 @@ export function App() {
 
   if (bootError) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16">
-        <h1 className="font-display text-2xl">Không kết nối được dịch vụ</h1>
+      <div className="mx-auto max-w-lg px-4 py-16 lg:max-w-2xl">
+        <h1 className="font-display text-2xl lg:text-3xl">Không kết nối được dịch vụ</h1>
         <p className="mt-3 text-[var(--color-ink-muted)]">{bootError}</p>
         <p className="mt-3 text-sm">
           Hãy chạy <code>pnpm db:migrate:local</code> và <code>pnpm db:seed:local</code>{" "}
@@ -39,7 +39,7 @@ export function App() {
 
   if (!ready) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-[var(--color-ink-muted)]">
+      <div className="mx-auto max-w-lg px-4 py-16 text-[var(--color-ink-muted)] lg:max-w-2xl">
         Đang khởi tạo Sống An 40+…
       </div>
     );

@@ -45,9 +45,10 @@ export function ProfilePage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 fade-up">
+      <div className="space-y-8 fade-up lg:grid lg:grid-cols-2 lg:gap-12 lg:space-y-0">
+        <div className="space-y-8">
         <div>
-          <h1 className="font-display text-3xl">Hồ sơ</h1>
+          <h1 className="font-display text-3xl lg:text-4xl">Hồ sơ</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
             Bạn đang dùng phiên ẩn danh. Không cần tạo tài khoản để dùng các tính
             năng cốt lõi.
@@ -95,8 +96,10 @@ export function ProfilePage() {
             </li>
           </ul>
         </section>
+        </div>
 
-        <section className="border-t border-[var(--color-sand)]/40 pt-6">
+        <div className="space-y-8">
+        <section className="border-t border-[var(--color-sand)]/40 pt-6 lg:border-t-0 lg:pt-0">
           <h2 className="font-display text-xl">Quyền riêng tư</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-[var(--color-ink-muted)]">
             <li>
@@ -148,7 +151,7 @@ export function ProfilePage() {
           </p>
         </section>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 lg:max-w-sm">
           <Link to="/danh-gia">
             <Button className="w-full">Làm lại bài đánh giá</Button>
           </Link>
@@ -157,6 +160,7 @@ export function ProfilePage() {
               Hỏi Sống An
             </Button>
           </Link>
+        </div>
         </div>
       </div>
     </AppShell>

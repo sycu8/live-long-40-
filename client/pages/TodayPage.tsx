@@ -167,96 +167,100 @@ export function TodayPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6 fade-up">
-        <div>
-          <h1 className="font-display text-3xl text-[var(--color-ink)]">Hôm nay</h1>
-          <p className="mt-2 text-[var(--color-ink-muted)]">
-            Điểm tổng quan: {readiness.overallScore}/100 — đây là điểm chuẩn bị,
-            không phải chẩn đoán.
-          </p>
-        </div>
-
-        <section className="rounded-2xl bg-white/70 p-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="font-display text-xl">Tiến độ tuần {weekNumber}</h2>
-            <p className="text-sm font-medium text-[var(--color-green)]">
-              {completedCount}/{totalCount || "—"} việc
-            </p>
-          </div>
-          <div
-            className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-sand)]/50"
-            role="progressbar"
-            aria-valuenow={progressPct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Tiến độ tuần ${weekNumber}`}
-          >
-            <div
-              className="h-full rounded-full bg-[var(--color-green)] transition-[width] duration-500"
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
-          <p className="mt-3 text-[var(--color-ink-muted)]">{encouragement}</p>
-        </section>
-
-        <div className="space-y-3 rounded-2xl bg-white/60 p-4">
-          {readiness.pillars.map((p) => (
-            <ScoreMeter
-              key={p.pillar}
-              label={PILLAR_LABELS[p.pillar]}
-              score={p.score}
-            />
-          ))}
-        </div>
-
-        <section>
-          <h2 className="font-display text-xl">Việc tuần {weekNumber}</h2>
-          {pending.length === 0 ? (
+      <div className="space-y-6 fade-up lg:space-y-0 lg:grid lg:grid-cols-[1.15fr_0.85fr] lg:gap-10 lg:items-start">
+        <div className="space-y-6">
+          <div>
+            <h1 className="font-display text-3xl text-[var(--color-ink)] lg:text-4xl">Hôm nay</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
-              Không còn việc đang mở trong tuần này.{" "}
-              <Link className="text-[var(--color-green)] underline" to="/ke-hoach">
-                Xem kế hoạch
-              </Link>
+              Điểm tổng quan: {readiness.overallScore}/100 — đây là điểm chuẩn bị,
+              không phải chẩn đoán.
             </p>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {pending.map((a) => (
-                <li key={a.title} className="rounded-xl bg-white/70 px-4 py-3">
-                  {a.title}
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-4">
-            <Link to="/ke-hoach">
-              <Button variant="secondary">Mở kế hoạch</Button>
-            </Link>
           </div>
-        </section>
 
-        {readiness.gaps.length > 0 ? (
-          <section>
-            <h2 className="font-display text-xl">Ưu tiên cải thiện</h2>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-[var(--color-ink-muted)]">
-              {readiness.gaps.map((g) => (
-                <li key={g}>{g}</li>
-              ))}
-            </ul>
+          <section className="rounded-2xl bg-white/70 p-4 lg:p-6">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="font-display text-xl">Tiến độ tuần {weekNumber}</h2>
+              <p className="text-sm font-medium text-[var(--color-green)]">
+                {completedCount}/{totalCount || "—"} việc
+              </p>
+            </div>
+            <div
+              className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-sand)]/50"
+              role="progressbar"
+              aria-valuenow={progressPct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Tiến độ tuần ${weekNumber}`}
+            >
+              <div
+                className="h-full rounded-full bg-[var(--color-green)] transition-[width] duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <p className="mt-3 text-[var(--color-ink-muted)]">{encouragement}</p>
           </section>
-        ) : null}
 
-        {blog ? (
-          <section className="border-t border-[var(--color-sand)]/40 pt-6">
-            <h2 className="font-display text-xl">Giữ tinh thần</h2>
-            <p className="mt-2 font-medium">{blog.title}</p>
-            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{blog.excerpt}</p>
-            <div className="mt-3">
-              <Link to={`/blog/${blog.slug}`}>
-                <Button variant="secondary">Đọc Góc động viên</Button>
+          <section>
+            <h2 className="font-display text-xl">Việc tuần {weekNumber}</h2>
+            {pending.length === 0 ? (
+              <p className="mt-2 text-[var(--color-ink-muted)]">
+                Không còn việc đang mở trong tuần này.{" "}
+                <Link className="text-[var(--color-green)] underline" to="/ke-hoach">
+                  Xem kế hoạch
+                </Link>
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {pending.map((a) => (
+                  <li key={a.title} className="rounded-xl bg-white/70 px-4 py-3">
+                    {a.title}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-4">
+              <Link to="/ke-hoach">
+                <Button variant="secondary">Mở kế hoạch</Button>
               </Link>
             </div>
           </section>
-        ) : null}
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-3 rounded-2xl bg-white/60 p-4 lg:p-6">
+            {readiness.pillars.map((p) => (
+              <ScoreMeter
+                key={p.pillar}
+                label={PILLAR_LABELS[p.pillar]}
+                score={p.score}
+              />
+            ))}
+          </div>
+
+          {readiness.gaps.length > 0 ? (
+            <section>
+              <h2 className="font-display text-xl">Ưu tiên cải thiện</h2>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-[var(--color-ink-muted)]">
+                {readiness.gaps.map((g) => (
+                  <li key={g}>{g}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {blog ? (
+            <section className="rounded-2xl border border-[var(--color-sand)]/35 bg-white/50 p-4 lg:p-6">
+              <h2 className="font-display text-xl">Giữ tinh thần</h2>
+              <p className="mt-2 font-medium">{blog.title}</p>
+              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{blog.excerpt}</p>
+              <div className="mt-3">
+                <Link to={`/blog/${blog.slug}`}>
+                  <Button variant="secondary">Đọc Góc động viên</Button>
+                </Link>
+              </div>
+            </section>
+          ) : null}
+        </div>
       </div>
     </AppShell>
   );

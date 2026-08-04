@@ -158,9 +158,9 @@ export function PlanPage() {
           ))}
         </div>
 
-        <ul className="space-y-3">
+        <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           {weekActions.map((a) => (
-            <li key={a.publicId} className="rounded-2xl bg-white/75 p-4">
+            <li key={a.publicId} className="rounded-2xl bg-white/75 p-4 lg:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">

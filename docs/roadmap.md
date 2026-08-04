@@ -20,7 +20,7 @@ Nguyên tắc: giáo dục + kế hoạch — **không** thay bác sĩ, tư vấ
 
 ---
 
-## Phase 1 — Vòng động lực *(đang làm)*
+## Phase 1 — Vòng động lực *(đã làm)*
 
 Giữ người dùng quay lại bằng **tiến độ rõ ràng + phản ánh nhẹ + động viên**.
 
@@ -28,8 +28,9 @@ Giữ người dùng quay lại bằng **tiến độ rõ ràng + phản ánh nh
 2. **Tiến độ tuần trên Hôm nay** — % hoàn thành, lời khích lệ theo tiến độ, việc tiếp theo.
 3. **Phản ánh khi hoàn thành việc** — độ khó / tự tin / ghi chú ngắn (API đã có, UI còn thiếu).
 4. **Lưu hội thoại tùy chọn** — bật trong Hồ sơ; chỉ lưu khi người dùng đồng ý rõ ràng.
+5. **Giao diện desktop riêng** — sidebar + bố cục rộng từ `lg` (1024px); mobile giữ bottom tabs (không stretch UI điện thoại trên máy tính).
 
-**Xong khi:** người dùng thấy tiến độ tuần, hoàn thành việc có bước phản ánh, tìm được blog trong 1 lần chạm, và có thể bật/tắt lưu chat.
+**Xong khi:** người dùng thấy tiến độ tuần, hoàn thành việc có bước phản ánh, tìm được blog trong 1 lần chạm, có thể bật/tắt lưu chat, và desktop không còn nhìn như web mobile.
 
 ---
 

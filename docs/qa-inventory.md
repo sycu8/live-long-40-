@@ -30,7 +30,8 @@ Last updated: 2026-08-04. Environment under test: local Wrangler/Vite with `remo
 
 | Control | AC | Edge |
 | --- | --- | --- |
-| Bottom nav (6) | Active state; keyboard focus visible | Not shown on landing/assessment/admin |
+| Bottom nav (mobile) | 6 destinations; active state; focus visible | Hidden from `lg` breakpoint |
+| Side nav (desktop) | Persistent left nav with full labels | Hidden below `lg` |
 | Header brand | Returns home | — |
 | Boot session | Creates session before routes | API down shows migrate/seed hint |
 | CSRF | Mutations send `X-CSRF-Token` | First `/session` exempt |

@@ -92,12 +92,12 @@ export function LibraryPage() {
           />
         ) : null}
         {!loading && items.length > 0 ? (
-          <ul className="space-y-3">
+          <ul className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 xl:grid-cols-3">
             {items.map((item) => (
               <li key={item.slug}>
                 <Link
                   to={`/thu-vien/${item.slug}`}
-                  className="block rounded-2xl bg-white/75 p-4 hover:bg-white"
+                  className="block h-full rounded-2xl bg-white/75 p-4 hover:bg-white"
                 >
                   <p className="text-xs text-[var(--color-ink-muted)]">
                     {PILLAR_LABELS[item.pillar]} · {item.estimatedReadingMinutes} phút
@@ -158,17 +158,17 @@ export function LibraryDetailPage() {
 
   return (
     <AppShell>
-      <article className="fade-up space-y-4">
+      <article className="fade-up mx-auto max-w-3xl space-y-4">
         <Link to="/thu-vien" className="text-sm text-[var(--color-blue)]">
           ← Thư viện
         </Link>
-        <h1 className="font-display text-3xl">{item.title}</h1>
+        <h1 className="font-display text-3xl lg:text-4xl">{item.title}</h1>
         <p className="text-sm text-[var(--color-ink-muted)]">
           {item.issuer} · Xuất bản {item.publicationDate} · Rà soát{" "}
           {item.lastReviewedAt} · Trạng thái {item.status}
         </p>
-        <p className="text-[var(--color-ink-muted)]">{item.summary}</p>
-        <div className="whitespace-pre-wrap rounded-2xl bg-white/70 p-4 leading-relaxed">
+        <p className="text-[var(--color-ink-muted)] lg:text-lg">{item.summary}</p>
+        <div className="whitespace-pre-wrap rounded-2xl bg-white/70 p-4 leading-relaxed lg:p-8">
           {item.bodyMarkdown}
         </div>
       </article>
