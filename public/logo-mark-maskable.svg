@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden="true" viewBox="0 0 512 512">
+  <!-- Maskable: safe zone ~80% center; full-bleed green for adaptive icons -->
+  <rect width="512" height="512" fill="#1F5C45"/>
+  <g transform="translate(96 96) scale(5)">
+    <circle cx="32" cy="22" r="6.2" fill="#F7F4EF"/>
+    <path fill="none" stroke="#F7F4EF" stroke-linecap="round" stroke-width="4.2" d="M18.5 42.5c4.2-10.5 22.8-10.5 27 0"/>
+    <path fill="#D8EBE2" d="M41.5 27.5c4.8 1.2 8.2 5.2 8.8 10.2-5.1-.4-9.3-3.5-11.2-8.2 1-.9 1.7-1.5 2.4-2z"/>
+  </g>
+</svg>

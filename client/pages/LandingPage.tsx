@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BRAND } from "@shared/brand";
 import { Button } from "../components/Button";
 import { BrandLogo } from "../components/BrandLogo";
 import { EXAMPLE_QUESTIONS, DISCLAIMER } from "@shared/constants/product";
@@ -18,7 +19,7 @@ export function LandingPage() {
       {/* Desktop: top marketing nav (no bottom-tab chrome) */}
       <div className="absolute inset-x-0 top-0 z-20 hidden lg:block">
         <div className={`${shell} flex items-center justify-between py-5`}>
-          <BrandLogo size="lg" to="/" />
+          <BrandLogo size="md" to="/" />
           <nav className="flex items-center gap-6 text-sm" aria-label="Liên kết trang chủ">
             <Link className="text-[var(--color-ink-muted)] hover:text-[var(--color-green)]" to="/blog">
               Góc động viên
@@ -51,19 +52,19 @@ export function LandingPage() {
           className={`${shell} flex min-h-[100dvh] flex-col justify-between pb-12 pt-8 lg:min-h-[min(100dvh,820px)] lg:justify-center lg:pb-20 lg:pt-28`}
         >
           <header className="fade-in lg:hidden">
-            <BrandLogo size="lg" to="/" />
+            <BrandLogo size="md" to="/" showWordmark={false} />
           </header>
 
           <div className="fade-up max-w-xl py-8 lg:max-w-2xl lg:py-0">
-            <p className="mb-3 hidden text-sm font-medium tracking-wide text-[var(--color-green)] lg:block">
-              Sống An 40+
+            <p className="font-display text-[2.35rem] leading-none tracking-tight text-[var(--color-green)] sm:text-[2.75rem] lg:text-6xl">
+              {BRAND.name}
             </p>
-            <h1 className="font-display text-[2rem] leading-tight text-[var(--color-ink)] sm:text-[2.4rem] lg:text-5xl lg:leading-[1.15]">
+            <h1 className="mt-4 font-display text-[1.45rem] leading-snug text-[var(--color-ink)] sm:text-[1.7rem] lg:mt-5 lg:text-3xl lg:leading-snug">
               Bắt đầu từ tuổi 40 để sống khỏe và tự chủ lâu hơn.
             </h1>
             <p className="mt-4 max-w-[34ch] text-lg leading-relaxed text-[var(--color-ink-muted)] lg:max-w-xl lg:text-xl">
-              Hiểu mức độ sẵn sàng, rồi làm những việc nhỏ mỗi tuần — không ồn ào,
-              không hứa hẹn thần kỳ.
+              {BRAND.tagline} Hiểu mức độ sẵn sàng, rồi làm những việc nhỏ mỗi tuần —
+              không ồn ào, không hứa hẹn thần kỳ.
             </p>
             <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:items-center">
               <Link to="/danh-gia" className="lg:w-auto">
@@ -80,7 +81,7 @@ export function LandingPage() {
           </div>
 
           <p className="fade-in text-sm text-[var(--color-ink-muted)] lg:mt-16 lg:self-start">
-            Cuộn xuống để xem Sống An 40+ giúp gì cho bạn
+            Cuộn xuống để xem {BRAND.name} giúp gì cho bạn
           </p>
         </div>
       </section>
@@ -240,7 +241,7 @@ export function LandingPage() {
           <div className="mt-8 grid gap-10 sm:grid-cols-2 lg:mt-12 lg:gap-16">
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-green-soft)]">
-                Sống An 40+ là
+                {BRAND.name} là
               </h3>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-[var(--color-cream)]/90">
                 {LANDING_BOUNDARIES.is.map((line) => (
@@ -281,11 +282,45 @@ export function LandingPage() {
               </Button>
             </Link>
           </div>
-          <p className="mt-10 text-left text-xs leading-relaxed text-[var(--color-ink-muted)] lg:mx-auto lg:max-w-3xl">
-            {DISCLAIMER}
-          </p>
         </div>
       </section>
+
+      <footer className="border-t border-[var(--color-sand)]/40 bg-[var(--color-cream-dark)]/40 py-12 lg:py-14">
+        <div className={`${shell} flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between`}>
+          <div>
+            <BrandLogo size="md" to="/" />
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-[var(--color-ink-muted)]">
+              {BRAND.descriptionShort}
+            </p>
+          </div>
+          <nav
+            className="grid grid-cols-2 gap-x-10 gap-y-2 text-sm text-[var(--color-ink-muted)] sm:grid-cols-3"
+            aria-label="Chân trang"
+          >
+            <Link className="hover:text-[var(--color-green)]" to="/danh-gia">
+              Đánh giá
+            </Link>
+            <Link className="hover:text-[var(--color-green)]" to="/ke-hoach">
+              Kế hoạch
+            </Link>
+            <Link className="hover:text-[var(--color-green)]" to="/hoi">
+              Hỏi Sống An
+            </Link>
+            <Link className="hover:text-[var(--color-green)]" to="/blog">
+              Góc động viên
+            </Link>
+            <Link className="hover:text-[var(--color-green)]" to="/thu-vien">
+              Thư viện
+            </Link>
+            <Link className="hover:text-[var(--color-green)]" to="/ho-so">
+              Hồ sơ
+            </Link>
+          </nav>
+        </div>
+        <p className={`${shell} mt-8 text-xs leading-relaxed text-[var(--color-ink-muted)]`}>
+          {DISCLAIMER}
+        </p>
+      </footer>
     </div>
   );
 }

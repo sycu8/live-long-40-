@@ -1,0 +1,44 @@
+# Sống An 40+ — https://song-an-40.sycu-lee.workers.dev
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /ket-qua
+
+# Generative / AI crawlers (GEO): allow public educational content
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+User-agent: Bytespider
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://song-an-40.sycu-lee.workers.dev/sitemap.xml

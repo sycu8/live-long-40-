@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 320 64" role="img" aria-label="SÑng An 40+">
+  <title>SÑng An 40+</title>
+  <defs>
+    <linearGradient id="sa-lockup-bg" x1="12" x2="52" y1="4" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#246B50"/>
+      <stop offset="1" stop-color="#1A4F3A"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" fill="url(#sa-lockup-bg)" rx="16"/>
+  <circle cx="32" cy="22" r="6.2" fill="#F7F4EF"/>
+  <path fill="none" stroke="#F7F4EF" stroke-linecap="round" stroke-width="4.2" d="M18.5 42.5c4.2-10.5 22.8-10.5 27 0"/>
+  <path fill="#D8EBE2" d="M41.5 27.5c4.8 1.2 8.2 5.2 8.8 10.2-5.1-.4-9.3-3.5-11.2-8.2 1-.9 1.7-1.5 2.4-2z"/>
+  <path fill="none" stroke="#1F5C45" stroke-linecap="round" stroke-width="1.4" d="M40.2 30.8c1.8 1.7 3.3 3.8 4.1 6.2" opacity=".55"/>
+  <text x="80" y="42" fill="#1F5C45" font-family="'Be Vietnam Pro', 'Noto Sans', ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.02em">SÑng An 40+</text>
+</svg>
