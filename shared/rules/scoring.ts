@@ -390,9 +390,31 @@ const STRENGTH_MESSAGES: Record<string, string> = {
 };
 
 function questionTopicLabel(questionKey: string): string {
+  const topics: Record<string, string> = {
+    age_band: "nhóm tuổi",
+    bp_known: "theo dõi huyết áp",
+    checkup_habit: "khám sức khỏe định kỳ",
+    activity: "vận động hàng tuần",
+    sleep: "giấc ngủ",
+    meds_list: "danh sách thuốc đang dùng",
+    fall_risk_awareness: "phòng ngã tại nhà",
+    emergency_fund: "quỹ dự phòng",
+    expense_estimate: "ước lượng chi phí về hưu",
+    income_sources: "nguồn thu nhập sau này",
+    debt_awareness: "theo dõi nợ phải trả",
+    insurance_basic: "bảo hiểm y tế / BHXH",
+    docs_ready: "lưu trữ giấy tờ quan trọng",
+    care_experience: "kinh nghiệm chăm sóc người lớn tuổi",
+    fall_response: "xử lý khi người thân bị ngã",
+    emergency_contacts: "danh sách liên hệ khẩn cấp",
+    care_prefs: "mong muốn hỗ trợ với gia đình",
+    home_safety: "an toàn nhà ở",
+    med_support: "hỗ trợ uống thuốc đúng giờ",
+    self_reliance_goal: "mục tiêu tự chủ lâu dài",
+  };
+  if (topics[questionKey]) return topics[questionKey];
   const q = ASSESSMENT_QUESTIONS.find((item) => item.key === questionKey);
   if (!q) return "hạng mục này";
-  // Turn the prompt into a short noun phrase fallback without exposing the key.
   return q.prompt
     .replace(/\?+$/, "")
     .replace(/^Bạn\s+/i, "")
@@ -415,6 +437,27 @@ function strengthMessage(questionKey: string): string {
 
 function unansweredMessage(questionKey: string): string {
   return `Chưa trả lời về ${questionTopicLabel(questionKey)}`;
+}
+
+/** Rewrite stored copy that accidentally embedded raw question keys. */
+export function humanizeResultPhrase(text: string): string {
+  const patterns: Array<[RegExp, (key: string) => string]> = [
+    [/^Cần cải thiện:\s*([a-z0-9_]+)$/i, gapMessage],
+    [/^Điểm mạnh:\s*([a-z0-9_]+)$/i, strengthMessage],
+    [/^Chưa trả lời:\s*([a-z0-9_]+)$/i, unansweredMessage],
+    [/^Chưa trả lời về\s+([a-z0-9_]+)$/i, unansweredMessage],
+  ];
+  for (const [re, resolver] of patterns) {
+    const m = text.trim().match(re);
+    if (m?.[1]) return resolver(m[1]);
+  }
+  if (GAP_MESSAGES[text]) return GAP_MESSAGES[text];
+  if (STRENGTH_MESSAGES[text]) return STRENGTH_MESSAGES[text];
+  return text;
+}
+
+export function humanizeResultPhrases(phrases: string[]): string[] {
+  return phrases.map(humanizeResultPhrase);
 }
 
 export function scoreAssessment(

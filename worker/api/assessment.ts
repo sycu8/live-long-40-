@@ -5,6 +5,7 @@ import {
   CompleteAssessmentSchema,
 } from "@shared/schemas/api";
 import { createId, nowIso } from "@shared/utils/id";
+import { humanizeResultPhrases } from "@shared/rules/scoring";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
 import {
@@ -317,8 +318,8 @@ assessmentRoutes.get("/readiness/current", async (c) => {
           interpretation: interpretations.caregiving,
         },
       ],
-      gaps: JSON.parse(row.gaps_json),
-      strengths: JSON.parse(row.strengths_json),
+      gaps: humanizeResultPhrases(JSON.parse(row.gaps_json) as string[]),
+      strengths: humanizeResultPhrases(JSON.parse(row.strengths_json) as string[]),
       explainability: JSON.parse(row.explainability_json),
       scoringRulesetVersion: row.scoring_ruleset_version,
       createdAt: row.created_at,
