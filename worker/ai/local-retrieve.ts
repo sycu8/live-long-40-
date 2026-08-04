@@ -60,6 +60,30 @@ export function scoreTextAgainstQuery(haystack: string, query: string): number {
   if (phrase.length >= 6 && folded.includes(phrase)) {
     score = Math.min(1, score + 0.25);
   }
+
+  // Topic phrases that disambiguate “phòng” (ngã vs dự phòng) and similar
+  const qFold = foldVietnamese(query);
+  const topics = [
+    "quy du phong",
+    "du phong",
+    "phong nga",
+    "giay to",
+    "huyet ap",
+    "suc khoe",
+    "kham dinh ky",
+  ];
+  for (const topic of topics) {
+    if (qFold.includes(topic) && folded.includes(topic)) {
+      score = Math.min(1, score + 0.35);
+      break;
+    }
+  }
+
+  // Soft-penalize weak single-token hits on multi-token questions
+  if (hits === 1 && tokens.length >= 3) {
+    score *= 0.55;
+  }
+
   // Require at least one strong (3+ char) hit when query has such tokens
   const strong = tokens.filter((t) => t.length >= 3);
   if (strong.length > 0 && !strong.some((t) => folded.includes(t))) {

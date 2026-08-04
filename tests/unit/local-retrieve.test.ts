@@ -23,7 +23,7 @@ describe("scoreTextAgainstQuery", () => {
 });
 
 describe("rankLocalKnowledge", () => {
-  it("ranks fund chunk above unrelated fall chunk for reserve query", () => {
+  it("ranks fund chunk above fall chunk for reserve query", () => {
     const ranked = rankLocalKnowledge(
       "Tôi nên chuẩn bị quỹ dự phòng thế nào?",
       [
@@ -32,7 +32,7 @@ describe("rankLocalKnowledge", () => {
           content: "Phòng ngã tại nhà. Giữ lối đi thông thoáng.",
           heading: "Phòng ngã",
           source_id: "src_fall",
-          title: "Hướng dẫn phòng ngã",
+          title: "Hướng dẫn giáo dục về phòng ngã tại nhà",
           issuer: "Sống An",
           status: "active",
         },
