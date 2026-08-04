@@ -1,0 +1,5 @@
+# Turnstile site key (public)
+TURNSTILE_SITE_KEY=
+
+# Optional local admin bearer token
+ADMIN_SHARED_SECRET=local-dev-admin

@@ -1,0 +1,83 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "song-an-40",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+  // Prefer: pnpm build && scripts/deploy-preview.mjs (uses Vite bundle).
+  // Direct `wrangler deploy -c wrangler.preview.jsonc` needs this alias.
+  "alias": {
+    "@shared": "./shared"
+  },
+  "assets": {
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "ENVIRONMENT": "preview",
+    "APP_NAME": "Sống An 40+",
+    "AI_SEARCH_INSTANCE": "song-an-40-knowledge",
+    "AI_GATEWAY_ID": "song-an-40",
+    "SESSION_COOKIE_NAME": "sa_session",
+    "CSRF_COOKIE_NAME": "sa_csrf",
+    "TURNSTILE_SITE_KEY": "",
+    "FEATURE_CHAT_HISTORY_DEFAULT": "false",
+    "PROMPT_VERSION": "v1.0.0",
+    "SCORING_RULESET_VERSION": "v1.0.0",
+    "SAFETY_RULESET_VERSION": "v1.0.0",
+    "PLAN_RULESET_VERSION": "v1.0.0",
+    "LOCAL_QA_ADMIN_TOKEN": ""
+  },
+  // Temporary preview accounts support D1/KV/Queues but not R2/Workflows/AI Search.
+  // Use the full wrangler.jsonc once authenticated to a real Cloudflare account.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "song-an-40-db",
+      "database_id": "dcb9356c-529c-43e4-acf5-36ccf3139c09",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CONFIG",
+      "id": "fdd863ff25984ab6acc4958f9bcc9896"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "queues": {
+    "producers": [
+      {
+        "binding": "INGESTION_QUEUE",
+        "queue": "song-an-40-ingestion"
+      },
+      {
+        "binding": "ANALYTICS_QUEUE",
+        "queue": "song-an-40-analytics"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "song-an-40-ingestion",
+        "max_batch_size": 5,
+        "max_batch_timeout": 30,
+        "max_retries": 5,
+        "dead_letter_queue": "song-an-40-ingestion-dlq"
+      },
+      {
+        "queue": "song-an-40-analytics",
+        "max_batch_size": 20,
+        "max_batch_timeout": 60,
+        "max_retries": 3
+      }
+    ]
+  }
+}
