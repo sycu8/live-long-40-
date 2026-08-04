@@ -31,7 +31,7 @@
     "PROMPT_VERSION": "v1.0.0",
     "SCORING_RULESET_VERSION": "v1.0.1",
     "SAFETY_RULESET_VERSION": "v1.0.0",
-    "PLAN_RULESET_VERSION": "v1.0.0",
+    "PLAN_RULESET_VERSION": "v1.0.1",
     "LOCAL_QA_ADMIN_TOKEN": ""
   },
   // Temporary preview accounts support D1/KV/Queues but not R2/Workflows/AI Search.

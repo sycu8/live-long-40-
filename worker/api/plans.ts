@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { CreatePlanSchema, CompleteActionSchema } from "@shared/schemas/api";
-import { generateThirtyDayPlan } from "@shared/rules/plan";
+import { generateThirtyDayPlan, humanizePlanReason } from "@shared/rules/plan";
 import { scoreAssessment } from "@shared/rules/scoring";
 import { createId, nowIso, addDaysIso } from "@shared/utils/id";
 import type { Env, AppVariables } from "../env";
@@ -146,7 +146,7 @@ planRoutes.get("/plans/current", async (c) => {
         actionKey: a.action_key,
         title: a.title,
         description: a.description,
-        reason: a.reason,
+        reason: humanizePlanReason(String(a.reason ?? ""), String(a.action_key ?? "")),
         effortMinutes: a.effort_minutes,
         isOptional: !!a.is_optional,
         pillar: a.pillar,
