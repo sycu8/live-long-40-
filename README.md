@@ -101,7 +101,22 @@ Biến công khai: `TURNSTILE_SITE_KEY`, `AI_GATEWAY_ID`, `AI_SEARCH_INSTANCE`, 
 
 ## Deploy lên Cloudflare
 
-### Tài khoản thật (khuyến nghị)
+### GitHub Actions (khuyến nghị cho CI)
+
+1. Thêm repository secrets:
+   - `CLOUDFLARE_API_TOKEN` — token template **Edit Cloudflare Workers** (+ D1, R2, Queues nếu cần)
+   - `CLOUDFLARE_ACCOUNT_ID`
+   - (tuỳ chọn) `ADMIN_SHARED_SECRET`, `SESSION_SIGNING_SECRET`
+2. Workflow: `.github/workflows/deploy-cloudflare.yml`
+   - Chạy trên push `main` / `cursor/**`, hoặc **Actions → Deploy Cloudflare → Run workflow**
+3. Job gọi `node scripts/ci-deploy.mjs`: provision D1/KV/R2/Queues nếu thiếu → build → deploy → migrate → (optional) seed.
+
+```bash
+gh workflow run deploy-cloudflare.yml -f environment=staging -f seed=true
+gh run watch
+```
+
+### Tài khoản thật (local)
 
 Cần `CLOUDFLARE_API_TOKEN` (Workers + D1 + R2 + KV + Queues + AI) và `CLOUDFLARE_ACCOUNT_ID`.
 
