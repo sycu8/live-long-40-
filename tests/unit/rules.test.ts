@@ -15,7 +15,7 @@ describe("assessment scoring", () => {
     const a = scoreAssessment(answers);
     const b = scoreAssessment(answers);
     expect(a.overallScore).toBe(b.overallScore);
-    expect(a.rulesetVersion).toBe("v1.0.0");
+    expect(a.rulesetVersion).toBe("v1.0.1");
     expect(a.pillars.health.score).toBeGreaterThan(50);
   });
 
@@ -29,6 +29,39 @@ describe("assessment scoring", () => {
 
   it("records ruleset version for auditability", () => {
     expect(scoreAssessment({}).rulesetVersion).toMatch(/^v/);
+  });
+
+  it("returns Vietnamese gap/strength copy, never raw question keys", () => {
+    const answers: Record<string, string> = {
+      meds_list: "no",
+      fall_risk_awareness: "no",
+      insurance_basic: "no",
+      income_sources: "unclear",
+      sleep: "poor",
+      bp_known: "within_3m",
+      checkup_habit: "yearly",
+      activity: "5plus",
+      docs_ready: "organized",
+    };
+    const result = scoreAssessment(answers);
+    const keys = ASSESSMENT_QUESTIONS.map((q) => q.key);
+    const exposed = [...result.gaps, ...result.strengths].filter((text) =>
+      keys.some(
+        (key) => text === key || text.endsWith(`: ${key}`) || text.includes(` ${key}`),
+      ),
+    );
+    expect(exposed).toEqual([]);
+    expect(result.gaps.join(" ")).toMatch(/thuốc|phòng ngã|bảo hiểm|thu nhập|giấc ngủ/i);
+    expect(result.strengths.join(" ")).toMatch(/huyết áp|khám định kỳ|vận động|giấy tờ/i);
+  });
+
+  it("covers every assessment question with human-readable gap and strength labels", () => {
+    for (const q of ASSESSMENT_QUESTIONS) {
+      const low = scoreAssessment({ [q.key]: q.options.at(-1)!.value });
+      const high = scoreAssessment({ [q.key]: q.options[0]!.value });
+      expect(low.gaps.some((g) => g.includes(q.key))).toBe(false);
+      expect(high.strengths.some((s) => s.includes(q.key))).toBe(false);
+    }
   });
 });
 

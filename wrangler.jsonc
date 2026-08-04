@@ -25,7 +25,7 @@
     "TURNSTILE_SITE_KEY": "",
     "FEATURE_CHAT_HISTORY_DEFAULT": "false",
     "PROMPT_VERSION": "v1.0.0",
-    "SCORING_RULESET_VERSION": "v1.0.0",
+    "SCORING_RULESET_VERSION": "v1.0.1",
     "SAFETY_RULESET_VERSION": "v1.0.0",
     "PLAN_RULESET_VERSION": "v1.0.0",
     // Local/staging QA only. Leave empty in production — use Cloudflare Access.
@@ -108,7 +108,7 @@
         "CSRF_COOKIE_NAME": "sa_csrf",
         "FEATURE_CHAT_HISTORY_DEFAULT": "false",
         "PROMPT_VERSION": "v1.0.0",
-        "SCORING_RULESET_VERSION": "v1.0.0",
+        "SCORING_RULESET_VERSION": "v1.0.1",
         "SAFETY_RULESET_VERSION": "v1.0.0",
         "PLAN_RULESET_VERSION": "v1.0.0"
       }

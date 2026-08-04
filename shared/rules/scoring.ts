@@ -1,6 +1,6 @@
 import type { Pillar } from "../constants/product";
 
-export const SCORING_RULESET_VERSION = "v1.0.0";
+export const SCORING_RULESET_VERSION = "v1.0.1";
 
 export type AnswerOption = {
   value: string;
@@ -344,30 +344,78 @@ function interpret(score: number, pillar: Pillar): string {
 }
 
 const GAP_MESSAGES: Record<string, string> = {
+  age_band: "Cần ưu tiên chuẩn bị sớm hơn theo nhóm tuổi",
   bp_known: "Chưa nắm huyết áp gần đây",
   checkup_habit: "Chưa có thói quen khám định kỳ",
   activity: "Vận động còn ít",
+  sleep: "Giấc ngủ chưa ổn định",
+  meds_list: "Chưa có danh sách thuốc đang dùng đầy đủ",
+  fall_risk_awareness: "Chưa áp dụng biện pháp phòng ngã tại nhà",
   emergency_fund: "Quỹ dự phòng chưa đủ",
   expense_estimate: "Chưa ước lượng chi phí về hưu",
+  income_sources: "Chưa nắm rõ nguồn thu nhập sau này",
+  debt_awareness: "Chưa theo dõi nợ phải trả rõ ràng",
+  insurance_basic: "Chưa chắc bảo hiểm y tế / BHXH đang hiệu lực",
   docs_ready: "Giấy tờ quan trọng chưa được sắp xếp",
+  care_experience: "Chưa có kinh nghiệm hỗ trợ chăm sóc người lớn tuổi",
   fall_response: "Chưa rõ cách xử lý khi người thân bị ngã",
   emergency_contacts: "Thiếu danh sách liên hệ khẩn cấp",
   care_prefs: "Chưa trao đổi mong muốn hỗ trợ với gia đình",
   home_safety: "Chưa kiểm tra an toàn nhà ở",
+  med_support: "Chưa sẵn sàng hỗ trợ người thân uống thuốc đúng giờ",
+  self_reliance_goal: "Chưa rõ mục tiêu tự chủ lâu dài",
 };
 
 const STRENGTH_MESSAGES: Record<string, string> = {
+  age_band: "Đã bắt đầu quan tâm chuẩn bị theo độ tuổi",
   bp_known: "Đã theo dõi huyết áp",
   checkup_habit: "Có thói quen khám định kỳ",
   activity: "Duy trì vận động đều",
+  sleep: "Giấc ngủ ổn định",
+  meds_list: "Đã có danh sách thuốc đang dùng",
+  fall_risk_awareness: "Đã áp dụng biện pháp phòng ngã",
   emergency_fund: "Có quỹ dự phòng",
   expense_estimate: "Đã ước lượng chi phí",
+  income_sources: "Đã liệt kê nguồn thu nhập dự kiến",
+  debt_awareness: "Theo dõi nợ và kế hoạch trả rõ",
+  insurance_basic: "Có bảo hiểm y tế / BHXH đang hiệu lực",
   docs_ready: "Giấy tờ được lưu ngăn nắp",
+  care_experience: "Đã có kinh nghiệm hỗ trợ chăm sóc",
   fall_response: "Biết phản ứng khi có người ngã",
   emergency_contacts: "Có danh sách liên hệ khẩn cấp",
   care_prefs: "Đã trao đổi mong muốn với gia đình",
   home_safety: "Đã kiểm tra an toàn nhà ở",
+  med_support: "Có cách hỗ trợ uống thuốc đúng giờ",
+  self_reliance_goal: "Đã xác định hướng tự chủ lâu dài",
 };
+
+function questionTopicLabel(questionKey: string): string {
+  const q = ASSESSMENT_QUESTIONS.find((item) => item.key === questionKey);
+  if (!q) return "hạng mục này";
+  // Turn the prompt into a short noun phrase fallback without exposing the key.
+  return q.prompt
+    .replace(/\?+$/, "")
+    .replace(/^Bạn\s+/i, "")
+    .trim();
+}
+
+function gapMessage(questionKey: string): string {
+  return (
+    GAP_MESSAGES[questionKey] ??
+    `Cần cải thiện: ${questionTopicLabel(questionKey)}`
+  );
+}
+
+function strengthMessage(questionKey: string): string {
+  return (
+    STRENGTH_MESSAGES[questionKey] ??
+    `Điểm mạnh: ${questionTopicLabel(questionKey)}`
+  );
+}
+
+function unansweredMessage(questionKey: string): string {
+  return `Chưa trả lời về ${questionTopicLabel(questionKey)}`;
+}
 
 export function scoreAssessment(
   answers: Record<string, string>,
@@ -445,21 +493,21 @@ export function scoreAssessment(
     .sort((a, b) => (b.rawScore ?? 0) - (a.rawScore ?? 0));
 
   const gaps = gapCandidates
-    .map((g) => GAP_MESSAGES[g.questionKey] ?? `Cần cải thiện: ${g.questionKey}`)
+    .map((g) => gapMessage(g.questionKey))
     .filter((v, i, arr) => arr.indexOf(v) === i)
     .slice(0, 3);
 
   const strengths = strengthCandidates
-    .map((g) => STRENGTH_MESSAGES[g.questionKey] ?? `Điểm mạnh: ${g.questionKey}`)
+    .map((g) => strengthMessage(g.questionKey))
     .filter((v, i, arr) => arr.indexOf(v) === i)
     .slice(0, 3);
 
   while (gaps.length < 3) {
     const unanswered = breakdown.find(
-      (b) => !b.answered && !gaps.includes(`Chưa trả lời: ${b.questionKey}`),
+      (b) => !b.answered && !gaps.includes(unansweredMessage(b.questionKey)),
     );
     if (!unanswered) break;
-    gaps.push(`Chưa trả lời: ${unanswered.questionKey}`);
+    gaps.push(unansweredMessage(unanswered.questionKey));
   }
 
   return {
