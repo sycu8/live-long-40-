@@ -11,7 +11,7 @@ import {
   type PageSeo,
 } from "@shared/brand";
 
-const DEFAULT_OG = "/og-image.png";
+const DEFAULT_OG = "/og-image.jpg";
 
 function upsertMeta(
   attr: "name" | "property",

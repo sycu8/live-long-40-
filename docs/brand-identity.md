@@ -36,7 +36,7 @@ Tránh: tím neon, glow công nghệ, nền tối làm chủ đạo.
 | `/logo-mark-192.png` / `512.png` | PWA icons |
 | `/logo-mark-maskable.svg` | Adaptive / maskable |
 | `/apple-touch-icon.png` | iOS home screen |
-| `/og-image.png` | Open Graph / Twitter (1200×630) |
+| `/og-image.jpg` | Open Graph / Twitter (1200×630) |
 | `/favicon.svg` | Tab icon |
 
 - Clear space tối thiểu ≈ ¼ cạnh mark
@@ -52,7 +52,7 @@ Tagline chuẩn: *Chuẩn bị tuổi già từ tuổi 40 — khỏe, tự chủ
 - Ngôn ngữ: `vi-VN`, quốc gia: Việt Nam (`geo.region=VN`)
 - Canonical + `hreflang` vi-VN / x-default
 - Schema: Organization + WebApplication + WebSite + FAQPage (`shared/brand/jsonld.ts`)
-- Open Graph / Twitter: `/og-image.png`
+- Open Graph / Twitter: `/og-image.jpg`
 - `robots.txt`, `sitemap.xml`, `llms.txt`
 - Client `DocumentHead` cập nhật title/meta theo route SPA
 - Không index: `/admin`, `/api/*`, `/ket-qua`
