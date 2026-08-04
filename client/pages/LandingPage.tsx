@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "../components/Button";
+import { BrandLogo } from "../components/BrandLogo";
 import { EXAMPLE_QUESTIONS, PILLAR_LABELS } from "@shared/constants/product";
 
 export function LandingPage() {
@@ -16,10 +17,8 @@ export function LandingPage() {
         />
         <div className="mx-auto flex min-h-[100dvh] max-w-lg flex-col justify-between px-4 pb-10 pt-8">
           <header className="fade-in">
-            <p className="font-display text-3xl tracking-tight text-[var(--color-green)]">
-              Sống An 40+
-            </p>
-            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+            <BrandLogo size="lg" />
+            <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
               Chuẩn bị cho tuổi già từ trung niên
             </p>
           </header>

@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
+import { BrandLogo } from "./BrandLogo";
 import { DISCLAIMER } from "@shared/constants/product";
 
 export function AppShell({
@@ -21,9 +21,7 @@ export function AppShell({
             wide ? "max-w-5xl" : "max-w-lg",
           )}
         >
-          <Link to="/" className="font-display text-xl text-[var(--color-green)]">
-            Sống An 40+
-          </Link>
+          <BrandLogo size="md" />
           <p className="max-w-[50%] text-right text-xs text-[var(--color-ink-muted)]">
             Công cụ giáo dục, không phải dịch vụ y tế
           </p>
