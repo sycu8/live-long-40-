@@ -87,72 +87,77 @@ export function TodayPage() {
   if (!readiness) {
     return (
       <AppShell>
-        <div className="space-y-8 fade-up">
-          <EmptyState
-            title="Bắt đầu từ việc hiểu mình đang ở đâu"
-            description="Hoàn thành bài đánh giá ngắn để nhận hồ sơ sẵn sàng và kế hoạch 30 ngày."
-            action={
-              <Link to="/danh-gia">
-                <Button>Kiểm tra mức độ sẵn sàng</Button>
-              </Link>
-            }
-          />
-          <section>
-            <h2 className="font-display text-xl text-[var(--color-ink)]">
-              Trong lúc đó bạn có thể
-            </h2>
-            <ul className="mt-4 space-y-4 text-[var(--color-ink-muted)]">
-              <li>
-                <Link className="font-medium text-[var(--color-green)]" to="/hoi">
-                  Hỏi Sống An
+        <div className="fade-up space-y-8 lg:grid lg:grid-cols-2 lg:gap-12 lg:space-y-0 lg:items-start">
+          <div className="space-y-8">
+            <EmptyState
+              title="Bắt đầu từ việc hiểu mình đang ở đâu"
+              description="Hoàn thành bài đánh giá ngắn để nhận hồ sơ sẵn sàng và kế hoạch 30 ngày."
+              action={
+                <Link to="/danh-gia">
+                  <Button>Kiểm tra mức độ sẵn sàng</Button>
                 </Link>
-                {" — "}
-                đặt câu hỏi về khám định kỳ, quỹ dự phòng, phòng ngã hoặc giấy tờ.
-              </li>
-              <li>
-                <Link
-                  className="font-medium text-[var(--color-green)]"
-                  to="/blog"
-                >
-                  Đọc Góc động viên
-                </Link>
-                {" — "}
-                bài viết ấm áp giúp bạn bớt tiêu cực và thích nghi với tuổi già.
-              </li>
-              <li>
-                <Link
-                  className="font-medium text-[var(--color-green)]"
-                  to="/thu-vien"
-                >
-                  Đọc Thư viện
-                </Link>
-                {" — "}
-                bài học ngắn theo sức khỏe, tài chính và kỹ năng chăm sóc.
-              </li>
-            </ul>
-          </section>
-          {blog ? (
-            <section className="border-t border-[var(--color-sand)]/40 pt-6">
-              <h2 className="font-display text-xl">Bài động viên mới</h2>
-              <p className="mt-2 font-medium text-[var(--color-ink)]">{blog.title}</p>
-              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{blog.excerpt}</p>
-              <div className="mt-3">
-                <Link to={`/blog/${blog.slug}`}>
-                  <Button variant="secondary">Đọc bài</Button>
-                </Link>
-              </div>
+              }
+            />
+            <section>
+              <h2 className="font-display text-xl text-[var(--color-ink)]">
+                Trong lúc đó bạn có thể
+              </h2>
+              <ul className="mt-4 space-y-4 text-[var(--color-ink-muted)]">
+                <li>
+                  <Link className="font-medium text-[var(--color-green)]" to="/hoi">
+                    Hỏi Sống An
+                  </Link>
+                  {" — "}
+                  đặt câu hỏi về khám định kỳ, quỹ dự phòng, phòng ngã hoặc giấy tờ.
+                </li>
+                <li>
+                  <Link
+                    className="font-medium text-[var(--color-green)]"
+                    to="/blog"
+                  >
+                    Đọc Góc động viên
+                  </Link>
+                  {" — "}
+                  bài viết ấm áp giúp bạn bớt tiêu cực và thích nghi với tuổi già.
+                </li>
+                <li>
+                  <Link
+                    className="font-medium text-[var(--color-green)]"
+                    to="/thu-vien"
+                  >
+                    Đọc Thư viện
+                  </Link>
+                  {" — "}
+                  bài học ngắn theo sức khỏe, tài chính và kỹ năng chăm sóc.
+                </li>
+              </ul>
             </section>
-          ) : null}
-          <section className="border-t border-[var(--color-sand)]/40 pt-6">
-            <h2 className="font-display text-xl text-[var(--color-ink)]">
-              Bài đánh giá gồm gì?
-            </h2>
-            <p className="mt-2 leading-relaxed text-[var(--color-ink-muted)]">
-              Khoảng 20 câu, làm trong khoảng 7 phút. Bạn sẽ nhận điểm chuẩn bị
-              theo ba trụ cột, khoảng trống ưu tiên và gợi ý việc nhỏ cho 30 ngày
-              tới — không phải chẩn đoán sức khỏe.
-            </p>
-          </section>
+          </div>
+
+          <div className="space-y-8">
+            {blog ? (
+              <section className="rounded-2xl bg-white/60 p-5 lg:p-6">
+                <h2 className="font-display text-xl">Bài động viên mới</h2>
+                <p className="mt-2 font-medium text-[var(--color-ink)]">{blog.title}</p>
+                <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{blog.excerpt}</p>
+                <div className="mt-3">
+                  <Link to={`/blog/${blog.slug}`}>
+                    <Button variant="secondary">Đọc bài</Button>
+                  </Link>
+                </div>
+              </section>
+            ) : null}
+            <section className="rounded-2xl border border-[var(--color-sand)]/35 p-5 lg:p-6">
+              <h2 className="font-display text-xl text-[var(--color-ink)]">
+                Bài đánh giá gồm gì?
+              </h2>
+              <p className="mt-2 leading-relaxed text-[var(--color-ink-muted)]">
+                Khoảng 20 câu, làm trong khoảng 7 phút. Bạn sẽ nhận điểm chuẩn bị
+                theo ba trụ cột, khoảng trống ưu tiên và gợi ý việc nhỏ cho 30 ngày
+                tới — không phải chẩn đoán sức khỏe.
+              </p>
+            </section>
+          </div>
         </div>
       </AppShell>
     );

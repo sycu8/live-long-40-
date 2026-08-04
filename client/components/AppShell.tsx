@@ -19,8 +19,8 @@ export function AppShell({
   wide?: boolean;
 }) {
   const mainMax = wide
-    ? "max-w-lg lg:max-w-6xl"
-    : "max-w-lg lg:max-w-5xl";
+    ? "max-w-lg lg:max-w-6xl lg:w-full"
+    : "max-w-lg lg:max-w-5xl lg:w-full";
 
   return (
     <div className="min-h-dvh lg:flex">
