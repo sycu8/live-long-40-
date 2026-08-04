@@ -1,7 +1,10 @@
 import type { Pillar } from "../constants/product";
-import type { ScoringResult } from "./scoring";
+import {
+  assessmentTopicLabel,
+  type ScoringResult,
+} from "./scoring";
 
-export const PLAN_RULESET_VERSION = "v1.0.0";
+export const PLAN_RULESET_VERSION = "v1.0.1";
 
 export type PlanActionTemplate = {
   actionKey: string;
@@ -189,6 +192,47 @@ function scoreForKeys(
   return Math.min(...scores);
 }
 
+function formatTopicList(keys: string[]): string {
+  const labels = [...new Set(keys.map((key) => assessmentTopicLabel(key)))];
+  if (labels.length === 0) return "các bước chuẩn bị của bạn";
+  if (labels.length === 1) return labels[0]!;
+  if (labels.length === 2) return `${labels[0]} và ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")} và ${labels.at(-1)}`;
+}
+
+/** User-facing explanation — Vietnamese only, no raw keys/scores/versions. */
+export function buildSelectionReason(
+  action: PlanActionTemplate,
+  triggerScore: number,
+): string {
+  const topics = formatTopicList(action.triggerQuestionKeys);
+  if (triggerScore <= action.maxScoreToTrigger) {
+    return `${action.reason} Được ưu tiên vì còn khoảng trống liên quan đến ${topics}.`;
+  }
+  return `${action.reason} Giúp củng cố phần ${topics} trong kế hoạch 30 ngày.`;
+}
+
+export function humanizePlanReason(
+  reason: string,
+  actionKey?: string,
+): string {
+  const looksTechnical =
+    /điểm liên quan|quy tắc\s*v?\d|Hành động bổ sung để đủ lịch/i.test(reason) ||
+    /\(([a-z][a-z0-9_]*)(,\s*[a-z][a-z0-9_]*)*\)/.test(reason) ||
+    /=\s*\d+/.test(reason);
+
+  if (!looksTechnical) return reason;
+
+  const baseKey = actionKey?.replace(/_w\d+_\d+$/, "") ?? "";
+  const template =
+    ACTION_CATALOG.find((a) => a.actionKey === baseKey) ??
+    ACTION_CATALOG.find((a) => actionKey?.startsWith(a.actionKey));
+  if (template) {
+    return buildSelectionReason(template, 0);
+  }
+  return "Việc này phù hợp với mức độ sẵn sàng hiện tại của bạn trong kế hoạch 30 ngày.";
+}
+
 export function generateThirtyDayPlan(result: ScoringResult): GeneratedPlan {
   const ranked = ACTION_CATALOG.map((action) => {
     const triggerScore = scoreForKeys(result, action.triggerQuestionKeys);
@@ -210,7 +254,7 @@ export function generateThirtyDayPlan(result: ScoringResult): GeneratedPlan {
         weekNumber: week,
         isOptional: idx === 2,
         sortOrder: idx,
-        selectionReason: `Chọn vì điểm liên quan (${item.action.triggerQuestionKeys.join(", ")}) = ${item.triggerScore}; quy tắc ${PLAN_RULESET_VERSION}.`,
+        selectionReason: buildSelectionReason(item.action, item.triggerScore),
       });
     });
   }
@@ -226,7 +270,7 @@ export function generateThirtyDayPlan(result: ScoringResult): GeneratedPlan {
       weekNumber: week,
       isOptional: idx === 2,
       sortOrder: idx,
-      selectionReason: `Hành động bổ sung để đủ lịch 30 ngày (${PLAN_RULESET_VERSION}).`,
+      selectionReason: `${fallback.reason} Bổ sung để đủ lịch trình 30 ngày của bạn.`,
     });
   }
 

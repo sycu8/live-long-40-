@@ -27,7 +27,7 @@
     "PROMPT_VERSION": "v1.0.0",
     "SCORING_RULESET_VERSION": "v1.0.1",
     "SAFETY_RULESET_VERSION": "v1.0.0",
-    "PLAN_RULESET_VERSION": "v1.0.0",
+    "PLAN_RULESET_VERSION": "v1.0.1",
     // Local/staging QA only. Leave empty in production — use Cloudflare Access.
     "LOCAL_QA_ADMIN_TOKEN": ""
   },
@@ -110,7 +110,7 @@
         "PROMPT_VERSION": "v1.0.0",
         "SCORING_RULESET_VERSION": "v1.0.1",
         "SAFETY_RULESET_VERSION": "v1.0.0",
-        "PLAN_RULESET_VERSION": "v1.0.0"
+        "PLAN_RULESET_VERSION": "v1.0.1"
       }
     }
   }

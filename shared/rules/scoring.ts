@@ -439,6 +439,10 @@ function unansweredMessage(questionKey: string): string {
   return `Chưa trả lời về ${questionTopicLabel(questionKey)}`;
 }
 
+export function assessmentTopicLabel(questionKey: string): string {
+  return questionTopicLabel(questionKey);
+}
+
 /** Rewrite stored copy that accidentally embedded raw question keys. */
 export function humanizeResultPhrase(text: string): string {
   const patterns: Array<[RegExp, (key: string) => string]> = [

@@ -92,7 +92,7 @@ describe("plan recommendations", () => {
       care_prefs: "not_yet",
     });
     const plan = generateThirtyDayPlan(scored);
-    expect(plan.rulesetVersion).toBe("v1.0.0");
+    expect(plan.rulesetVersion).toBe("v1.0.1");
     expect(plan.actions).toHaveLength(12);
     for (let week = 1; week <= 4; week++) {
       const weekActions = plan.actions.filter((a) => a.weekNumber === week);
@@ -100,6 +100,39 @@ describe("plan recommendations", () => {
       expect(weekActions.filter((a) => !a.isOptional)).toHaveLength(2);
       expect(weekActions.filter((a) => a.isOptional)).toHaveLength(1);
     }
+  });
+
+  it("writes Vietnamese selection reasons without raw keys, scores, or rule ids", async () => {
+    const { humanizePlanReason } = await import("@shared/rules/plan");
+    const scored = scoreAssessment({
+      fall_response: "unsure",
+      fall_risk_awareness: "no",
+      home_safety: "not_checked",
+      meds_list: "no",
+    });
+    const plan = generateThirtyDayPlan(scored);
+    const keys = [
+      "fall_response",
+      "fall_risk_awareness",
+      "home_safety",
+      "meds_list",
+      "bp_known",
+    ];
+    for (const action of plan.actions) {
+      expect(action.selectionReason).not.toMatch(/điểm liên quan|quy tắc/i);
+      expect(action.selectionReason).not.toMatch(/=\s*\d+/);
+      for (const key of keys) {
+        expect(action.selectionReason.includes(key)).toBe(false);
+      }
+      expect(action.selectionReason.length).toBeGreaterThan(20);
+    }
+
+    expect(
+      humanizePlanReason(
+        "Chọn vì điểm liên quan (fall_response, fall_risk_awareness, home_safety) = 20; quy tắc v1.0.0.",
+        "fall_lesson",
+      ),
+    ).toMatch(/phòng ngã|an toàn nhà ở|xử lý khi người thân bị ngã/i);
   });
 });
 
