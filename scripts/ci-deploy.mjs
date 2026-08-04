@@ -47,45 +47,47 @@ function ensureToken() {
   }
 }
 
-function findD1Id(name) {
-  const out = wrangler(["d1", "list", "--json"]);
-  try {
-    const list = JSON.parse(out);
-    const hit = (Array.isArray(list) ? list : list?.result ?? []).find(
-      (d) => d.name === name || d.database_name === name,
+async function cfApi(path) {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}${path}`;
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+  });
+  const body = await res.json();
+  if (!res.ok || body.success === false) {
+    throw new Error(
+      `CF API ${path} failed: ${res.status} ${JSON.stringify(body.errors ?? body)}`,
     );
-    return hit?.uuid ?? hit?.id ?? null;
-  } catch {
-    return null;
   }
+  return body.result;
+}
+
+async function findD1Id(name) {
+  const list = await cfApi("/d1/database");
+  const hit = (list ?? []).find((d) => d.name === name);
+  return hit?.uuid ?? null;
 }
 
 function createD1(name) {
   const out = wrangler(["d1", "create", name]);
   const m = out.match(/database_id["\s:]+([0-9a-f-]{36})/i);
   if (m) return m[1];
-  const id = findD1Id(name);
-  if (id) return id;
   throw new Error(`Could not determine D1 id for ${name}`);
 }
 
-function findKvId(title) {
-  const out = wrangler(["kv", "namespace", "list", "--json"]);
-  try {
-    const list = JSON.parse(out);
-    const hit = (Array.isArray(list) ? list : []).find((n) => n.title === title);
-    return hit?.id ?? null;
-  } catch {
-    return null;
-  }
+async function findKvId(title) {
+  const list = await cfApi("/storage/kv/namespaces");
+  const hit = (list ?? []).find((n) => n.title === title);
+  return hit?.id ?? null;
 }
 
 function createKv(title) {
   const out = wrangler(["kv", "namespace", "create", title]);
   const m = out.match(/"id"\s*:\s*"([a-f0-9]{32})"/i);
   if (m) return m[1];
-  const id = findKvId(title);
-  if (id) return id;
   throw new Error(`Could not determine KV id for ${title}`);
 }
 
@@ -143,72 +145,79 @@ const dbName = "song-an-40-db";
 const kvTitle = "song-an-40-config";
 const r2Name = "song-an-40-sources";
 
-console.log("→ Installing deps…");
-run("pnpm", ["install", "--frozen-lockfile"], { stdio: "inherit" });
+async function main() {
+  console.log("→ Installing deps…");
+  run("pnpm", ["install", "--frozen-lockfile"], { stdio: "inherit" });
 
-console.log("→ Authenticating…");
-wrangler(["whoami"], { stdio: "inherit" });
+  console.log("→ Authenticating…");
+  wrangler(["whoami"], { stdio: "inherit" });
 
-console.log("→ Ensuring D1…");
-let d1Id = findD1Id(dbName);
-if (!d1Id) {
-  console.log(`Creating D1 ${dbName}…`);
-  d1Id = createD1(dbName);
-} else {
-  console.log(`D1 exists: ${d1Id}`);
-}
-
-console.log("→ Ensuring KV…");
-let kvId = findKvId(kvTitle) || findKvId("CONFIG");
-if (!kvId) {
-  console.log(`Creating KV ${kvTitle}…`);
-  kvId = createKv(kvTitle);
-} else {
-  console.log(`KV exists: ${kvId}`);
-}
-
-console.log("→ Ensuring R2 + Queues…");
-ensureR2(r2Name);
-for (const q of [
-  "song-an-40-ingestion",
-  "song-an-40-analytics",
-  "song-an-40-ingestion-dlq",
-]) {
-  ensureQueue(q);
-}
-
-patchWrangler({ d1Id, kvId, environment });
-
-console.log("→ Building…");
-run("pnpm", ["build"], { stdio: "inherit" });
-
-console.log("→ Deploying Worker…");
-wrangler(["deploy"], { stdio: "inherit" });
-
-console.log("→ Applying D1 migrations…");
-wrangler(
-  ["d1", "migrations", "apply", dbName, "--remote"],
-  { stdio: "inherit" },
-);
-
-if (process.env.SEED_REMOTE === "1" || process.env.SEED_REMOTE === "true") {
-  const seed = resolve(root, "seed/demo.sql");
-  if (existsSync(seed)) {
-    console.log("→ Seeding demo data…");
-    wrangler(
-      ["d1", "execute", dbName, "--remote", `--file=${seed}`],
-      { stdio: "inherit" },
-    );
+  console.log("→ Ensuring D1…");
+  let d1Id = await findD1Id(dbName);
+  if (!d1Id) {
+    console.log(`Creating D1 ${dbName}…`);
+    d1Id = createD1(dbName);
+  } else {
+    console.log(`D1 exists: ${d1Id}`);
   }
+
+  console.log("→ Ensuring KV…");
+  let kvId = (await findKvId(kvTitle)) || (await findKvId("CONFIG"));
+  if (!kvId) {
+    console.log(`Creating KV ${kvTitle}…`);
+    kvId = createKv(kvTitle);
+  } else {
+    console.log(`KV exists: ${kvId}`);
+  }
+
+  console.log("→ Ensuring R2 + Queues…");
+  ensureR2(r2Name);
+  for (const q of [
+    "song-an-40-ingestion",
+    "song-an-40-analytics",
+    "song-an-40-ingestion-dlq",
+  ]) {
+    ensureQueue(q);
+  }
+
+  patchWrangler({ d1Id, kvId, environment });
+
+  console.log("→ Building…");
+  run("pnpm", ["build"], { stdio: "inherit" });
+
+  console.log("→ Deploying Worker…");
+  wrangler(["deploy"], { stdio: "inherit" });
+
+  console.log("→ Applying D1 migrations…");
+  wrangler(
+    ["d1", "migrations", "apply", dbName, "--remote"],
+    { stdio: "inherit" },
+  );
+
+  if (process.env.SEED_REMOTE === "1" || process.env.SEED_REMOTE === "true") {
+    const seed = resolve(root, "seed/demo.sql");
+    if (existsSync(seed)) {
+      console.log("→ Seeding demo data…");
+      wrangler(
+        ["d1", "execute", dbName, "--remote", `--file=${seed}`],
+        { stdio: "inherit" },
+      );
+    }
+  }
+
+  const sessionSecret =
+    process.env.SESSION_SIGNING_SECRET ||
+    `ci-${randomBytes(24).toString("hex")}`;
+  putSecret("SESSION_SIGNING_SECRET", sessionSecret);
+
+  if (process.env.ADMIN_SHARED_SECRET) {
+    putSecret("ADMIN_SHARED_SECRET", process.env.ADMIN_SHARED_SECRET);
+  }
+
+  console.log("→ Deploy complete.");
 }
 
-const sessionSecret =
-  process.env.SESSION_SIGNING_SECRET ||
-  `ci-${randomBytes(24).toString("hex")}`;
-putSecret("SESSION_SIGNING_SECRET", sessionSecret);
-
-if (process.env.ADMIN_SHARED_SECRET) {
-  putSecret("ADMIN_SHARED_SECRET", process.env.ADMIN_SHARED_SECRET);
-}
-
-console.log("→ Deploy complete.");
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

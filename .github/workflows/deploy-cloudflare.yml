@@ -66,5 +66,8 @@ jobs:
           fi
           echo "Cloudflare secrets are present."
 
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Deploy
         run: node scripts/ci-deploy.mjs
