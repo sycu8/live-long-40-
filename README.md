@@ -99,7 +99,36 @@ Trong `wrangler.jsonc`:
 
 Biến công khai: `TURNSTILE_SITE_KEY`, `AI_GATEWAY_ID`, `AI_SEARCH_INSTANCE`, versions (`PROMPT_VERSION`, `SCORING_RULESET_VERSION`, …).
 
-## Provision staging (không deploy production tự động)
+## Deploy lên Cloudflare
+
+### Tài khoản thật (khuyến nghị)
+
+Cần `CLOUDFLARE_API_TOKEN` (Workers + D1 + R2 + KV + Queues + AI) và `CLOUDFLARE_ACCOUNT_ID`.
+
+```bash
+export CLOUDFLARE_API_TOKEN=…
+export CLOUDFLARE_ACCOUNT_ID=…
+# Tạo D1/KV/R2/Queues, cập nhật ID trong wrangler.jsonc
+pnpm build
+pnpm db:migrate:remote
+pnpm exec wrangler secret put SESSION_SIGNING_SECRET
+pnpm exec wrangler secret put ADMIN_SHARED_SECRET   # staging only; prod dùng Access
+pnpm exec wrangler deploy
+# Tuỳ chọn: pnpm exec wrangler d1 execute song-an-40-db --remote --file=./seed/demo.sql
+```
+
+`wrangler.jsonc` đầy đủ gồm R2, Workflows, AI Search. Binding thiếu sẽ được Worker xử lý mềm (admin upload R2 → 503).
+
+### Preview tạm (không cần login)
+
+```bash
+pnpm deploy:preview
+# hoặc: node scripts/deploy-preview.mjs
+```
+
+Dùng temporary preview account (`wrangler deploy --temporary`). Hỗ trợ D1/KV/Queues/AI; **không** hỗ trợ R2/Workflows/AI Search (`wrangler.preview.jsonc`). Claim account trong ~60 phút qua URL Wrangler in ra, nếu không preview hết hạn.
+
+### Staging production-like
 
 1. Tạo D1, R2, KV, Queues trên account Cloudflare.
 2. Cập nhật `database_id` / KV `id` trong `wrangler.jsonc` (hoặc dùng auto-provision Wrangler nếu bật).
@@ -162,6 +191,7 @@ pnpm exec wrangler deploy --env staging
 | `pnpm db:migrate:local` / `remote` | D1 migrations |
 | `pnpm db:seed:local` | Demo data |
 | `pnpm deploy:dry-run` | Validate deploy bundle |
+| `pnpm deploy:preview` | Deploy preview (token hoặc temporary account) |
 
 ## Known limitations
 
@@ -169,4 +199,4 @@ pnpm exec wrangler deploy --env staging
 - PDF: lưu R2 được, nhưng **bắt buộc** dán văn bản đã duyệt trước khi index (không giả PDF extraction).  
 - Turnstile chỉ enforce khi có `TURNSTILE_SECRET_KEY`.  
 - Cloudflare Access JWT được chấp nhận qua header; không tự verify chữ ký JWT trong MVP (giả định Access edge).  
-- Chưa deploy production trong phạm vi agent này.
+- Temporary preview workers.dev có thể bật Cloudflare challenge; R2/Workflows không có trên preview account.

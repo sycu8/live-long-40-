@@ -91,6 +91,15 @@ adminRoutes.post("/sources/:id/upload", async (c) => {
     return jsonError(c, 413, "PAYLOAD_TOO_LARGE", "File quá lớn (tối đa 8MB).");
   }
 
+  if (!c.env.SOURCES) {
+    return jsonError(
+      c,
+      503,
+      "BINDING_MISSING",
+      "R2 chưa được cấu hình trên môi trường này.",
+    );
+  }
+
   const key = `sources/${source.id}/${createId("obj")}`;
   await c.env.SOURCES.put(key, buf, {
     httpMetadata: { contentType },
@@ -142,7 +151,7 @@ adminRoutes.post("/sources/:id/ingest", async (c) => {
     .run();
 
   try {
-    await c.env.INGESTION_QUEUE.send({
+    await c.env.INGESTION_QUEUE?.send({
       type: "ingest",
       jobId,
       sourceId: source.id,
@@ -153,6 +162,7 @@ adminRoutes.post("/sources/:id/ingest", async (c) => {
   }
 
   try {
+    if (!c.env.INGESTION_WORKFLOW) throw new Error("workflow unavailable");
     const instance = await c.env.INGESTION_WORKFLOW.create({
       id: jobPublicId,
       params: {

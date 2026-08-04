@@ -42,6 +42,9 @@ export class IngestionWorkflow extends WorkflowEntrypoint<Env, Params> {
       if (!source?.r2_object_key) {
         throw new Error("Không có văn bản đã duyệt hoặc đối tượng R2.");
       }
+      if (!this.env.SOURCES) {
+        throw new Error("R2 chưa được cấu hình trên môi trường này.");
+      }
       const obj = await this.env.SOURCES.get(source.r2_object_key);
       if (!obj) throw new Error("Không đọc được đối tượng R2.");
       const contentType = obj.httpMetadata?.contentType ?? "";

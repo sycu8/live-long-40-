@@ -121,7 +121,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
 
     // Privacy-safe analytics event (no question text)
     try {
-      await c.env.ANALYTICS_QUEUE.send({
+      await c.env.ANALYTICS_QUEUE?.send({
         type: "risk_routed",
         riskClass: pipeline.riskClass,
         at: nowIso(),

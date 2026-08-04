@@ -1,10 +1,11 @@
 export type Env = {
   ASSETS: Fetcher;
   DB: D1Database;
-  SOURCES: R2Bucket;
+  /** Optional on temporary preview accounts (R2 not always available). */
+  SOURCES?: R2Bucket;
   CONFIG: KVNamespace;
-  AI: Ai;
-  AI_SEARCH: {
+  AI?: Ai;
+  AI_SEARCH?: {
     get(id: string): {
       search(input: {
         query?: string;
@@ -35,9 +36,10 @@ export type Env = {
     };
     create?(opts: { id: string }): Promise<unknown>;
   };
-  INGESTION_QUEUE: Queue;
-  ANALYTICS_QUEUE: Queue;
-  INGESTION_WORKFLOW: Workflow;
+  INGESTION_QUEUE?: Queue;
+  ANALYTICS_QUEUE?: Queue;
+  /** Optional when Workflows are unavailable (e.g. temporary preview accounts). */
+  INGESTION_WORKFLOW?: Workflow;
   ENVIRONMENT: string;
   APP_NAME: string;
   AI_SEARCH_INSTANCE: string;

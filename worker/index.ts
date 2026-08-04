@@ -105,6 +105,10 @@ async function handleQueue(batch: MessageBatch, env: Env) {
       at?: string;
     };
     if (body.type === "ingest" && body.jobId && body.sourceId) {
+      if (!env.INGESTION_WORKFLOW) {
+        msg.ack();
+        continue;
+      }
       try {
         await env.INGESTION_WORKFLOW.create({
           params: {

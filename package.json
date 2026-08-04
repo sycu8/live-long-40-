@@ -24,7 +24,8 @@
     "cf:types": "wrangler types",
     "cf:check": "wrangler deploy --dry-run",
     "cf:dev": "vite",
-    "deploy:dry-run": "pnpm build && wrangler deploy --dry-run"
+    "deploy:dry-run": "pnpm build && wrangler deploy --dry-run",
+    "deploy:preview": "node scripts/deploy-preview.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
