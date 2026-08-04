@@ -84,6 +84,16 @@ export function scoreTextAgainstQuery(haystack: string, query: string): number {
     score *= 0.55;
   }
 
+  // “quỹ dự phòng” must not lose to “phòng ngã” on the shared token “phòng”
+  if (
+    ((qFold.includes("quy") && qFold.includes("phong")) ||
+      qFold.includes("du phong")) &&
+    !folded.includes("quy") &&
+    !folded.includes("du phong")
+  ) {
+    score *= 0.15;
+  }
+
   // Require at least one strong (3+ char) hit when query has such tokens
   const strong = tokens.filter((t) => t.length >= 3);
   if (strong.length > 0 && !strong.some((t) => folded.includes(t))) {
