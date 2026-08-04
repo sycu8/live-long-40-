@@ -416,3 +416,132 @@ INSERT OR IGNORE INTO source_chunks (
   'indexed',
   datetime('now')
 );
+
+-- Extra approved sources covering example chat questions (health check + documents)
+INSERT OR IGNORE INTO source_documents (
+  id, public_id, slug, title, summary, issuer, jurisdiction, document_type, language, category, pillar,
+  estimated_reading_minutes, status, review_status, publication_date, effective_from, last_reviewed_at, reviewer,
+  created_at, updated_at
+) VALUES (
+  'src_demo_checkup',
+  'psrc_demo_checkup',
+  'kham-suc-khoe-tuoi-40-giao-duc',
+  'Khám sức khỏe định kỳ từ tuổi 40 (giáo dục)',
+  'Gợi ý giáo dục về việc trao đổi với nhân viên y tế các hạng mục theo dõi thường gặp.',
+  'Sống An 40+ Biên tập giáo dục',
+  'VN',
+  'education',
+  'vi',
+  'kham-phong-benh',
+  'health',
+  5,
+  'active',
+  'approved',
+  '2026-04-01',
+  '2026-04-01',
+  '2026-07-01',
+  'seed',
+  datetime('now'),
+  datetime('now')
+);
+
+INSERT OR IGNORE INTO source_versions (
+  id, source_id, version_number, content_hash, reviewed_text, created_at, created_by
+) VALUES (
+  'sver_demo_checkup',
+  'src_demo_checkup',
+  1,
+  'seedhash_checkup',
+  '# Khám sức khỏe từ tuổi 40
+
+Từ tuổi 40, nhiều người được khuyên chủ động khám định kỳ và trao đổi với nhân viên y tế về huyết áp, đường huyết, cholesterol, cân nặng và lối sống.
+
+## Việc có thể chuẩn bị
+- Mang theo danh sách thuốc đang dùng.
+- Ghi triệu chứng hoặc thay đổi gần đây.
+- Hỏi rõ lịch tái khám và dấu hiệu cần đi khám sớm.
+
+Ứng dụng này không chỉ định xét nghiệm và không chẩn đoán.',
+  datetime('now'),
+  'seed'
+);
+
+INSERT OR IGNORE INTO source_chunks (
+  id, source_id, version_id, chunk_index, heading, location_ref, content, content_hash, metadata_json, indexing_status, created_at
+) VALUES (
+  'chk_demo_checkup_1',
+  'src_demo_checkup',
+  'sver_demo_checkup',
+  0,
+  'Khám sức khỏe từ tuổi 40',
+  'chunk-0',
+  'Từ tuổi 40, nên chủ động khám định kỳ và trao đổi với nhân viên y tế về huyết áp, đường huyết, cholesterol, cân nặng và lối sống. Mang theo danh sách thuốc; ghi triệu chứng; hỏi lịch tái khám. Đây là thông tin giáo dục, không chỉ định xét nghiệm.',
+  'seedchunk_checkup',
+  '{"source_id":"src_demo_checkup","title":"Khám sức khỏe định kỳ từ tuổi 40 (giáo dục)","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-04-01","category":"kham-phong-benh"}',
+  'indexed',
+  datetime('now')
+);
+
+INSERT OR IGNORE INTO source_documents (
+  id, public_id, slug, title, summary, issuer, jurisdiction, document_type, language, category, pillar,
+  estimated_reading_minutes, status, review_status, publication_date, effective_from, last_reviewed_at, reviewer,
+  created_at, updated_at
+) VALUES (
+  'src_demo_docs',
+  'psrc_demo_docs',
+  'giay-to-tuoi-gia-giao-duc',
+  'Chuẩn bị giấy tờ quan trọng cho tuổi già (giáo dục)',
+  'Gợi ý giáo dục về việc sắp xếp giấy tờ cá nhân và cho người thân tin cậy biết vị trí lưu.',
+  'Sống An 40+ Biên tập giáo dục',
+  'VN',
+  'education',
+  'vi',
+  'nha-o-giay-to',
+  'finance',
+  4,
+  'active',
+  'approved',
+  '2026-04-01',
+  '2026-04-01',
+  '2026-07-01',
+  'seed',
+  datetime('now'),
+  datetime('now')
+);
+
+INSERT OR IGNORE INTO source_versions (
+  id, source_id, version_number, content_hash, reviewed_text, created_at, created_by
+) VALUES (
+  'sver_demo_docs',
+  'src_demo_docs',
+  1,
+  'seedhash_docs',
+  '# Giấy tờ quan trọng
+
+Chuẩn bị giấy tờ cho tuổi già thường gồm giấy tùy thân, bảo hiểm y tế/xã hội, giấy tờ nhà đất và thông tin liên hệ khẩn cấp.
+
+## Gợi ý thực tế
+- Gom bản gốc và bản sao vào một chỗ dễ tìm.
+- Cho một người thân tin cậy biết vị trí lưu.
+- Rà soát định kỳ khi có thay đổi.
+
+Không phải tư vấn pháp lý.',
+  datetime('now'),
+  'seed'
+);
+
+INSERT OR IGNORE INTO source_chunks (
+  id, source_id, version_id, chunk_index, heading, location_ref, content, content_hash, metadata_json, indexing_status, created_at
+) VALUES (
+  'chk_demo_docs_1',
+  'src_demo_docs',
+  'sver_demo_docs',
+  0,
+  'Giấy tờ quan trọng',
+  'chunk-0',
+  'Chuẩn bị giấy tờ cho tuổi già: giấy tùy thân, bảo hiểm, giấy tờ nhà đất và liên hệ khẩn cấp. Gom bản gốc và bản sao; cho người thân tin cậy biết vị trí lưu; rà soát khi có thay đổi. Không phải tư vấn pháp lý.',
+  'seedchunk_docs',
+  '{"source_id":"src_demo_docs","title":"Chuẩn bị giấy tờ quan trọng cho tuổi già (giáo dục)","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-04-01","category":"nha-o-giay-to"}',
+  'indexed',
+  datetime('now')
+);

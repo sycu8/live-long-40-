@@ -4,6 +4,11 @@ import { evaluateHighRisk } from "@shared/rules/safety";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@shared/rules/prompt";
 import type { Env } from "../env";
 import { filterRetrievedCandidates } from "./retrieval-filter";
+import {
+  rankLocalKnowledge,
+  type LocalChunkRow,
+  type LocalLessonRow,
+} from "./local-retrieve";
 
 export type RetrievedSource = {
   key: string;
@@ -17,6 +22,35 @@ export type RetrievedSource = {
   score: number;
   status?: string;
 };
+
+async function retrieveFromD1(
+  env: Env,
+  query: string,
+): Promise<RetrievedSource[]> {
+  if (!env.DB) return [];
+
+  const chunkRows = await env.DB.prepare(
+    `SELECT c.id as chunk_id, c.content as content, c.heading as heading,
+            s.id as source_id, s.title as title, s.issuer as issuer,
+            s.publication_date as publication_date, s.original_url as original_url, s.status as status
+     FROM source_chunks c
+     JOIN source_documents s ON s.id = c.source_id
+     WHERE s.status = 'active' AND s.review_status = 'approved'
+       AND c.indexing_status = 'indexed'
+     LIMIT 200`,
+  ).all();
+
+  const lessonRows = await env.DB.prepare(
+    `SELECT slug, title, summary, body_markdown, issuer, publication_date, last_reviewed_at
+     FROM library_lessons
+     WHERE status = 'active'
+     LIMIT 100`,
+  ).all();
+
+  const chunks = (chunkRows.results ?? []) as unknown as LocalChunkRow[];
+  const lessons = (lessonRows.results ?? []) as unknown as LocalLessonRow[];
+  return rankLocalKnowledge(query, chunks, lessons, 6);
+}
 
 export async function retrieveSources(
   env: Env,
@@ -52,51 +86,14 @@ export async function retrieveSources(
       }
       if (sources.length > 0) return { sources, mode: "ai_search" };
     } catch {
-      // Fall through to local D1 retrieval for development
+      // Fall through to local D1 retrieval
     }
   }
 
-  // Local development fallback: keyword search over approved chunks in D1
-  if (env.DB) {
-    const tokens = normalized.withoutDiacritics
-      .split(/\s+/)
-      .filter((t) => t.length > 2)
-      .slice(0, 6);
-    if (tokens.length === 0) return { sources: [], mode: "empty" };
-
-    const like = tokens.map(() => `lower(c.content) LIKE ?`).join(" OR ");
-    const binds = tokens.map((t) => `%${t}%`);
-    const rows = await env.DB.prepare(
-      `SELECT c.id as chunk_id, c.content as content, c.heading as heading,
-              s.id as source_id, s.title as title, s.issuer as issuer,
-              s.publication_date as publication_date, s.original_url as original_url, s.status as status
-       FROM source_chunks c
-       JOIN source_documents s ON s.id = c.source_id
-       WHERE s.status = 'active' AND s.review_status = 'approved'
-         AND c.indexing_status = 'indexed'
-         AND (${like})
-       LIMIT 8`,
-    )
-      .bind(...binds)
-      .all();
-
-    const sources: RetrievedSource[] = (rows.results ?? []).map((r, idx) => ({
-      key: `S${idx + 1}`,
-      sourceId: String(r.source_id),
-      chunkId: String(r.chunk_id),
-      title: String(r.title),
-      issuer: String(r.issuer),
-      publicationDate: r.publication_date ? String(r.publication_date) : undefined,
-      url: r.original_url ? String(r.original_url) : undefined,
-      snippet: String(r.content).slice(0, 500),
-      score: 0.55,
-      status: String(r.status),
-    }));
-
-    return {
-      sources,
-      mode: sources.length ? "local_fallback" : "empty",
-    };
+  // Local / staging fallback: diacritic-insensitive ranking over D1 knowledge
+  const local = await retrieveFromD1(env, query);
+  if (local.length > 0) {
+    return { sources: local, mode: "local_fallback" };
   }
 
   return { sources: [], mode: "empty" };
@@ -265,7 +262,14 @@ export async function runChatPipeline(
           full = response.response;
           controller.enqueue(full);
         } else {
-          full = ABSTENTION_MESSAGE;
+          // Model returned an unexpected shape — still give a grounded extractive answer
+          full =
+            `Dựa trên nguồn đã duyệt:\n\n` +
+            sources
+              .slice(0, 3)
+              .map((s) => `• ${s.snippet} [${s.key}]`)
+              .join("\n\n") +
+            `\n\nĐây là thông tin giáo dục, không thay thế tư vấn chuyên môn.`;
           controller.enqueue(full);
         }
 
