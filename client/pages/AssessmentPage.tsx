@@ -30,19 +30,26 @@ export function AssessmentPage() {
   const [showWhy, setShowWhy] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const data = await api<AssessmentPayload>("/assessment/current");
-        setQuestions(data.questions);
         const run = await api<{ run: { publicId: string } }>("/assessment/runs", {
           method: "POST",
           body: {},
         });
+        if (cancelled) return;
+        setQuestions(data.questions);
         setRunId(run.run.publicId);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Không tải được bài đánh giá.");
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Không tải được bài đánh giá.");
+        }
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const current = questions[index];

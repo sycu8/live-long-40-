@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Button } from "../components/Button";
 import { ScoreMeter } from "../components/ui";
@@ -29,6 +29,7 @@ type Result = {
 };
 
 export function ResultsPage() {
+  const { id: routeResultId } = useParams();
   const navigate = useNavigate();
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +39,17 @@ export function ResultsPage() {
     (async () => {
       try {
         const data = await api<{ result: Result }>("/readiness/current");
+        if (routeResultId && data.result.publicId !== routeResultId) {
+          setError(
+            "Kết quả trên đường dẫn không khớp phiên hiện tại. Đang hiển thị kết quả mới nhất của bạn.",
+          );
+        }
         setResult(data.result);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Không tải được kết quả.");
       }
     })();
-  }, []);
+  }, [routeResultId]);
 
   async function createPlan() {
     setCreating(true);

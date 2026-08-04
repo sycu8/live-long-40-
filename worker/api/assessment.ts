@@ -62,7 +62,7 @@ assessmentRoutes.get("/assessment/current", async (c) => {
 });
 
 assessmentRoutes.post("/assessment/runs", async (c) => {
-  const ok = await enforceRateLimit(c, "assessment_create", 10, 3600);
+  const ok = await enforceRateLimit(c, "assessment_create", 60, 3600);
   if (!ok) {
     return jsonError(c, 429, "RATE_LIMITED", "Bạn đã tạo quá nhiều bài đánh giá. Thử lại sau.");
   }

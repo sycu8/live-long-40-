@@ -14,8 +14,11 @@ type Readiness = {
   };
 };
 
+import { currentPlanWeek } from "../lib/plan-week";
+
 type Plan = {
   plan: {
+    startDate: string;
     actions: Array<{ status: string; weekNumber: number; title: string }>;
   };
 };
@@ -23,6 +26,7 @@ type Plan = {
 export function TodayPage() {
   const [readiness, setReadiness] = useState<Readiness["result"] | null>(null);
   const [weekActions, setWeekActions] = useState<Plan["plan"]["actions"]>([]);
+  const [weekNumber, setWeekNumber] = useState(1);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,16 +41,10 @@ export function TodayPage() {
       try {
         const p = await api<Plan>("/plans/current");
         if (!cancelled) {
-          const currentWeek = Math.min(
-            4,
-            Math.ceil(
-              (Date.now() - Date.parse(p.plan.actions[0] ? new Date().toISOString() : new Date().toISOString())) /
-                (7 * 86400000),
-            ) || 1,
-          );
-          // Show week 1 actions by default for MVP simplicity
+          const week = currentPlanWeek(p.plan.startDate);
+          setWeekNumber(week);
           setWeekActions(
-            p.plan.actions.filter((a) => a.weekNumber === 1 || a.weekNumber === currentWeek).slice(0, 3),
+            p.plan.actions.filter((a) => a.weekNumber === week).slice(0, 3),
           );
         }
       } catch {
@@ -108,10 +106,10 @@ export function TodayPage() {
         </div>
 
         <section>
-          <h2 className="font-display text-xl">Việc tuần này</h2>
+          <h2 className="font-display text-xl">Việc tuần {weekNumber}</h2>
           {pending.length === 0 ? (
             <p className="mt-2 text-[var(--color-ink-muted)]">
-              Chưa có việc đang mở.{" "}
+              Không còn việc đang mở trong tuần này.{" "}
               <Link className="text-[var(--color-green)] underline" to="/ke-hoach">
                 Xem kế hoạch
               </Link>

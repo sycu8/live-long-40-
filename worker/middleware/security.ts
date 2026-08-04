@@ -134,23 +134,31 @@ export const requireAdmin = createMiddleware<{
   Variables: AppVariables;
 }>(async (c, next) => {
   // Cloudflare Access JWT is expected in production (Cf-Access-Jwt-Assertion).
-  // Local/dev fallback uses ADMIN_SHARED_SECRET via Authorization: Bearer.
+  // Local/staging can use Authorization: Bearer with ADMIN_SHARED_SECRET or LOCAL_QA_ADMIN_TOKEN.
   const accessJwt = c.req.header("Cf-Access-Jwt-Assertion");
   if (accessJwt) {
     await next();
     return;
   }
+
   const auth = c.req.header("Authorization") ?? "";
-  const secret = c.env.ADMIN_SHARED_SECRET;
-  if (secret && auth === `Bearer ${secret}`) {
+  const secrets = [c.env.ADMIN_SHARED_SECRET, c.env.LOCAL_QA_ADMIN_TOKEN].filter(
+    (s): s is string => Boolean(s && s.length > 0),
+  );
+
+  for (const secret of secrets) {
+    if (auth === `Bearer ${secret}`) {
+      await next();
+      return;
+    }
+  }
+
+  // Open only when explicitly in development AND no local admin token configured.
+  if (c.env.ENVIRONMENT === "development" && secrets.length === 0) {
     await next();
     return;
   }
-  if (c.env.ENVIRONMENT === "development" && !secret) {
-    // Local development without Access — allow with clear audit marker
-    await next();
-    return;
-  }
+
   return jsonError(
     c,
     401,

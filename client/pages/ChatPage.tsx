@@ -32,19 +32,27 @@ export function ChatPage() {
   const [drawerSource, setDrawerSource] = useState<Source | null>(null);
   const [feedbackFor, setFeedbackFor] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const autoSentRef = useRef(false);
+  const sendRef = useRef<(question?: string) => Promise<void>>(async () => {});
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const data = await api<{ chatSessionPublicId: string }>("/chat/sessions", {
           method: "POST",
           body: { historyOptIn: false },
         });
-        setSessionId(data.chatSessionPublicId);
+        if (!cancelled) setSessionId(data.chatSessionPublicId);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Không mở được phiên chat.");
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Không mở được phiên chat.");
+        }
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -172,6 +180,15 @@ export function ChatPage() {
       setStreaming(false);
     }
   }
+
+  sendRef.current = send;
+
+  useEffect(() => {
+    const q = params.get("q");
+    if (!sessionId || !q || autoSentRef.current) return;
+    autoSentRef.current = true;
+    void sendRef.current(q);
+  }, [sessionId, params]);
 
   async function sendFeedback(helpful: boolean) {
     if (!feedbackFor) return;

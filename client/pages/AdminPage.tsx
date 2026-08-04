@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { Button } from "../components/Button";
-import { api, getCsrfToken } from "../lib/api";
+import { api, setAdminBearer } from "../lib/api";
 import { LIBRARY_CATEGORIES } from "@shared/constants/product";
 
 type SourceRow = {
@@ -17,6 +17,7 @@ export function AdminPage() {
   const [sources, setSources] = useState<SourceRow[]>([]);
   const [jobs, setJobs] = useState<Array<Record<string, unknown>>>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [adminToken, setAdminToken] = useState("");
   const [form, setForm] = useState<{
     title: string;
     issuer: string;
@@ -33,17 +34,15 @@ export function AdminPage() {
     summary: "",
   });
 
-  async function refresh() {
+  async function refresh(opts?: { preserveMessage?: boolean }) {
     try {
-      const data = await api<{ sources: SourceRow[] }>("/admin/sources", {
-        headers: adminHeaders(),
-      });
+      const data = await api<{ sources: SourceRow[] }>("/admin/sources");
       setSources(data.sources);
       const jobData = await api<{ jobs: Array<Record<string, unknown>> }>(
         "/admin/ingestion-jobs",
-        { headers: adminHeaders() },
       );
       setJobs(jobData.jobs);
+      if (!opts?.preserveMessage) setMessage(null);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Không tải được admin API.");
     }
@@ -53,13 +52,17 @@ export function AdminPage() {
     void refresh();
   }, []);
 
+  function applyToken() {
+    setAdminBearer(adminToken || null);
+    void refresh();
+  }
+
   async function createSource(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
     try {
       const created = await api<{ publicId: string }>("/admin/sources", {
         method: "POST",
-        headers: adminHeaders(),
         body: {
           title: form.title,
           issuer: form.issuer,
@@ -73,29 +76,30 @@ export function AdminPage() {
       });
       await api(`/admin/sources/${created.publicId}/ingest`, {
         method: "POST",
-        headers: adminHeaders(),
         body: { reviewedText: form.reviewedText },
       });
       await api(`/admin/sources/${created.publicId}/approve`, {
         method: "POST",
-        headers: adminHeaders(),
         body: { approve: true, reviewer: "local-admin" },
       });
       setMessage("Đã tạo, nạp và duyệt nguồn.");
       setForm((f) => ({ ...f, title: "", reviewedText: "", summary: "" }));
-      await refresh();
+      await refresh({ preserveMessage: true });
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Thao tác thất bại.");
     }
   }
 
   async function withdraw(publicId: string) {
-    await api(`/admin/sources/${publicId}/withdraw`, {
-      method: "POST",
-      headers: adminHeaders(),
-      body: {},
-    });
-    await refresh();
+    try {
+      await api(`/admin/sources/${publicId}/withdraw`, {
+        method: "POST",
+        body: {},
+      });
+      await refresh();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Không rút được nguồn.");
+    }
   }
 
   return (
@@ -104,9 +108,26 @@ export function AdminPage() {
         <div>
           <h1 className="font-display text-3xl">Quản trị tri thức</h1>
           <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
-            Trong production, khu vực này được bảo vệ bởi Cloudflare Access. Local
-            development cho phép truy cập khi chưa cấu hình secret.
+            Production dùng Cloudflare Access. Local/staging có thể cần Bearer token
+            (không lưu vào localStorage).
           </p>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-2 rounded-2xl bg-white/70 p-4">
+          <label className="block min-w-[240px] flex-1 text-sm">
+            Admin bearer token (tuỳ chọn)
+            <input
+              type="password"
+              autoComplete="off"
+              className="mt-1 min-h-12 w-full rounded-lg border px-3"
+              value={adminToken}
+              onChange={(e) => setAdminToken(e.target.value)}
+              placeholder="Để trống nếu môi trường development mở"
+            />
+          </label>
+          <Button type="button" variant="secondary" onClick={applyToken}>
+            Áp dụng token
+          </Button>
         </div>
 
         <form onSubmit={createSource} className="space-y-3 rounded-2xl bg-white/70 p-4">
@@ -163,7 +184,11 @@ export function AdminPage() {
           <Button type="submit">Tạo + nạp + duyệt</Button>
         </form>
 
-        {message ? <p role="status">{message}</p> : null}
+        {message ? (
+          <p role="status" className="text-sm">
+            {message}
+          </p>
+        ) : null}
 
         <section>
           <h2 className="font-display text-xl">Nguồn</h2>
@@ -201,11 +226,4 @@ export function AdminPage() {
       </div>
     </AppShell>
   );
-}
-
-function adminHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {};
-  const csrf = getCsrfToken();
-  if (csrf) headers["X-CSRF-Token"] = csrf;
-  return headers;
 }

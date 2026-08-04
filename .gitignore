@@ -10,6 +10,7 @@ blob-report
 .env
 .env.*
 !.env.example
+.dev.vars
 *.log
 node_modules/.tmp
 .pnpm-store

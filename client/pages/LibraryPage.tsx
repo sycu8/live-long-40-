@@ -24,16 +24,19 @@ export function LibraryPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [category, setCategory] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setError(null);
       const q = category ? `?category=${encodeURIComponent(category)}` : "";
       try {
         const data = await api<{ items: Item[] }>(`/library${q}`);
         setItems(data.items);
-      } catch {
+      } catch (e) {
         setItems([]);
+        setError(e instanceof Error ? e.message : "Không tải được thư viện.");
       } finally {
         setLoading(false);
       }
@@ -77,12 +80,18 @@ export function LibraryPage() {
         </div>
 
         {loading ? <p>Đang tải…</p> : null}
-        {!loading && items.length === 0 ? (
+        {error ? (
+          <p role="alert" className="text-[var(--color-danger)]">
+            {error}
+          </p>
+        ) : null}
+        {!loading && !error && items.length === 0 ? (
           <EmptyState
             title="Thư viện đang trống"
             description="Chưa có bài học công khai. Quản trị viên có thể thêm nguồn đã duyệt."
           />
-        ) : (
+        ) : null}
+        {!loading && items.length > 0 ? (
           <ul className="space-y-3">
             {items.map((item) => (
               <li key={item.slug}>
@@ -105,7 +114,7 @@ export function LibraryPage() {
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
       </div>
     </AppShell>
   );

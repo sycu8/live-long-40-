@@ -54,6 +54,7 @@ export type Env = {
   SESSION_SIGNING_SECRET?: string;
   TURNSTILE_SECRET_KEY?: string;
   ADMIN_SHARED_SECRET?: string;
+  LOCAL_QA_ADMIN_TOKEN?: string;
 };
 
 export type AppVariables = {

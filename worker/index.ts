@@ -27,6 +27,11 @@ app.get("/api/health", (c) =>
     ok: true,
     app: c.env.APP_NAME ?? "Sống An 40+",
     environment: c.env.ENVIRONMENT ?? "unknown",
+    // booleans only — never expose secret values
+    adminSecretConfigured: Boolean(
+      c.env.ADMIN_SHARED_SECRET || c.env.LOCAL_QA_ADMIN_TOKEN,
+    ),
+    turnstileConfigured: Boolean(c.env.TURNSTILE_SECRET_KEY),
   }),
 );
 
@@ -57,6 +62,7 @@ app.route("/api/v1", api);
 const admin = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 admin.use("*", anonymousSession);
 admin.use("*", requireAdmin);
+admin.use("*", csrfProtection);
 admin.route("/", adminRoutes);
 app.route("/api/v1/admin", admin);
 
