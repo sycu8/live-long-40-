@@ -212,6 +212,15 @@ async function main() {
         { stdio: "inherit" },
       );
     }
+    console.log("→ Generating & seeding blog posts…");
+    run("node", ["seed/generate-blog.mjs"], { stdio: "inherit" });
+    const blogSeed = resolve(root, "seed/blog.sql");
+    if (existsSync(blogSeed)) {
+      wrangler(
+        ["d1", "execute", dbName, "--remote", `--file=${blogSeed}`],
+        { stdio: "inherit" },
+      );
+    }
   }
 
   const sessionSecret =

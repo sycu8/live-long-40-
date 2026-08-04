@@ -40,6 +40,14 @@ export function ProfilePage() {
               câu hỏi giáo dục có nguồn đã duyệt.
             </li>
             <li>
+              <Link className="font-medium text-[var(--color-green)]" to="/blog">
+                Góc động viên
+              </Link>
+              {" — "}
+              bài viết dài hơi, cập nhật khoảng hai ngày một lần, giúp bạn giữ tinh
+              thần thích nghi.
+            </li>
+            <li>
               <Link className="font-medium text-[var(--color-green)]" to="/thu-vien">
                 Thư viện
               </Link>
