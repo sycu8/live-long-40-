@@ -1,0 +1,130 @@
+import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
+import { ZodError } from "zod";
+import type { Env, AppVariables } from "./env";
+import {
+  requestContext,
+  securityHeaders,
+  anonymousSession,
+  csrfProtection,
+  requireAdmin,
+} from "./middleware/security";
+import { assessmentRoutes } from "./api/assessment";
+import { planRoutes } from "./api/plans";
+import { libraryRoutes } from "./api/library";
+import { chatRoutes } from "./api/chat";
+import { adminRoutes } from "./api/admin";
+import { IngestionWorkflow } from "./workflows/ingestion";
+import { DISCLAIMER, EXAMPLE_QUESTIONS } from "@shared/constants/product";
+
+const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+
+app.use("*", requestContext);
+app.use("*", securityHeaders);
+
+app.get("/api/health", (c) =>
+  c.json({
+    ok: true,
+    app: c.env.APP_NAME ?? "Sống An 40+",
+    environment: c.env.ENVIRONMENT ?? "unknown",
+  }),
+);
+
+app.get("/api/v1/meta", (c) =>
+  c.json({
+    name: "Sống An 40+",
+    disclaimer: DISCLAIMER,
+    exampleQuestions: EXAMPLE_QUESTIONS,
+    versions: {
+      prompt: c.env.PROMPT_VERSION,
+      scoring: c.env.SCORING_RULESET_VERSION,
+      safety: c.env.SAFETY_RULESET_VERSION,
+      plan: c.env.PLAN_RULESET_VERSION,
+    },
+  }),
+);
+
+const api = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+api.use("*", anonymousSession);
+api.use("*", csrfProtection);
+api.route("/", assessmentRoutes);
+api.route("/", planRoutes);
+api.route("/", libraryRoutes);
+api.route("/", chatRoutes);
+
+app.route("/api/v1", api);
+
+const admin = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+admin.use("*", anonymousSession);
+admin.use("*", requireAdmin);
+admin.route("/", adminRoutes);
+app.route("/api/v1/admin", admin);
+
+app.onError((err, c) => {
+  if (err instanceof ZodError) {
+    return c.json(
+      {
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Dữ liệu không hợp lệ.",
+          details: err.issues,
+        },
+      },
+      400,
+    );
+  }
+  if (err instanceof HTTPException) {
+    return err.getResponse();
+  }
+  console.error(JSON.stringify({ level: "error", message: String(err) }));
+  return c.json(
+    {
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "Đã xảy ra lỗi hệ thống.",
+      },
+    },
+    500,
+  );
+});
+
+async function handleQueue(batch: MessageBatch, env: Env) {
+  for (const msg of batch.messages) {
+    const body = msg.body as {
+      type?: string;
+      jobId?: string;
+      sourceId?: string;
+      reviewedText?: string;
+      riskClass?: string;
+      at?: string;
+    };
+    if (body.type === "ingest" && body.jobId && body.sourceId) {
+      try {
+        await env.INGESTION_WORKFLOW.create({
+          params: {
+            jobId: body.jobId,
+            sourceId: body.sourceId,
+            reviewedText: body.reviewedText,
+          },
+        });
+        msg.ack();
+      } catch {
+        msg.retry();
+      }
+    } else if (body.type === "risk_routed" || body.type === "analytics") {
+      // Privacy-safe operational analytics — no question text stored
+      msg.ack();
+    } else {
+      msg.ack();
+    }
+  }
+}
+
+export { IngestionWorkflow };
+
+export default {
+  fetch: app.fetch,
+  async queue(batch: MessageBatch, env: Env) {
+    await handleQueue(batch, env);
+  },
+};

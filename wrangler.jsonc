@@ -1,0 +1,113 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "song-an-40",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/admin", "/admin/*"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "ENVIRONMENT": "development",
+    "APP_NAME": "Sống An 40+",
+    "AI_SEARCH_INSTANCE": "song-an-40-knowledge",
+    "AI_GATEWAY_ID": "song-an-40",
+    "SESSION_COOKIE_NAME": "sa_session",
+    "CSRF_COOKIE_NAME": "sa_csrf",
+    "TURNSTILE_SITE_KEY": "",
+    "FEATURE_CHAT_HISTORY_DEFAULT": "false",
+    "PROMPT_VERSION": "v1.0.0",
+    "SCORING_RULESET_VERSION": "v1.0.0",
+    "SAFETY_RULESET_VERSION": "v1.0.0",
+    "PLAN_RULESET_VERSION": "v1.0.0"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "song-an-40-db",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SOURCES",
+      "bucket_name": "song-an-40-sources"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CONFIG",
+      "id": "00000000000000000000000000000001"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "ai_search_namespaces": [
+    {
+      "binding": "AI_SEARCH",
+      "namespace": "default"
+      // Set "remote": true when authenticated to proxy a deployed AI Search instance.
+      // Local development uses D1 chunk fallback when AI Search is unavailable.
+    }
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "INGESTION_QUEUE",
+        "queue": "song-an-40-ingestion"
+      },
+      {
+        "binding": "ANALYTICS_QUEUE",
+        "queue": "song-an-40-analytics"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "song-an-40-ingestion",
+        "max_batch_size": 5,
+        "max_batch_timeout": 30,
+        "max_retries": 5,
+        "dead_letter_queue": "song-an-40-ingestion-dlq"
+      },
+      {
+        "queue": "song-an-40-analytics",
+        "max_batch_size": 20,
+        "max_batch_timeout": 60,
+        "max_retries": 3
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "binding": "INGESTION_WORKFLOW",
+      "name": "song-an-40-ingestion",
+      "class_name": "IngestionWorkflow"
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "song-an-40-staging",
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "APP_NAME": "Sống An 40+",
+        "AI_SEARCH_INSTANCE": "song-an-40-knowledge",
+        "AI_GATEWAY_ID": "song-an-40",
+        "SESSION_COOKIE_NAME": "sa_session",
+        "CSRF_COOKIE_NAME": "sa_csrf",
+        "FEATURE_CHAT_HISTORY_DEFAULT": "false",
+        "PROMPT_VERSION": "v1.0.0",
+        "SCORING_RULESET_VERSION": "v1.0.0",
+        "SAFETY_RULESET_VERSION": "v1.0.0",
+        "PLAN_RULESET_VERSION": "v1.0.0"
+      }
+    }
+  }
+}
