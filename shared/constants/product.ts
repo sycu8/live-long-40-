@@ -82,3 +82,10 @@ export const EXAMPLE_QUESTIONS = [
   "Làm gì khi cha mẹ bị ngã?",
   "Cần chuẩn bị giấy tờ nào cho tuổi già?",
 ] as const;
+
+/** Extra suggested questions with prepared answers in the answer bank. */
+export const EXTENDED_EXAMPLE_QUESTIONS = [
+  ...EXAMPLE_QUESTIONS,
+  "Theo dõi huyết áp tại nhà thế nào?",
+  "Làm sao để ngủ ngon hơn ở tuổi trung niên?",
+] as const;

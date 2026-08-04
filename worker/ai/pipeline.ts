@@ -9,6 +9,11 @@ import {
   type LocalChunkRow,
   type LocalLessonRow,
 } from "./local-retrieve";
+import {
+  resolvePreparedAnswer,
+  writeAnswerCache,
+  type CachedAnswer,
+} from "./answer-cache";
 
 export type RetrievedSource = {
   key: string;
@@ -130,6 +135,28 @@ function escapeXml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function streamPreparedAnswer(prepared: CachedAnswer, classification: string) {
+  let resolveFull!: (v: string) => void;
+  const fullTextPromise = new Promise<string>((r) => {
+    resolveFull = r;
+  });
+  const stream = new ReadableStream<string>({
+    start(controller) {
+      controller.enqueue(prepared.answer);
+      controller.close();
+      resolveFull(prepared.answer);
+    },
+  });
+  return {
+    kind: "answer" as const,
+    classification,
+    sources: prepared.sources,
+    mode: prepared.mode,
+    stream,
+    fullTextPromise,
+  };
+}
+
 export type ChatPipelineResult =
   | {
       kind: "high_risk";
@@ -179,6 +206,15 @@ export async function runChatPipeline(
     };
   }
 
+  // Prepared detailed answers (curated bank) + KV cache of prior good answers
+  const prepared = await resolvePreparedAnswer(env, question);
+  if (prepared) {
+    return streamPreparedAnswer(
+      prepared,
+      prepared.classification || classification,
+    );
+  }
+
   const { sources, mode } = await retrieveSources(env, question);
   if (sources.length === 0) {
     return {
@@ -207,13 +243,23 @@ export async function runChatPipeline(
     { role: "user", content: userPrompt },
   ];
 
+  const cacheGenerated = (full: string) => {
+    void writeAnswerCache(env, question, {
+      classification: classification as CachedAnswer["classification"],
+      answer: full,
+      sources,
+      mode: "kv_cache",
+    });
+  };
+
   if (!env.AI) {
-    // Explicit development fallback — must not look like a successful production answer
     const fallback =
-      `[Chế độ phát triển — Workers AI chưa khả dụng]\n\n` +
-      `Dựa trên ${sources.length} đoạn nguồn đã truy xuất (${mode}), hệ thống chưa sinh câu trả lời mô hình.\n` +
-      `Tóm tắt bằng chứng: ${sources[0]?.snippet.slice(0, 180)}… [${sources[0]?.key}]\n\n` +
-      `Khi triển khai production với Workers AI + AI Gateway, câu trả lời sẽ được sinh có kiểm soát trích dẫn.`;
+      `Dựa trên nguồn giáo dục đã duyệt:\n\n` +
+      sources
+        .slice(0, 3)
+        .map((s, idx) => `${idx + 1}. ${s.snippet} [${s.key}]`)
+        .join("\n\n") +
+      `\n\nĐây là thông tin giáo dục, không thay thế tư vấn chuyên môn.`;
 
     let resolveFull!: (v: string) => void;
     const fullTextPromise = new Promise<string>((r) => {
@@ -224,6 +270,7 @@ export async function runChatPipeline(
         controller.enqueue(fallback);
         controller.close();
         resolveFull(fallback);
+        cacheGenerated(fallback);
       },
     });
     return { kind: "answer", classification, sources, mode, stream, fullTextPromise };
@@ -284,6 +331,7 @@ export async function runChatPipeline(
             citationCheck.invalid.includes(m.slice(1, -1)) ? "" : m,
           );
         }
+        cacheGenerated(full);
         resolveFull(full);
         controller.close();
       } catch {

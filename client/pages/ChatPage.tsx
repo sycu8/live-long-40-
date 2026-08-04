@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Button } from "../components/Button";
 import { api, getCsrfToken } from "../lib/api";
-import { EXAMPLE_QUESTIONS } from "@shared/constants/product";
+import { EXTENDED_EXAMPLE_QUESTIONS } from "@shared/constants/product";
 import { resolveChatHistoryOptIn } from "../lib/preferences";
 
 type Source = {
@@ -263,7 +263,7 @@ export function ChatPage() {
           {messages.length === 0 ? (
             <div className="space-y-2 lg:hidden">
               <p className="text-sm font-medium">Gợi ý câu hỏi</p>
-              {EXAMPLE_QUESTIONS.map((q) => (
+              {EXTENDED_EXAMPLE_QUESTIONS.map((q) => (
                 <button
                   key={q}
                   type="button"
@@ -357,7 +357,7 @@ export function ChatPage() {
               Chọn một câu hoặc tự hỏi theo cách của bạn.
             </p>
             <ul className="mt-4 space-y-2">
-              {EXAMPLE_QUESTIONS.map((q) => (
+              {EXTENDED_EXAMPLE_QUESTIONS.map((q) => (
                 <li key={q}>
                   <button
                     type="button"
