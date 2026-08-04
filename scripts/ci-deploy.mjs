@@ -116,8 +116,17 @@ function patchWrangler({ d1Id, kvId, environment }) {
     /"ENVIRONMENT":\s*"[^"]+"/,
     `"ENVIRONMENT": "${environment}"`,
   );
+  // AI Search binding requires extra token scopes; strip for CI if not explicitly enabled.
+  if (process.env.ENABLE_AI_SEARCH !== "1") {
+    text = text.replace(
+      /,\s*"ai_search_namespaces"\s*:\s*\[[\s\S]*?\]/,
+      "",
+    );
+  }
   writeFileSync(path, text);
-  console.log(`Patched wrangler.jsonc (D1=${d1Id}, KV=${kvId}, env=${environment})`);
+  console.log(
+    `Patched wrangler.jsonc (D1=${d1Id}, KV=${kvId}, env=${environment}, ai_search=${process.env.ENABLE_AI_SEARCH === "1"})`,
+  );
 }
 
 function putSecret(name, value) {
