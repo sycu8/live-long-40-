@@ -8,6 +8,7 @@ import { ResultsPage } from "./pages/ResultsPage";
 import { PlanPage } from "./pages/PlanPage";
 import { ChatPage } from "./pages/ChatPage";
 import { LibraryPage, LibraryDetailPage } from "./pages/LibraryPage";
+import { BlogPage, BlogDetailPage } from "./pages/BlogPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminPage } from "./pages/AdminPage";
 
@@ -55,6 +56,8 @@ export function App() {
         <Route path="/hoi" element={<ChatPage />} />
         <Route path="/thu-vien" element={<LibraryPage />} />
         <Route path="/thu-vien/:slug" element={<LibraryDetailPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogDetailPage />} />
         <Route path="/ho-so" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

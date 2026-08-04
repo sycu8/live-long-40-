@@ -151,9 +151,29 @@ export function LandingPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-8">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link to="/thu-vien">
               <Button variant="secondary">Xem Thư viện bài học</Button>
+            </Link>
+            <Link to="/blog">
+              <Button variant="ghost">Đọc Góc động viên</Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-14">
+        <div className="mx-auto max-w-lg">
+          <h2 className="font-display text-2xl text-[var(--color-ink)]">
+            Góc động viên
+          </h2>
+          <p className="mt-2 text-[var(--color-ink-muted)]">
+            Bài viết dài, ấm áp — cập nhật khoảng hai ngày một lần — để bạn không bị
+            cuốn vào tiêu cực khi nghĩ về tuổi già, mà biết cách thích nghi từng bước.
+          </p>
+          <div className="mt-6">
+            <Link to="/blog">
+              <Button>Vào Góc động viên</Button>
             </Link>
           </div>
         </div>

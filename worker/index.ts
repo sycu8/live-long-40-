@@ -13,6 +13,7 @@ import { assessmentRoutes } from "./api/assessment";
 import { planRoutes } from "./api/plans";
 import { libraryRoutes } from "./api/library";
 import { chatRoutes } from "./api/chat";
+import { blogRoutes, publishDueBlogPosts } from "./api/blog";
 import { adminRoutes } from "./api/admin";
 import { IngestionWorkflow } from "./workflows/ingestion";
 import { DISCLAIMER, EXAMPLE_QUESTIONS } from "@shared/constants/product";
@@ -56,6 +57,7 @@ api.route("/", assessmentRoutes);
 api.route("/", planRoutes);
 api.route("/", libraryRoutes);
 api.route("/", chatRoutes);
+api.route("/", blogRoutes);
 
 app.route("/api/v1", api);
 
@@ -136,5 +138,18 @@ export default {
   fetch: app.fetch,
   async queue(batch: MessageBatch, env: Env) {
     await handleQueue(batch, env);
+  },
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(
+      publishDueBlogPosts(env.DB).then((n) => {
+        console.log(
+          JSON.stringify({
+            level: "info",
+            message: "blog_publish_due",
+            published: n,
+          }),
+        );
+      }),
+    );
   },
 };

@@ -48,8 +48,8 @@ export const LANDING_OUTCOMES = [
     body: "Đặt câu hỏi giáo dục; câu trả lời dựa trên nguồn đã duyệt và luôn ghi rõ giới hạn.",
   },
   {
-    title: "Thư viện bài học",
-    body: "Bài ngắn theo chủ đề: khám định kỳ, quỹ dự phòng, phòng ngã, giấy tờ và chăm sóc gia đình.",
+    title: "Góc động viên",
+    body: "Bài viết dài, cập nhật khoảng hai ngày một lần — nâng tinh thần và gợi ý cách thích nghi với tuổi trung niên đến tuổi già.",
   },
 ] as const;
 

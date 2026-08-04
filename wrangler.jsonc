@@ -96,6 +96,10 @@
       "class_name": "IngestionWorkflow"
     }
   ],
+  // Publish scheduled blog posts daily; content cadence is every ~2 days via scheduled_for.
+  "triggers": {
+    "crons": ["0 2 * * *"]
+  },
   "env": {
     "staging": {
       "name": "song-an-40-staging",

@@ -94,6 +94,16 @@ export function TodayPage() {
               <li>
                 <Link
                   className="font-medium text-[var(--color-green)]"
+                  to="/blog"
+                >
+                  Đọc Góc động viên
+                </Link>
+                {" — "}
+                bài viết ấm áp giúp bạn bớt tiêu cực và thích nghi với tuổi già.
+              </li>
+              <li>
+                <Link
+                  className="font-medium text-[var(--color-green)]"
                   to="/thu-vien"
                 >
                   Đọc Thư viện
