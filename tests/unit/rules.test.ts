@@ -63,6 +63,21 @@ describe("assessment scoring", () => {
       expect(high.strengths.some((s) => s.includes(q.key))).toBe(false);
     }
   });
+
+  it("humanizes legacy stored phrases that embedded raw keys", async () => {
+    const { humanizeResultPhrases } = await import("@shared/rules/scoring");
+    expect(
+      humanizeResultPhrases([
+        "Cần cải thiện: meds_list",
+        "Điểm mạnh: insurance_basic",
+        "Chưa trả lời: fall_risk_awareness",
+      ]),
+    ).toEqual([
+      "Chưa có danh sách thuốc đang dùng đầy đủ",
+      "Có bảo hiểm y tế / BHXH đang hiệu lực",
+      "Chưa trả lời về phòng ngã tại nhà",
+    ]);
+  });
 });
 
 describe("plan recommendations", () => {
