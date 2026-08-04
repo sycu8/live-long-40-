@@ -69,15 +69,51 @@ export function TodayPage() {
   if (!readiness) {
     return (
       <AppShell>
-        <EmptyState
-          title="Bắt đầu từ việc hiểu mình đang ở đâu"
-          description="Hoàn thành bài đánh giá ngắn để nhận hồ sơ sẵn sàng và kế hoạch 30 ngày."
-          action={
-            <Link to="/danh-gia">
-              <Button>Kiểm tra mức độ sẵn sàng</Button>
-            </Link>
-          }
-        />
+        <div className="space-y-8 fade-up">
+          <EmptyState
+            title="Bắt đầu từ việc hiểu mình đang ở đâu"
+            description="Hoàn thành bài đánh giá ngắn để nhận hồ sơ sẵn sàng và kế hoạch 30 ngày."
+            action={
+              <Link to="/danh-gia">
+                <Button>Kiểm tra mức độ sẵn sàng</Button>
+              </Link>
+            }
+          />
+          <section>
+            <h2 className="font-display text-xl text-[var(--color-ink)]">
+              Trong lúc đó bạn có thể
+            </h2>
+            <ul className="mt-4 space-y-4 text-[var(--color-ink-muted)]">
+              <li>
+                <Link className="font-medium text-[var(--color-green)]" to="/hoi">
+                  Hỏi Sống An
+                </Link>
+                {" — "}
+                đặt câu hỏi về khám định kỳ, quỹ dự phòng, phòng ngã hoặc giấy tờ.
+              </li>
+              <li>
+                <Link
+                  className="font-medium text-[var(--color-green)]"
+                  to="/thu-vien"
+                >
+                  Đọc Thư viện
+                </Link>
+                {" — "}
+                bài học ngắn theo sức khỏe, tài chính và kỹ năng chăm sóc.
+              </li>
+            </ul>
+          </section>
+          <section className="border-t border-[var(--color-sand)]/40 pt-6">
+            <h2 className="font-display text-xl text-[var(--color-ink)]">
+              Bài đánh giá gồm gì?
+            </h2>
+            <p className="mt-2 leading-relaxed text-[var(--color-ink-muted)]">
+              Khoảng 20 câu, làm trong khoảng 7 phút. Bạn sẽ nhận điểm chuẩn bị
+              theo ba trụ cột, khoảng trống ưu tiên và gợi ý việc nhỏ cho 30 ngày
+              tới — không phải chẩn đoán sức khỏe.
+            </p>
+          </section>
+        </div>
       </AppShell>
     );
   }
