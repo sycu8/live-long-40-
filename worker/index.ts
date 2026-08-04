@@ -41,6 +41,7 @@ app.get("/api/v1/meta", (c) =>
     name: "Sống An 40+",
     disclaimer: DISCLAIMER,
     exampleQuestions: EXAMPLE_QUESTIONS,
+    chatHistoryDefault: c.env.FEATURE_CHAT_HISTORY_DEFAULT === "true",
     versions: {
       prompt: c.env.PROMPT_VERSION,
       scoring: c.env.SCORING_RULESET_VERSION,

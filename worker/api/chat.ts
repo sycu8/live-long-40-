@@ -40,6 +40,54 @@ chatRoutes.post("/chat/sessions", async (c) => {
   return c.json({ chatSessionPublicId: publicId, historyOptIn: body.historyOptIn });
 });
 
+/** Resume latest opted-in chat for this anonymous session (privacy: only when history_opt_in). */
+chatRoutes.get("/chat/sessions/latest", async (c) => {
+  const chat = await c.env.DB.prepare(
+    `SELECT id, public_id, history_opt_in, title, updated_at
+     FROM chat_sessions
+     WHERE session_id = ? AND history_opt_in = 1
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+  )
+    .bind(c.get("sessionId"))
+    .first<{
+      id: string;
+      public_id: string;
+      history_opt_in: number;
+      title: string;
+      updated_at: string;
+    }>();
+
+  if (!chat) {
+    return c.json({ chatSessionPublicId: null, historyOptIn: true, messages: [] });
+  }
+
+  const rows = await c.env.DB.prepare(
+    `SELECT public_id, role, content, classification, abstained, created_at
+     FROM chat_messages
+     WHERE chat_session_id = ? AND content IS NOT NULL
+     ORDER BY created_at ASC
+     LIMIT 40`,
+  )
+    .bind(chat.id)
+    .all();
+
+  return c.json({
+    chatSessionPublicId: chat.public_id,
+    historyOptIn: true,
+    title: chat.title,
+    updatedAt: chat.updated_at,
+    messages: (rows.results ?? []).map((m) => ({
+      id: m.public_id,
+      role: m.role,
+      content: m.content,
+      kind: m.abstained ? "abstain" : undefined,
+      classification: m.classification,
+      createdAt: m.created_at,
+    })),
+  });
+});
+
 chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
   const ok = await enforceRateLimit(c, "chat", 30, 3600);
   if (!ok) {

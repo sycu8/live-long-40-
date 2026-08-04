@@ -4,7 +4,8 @@ import { clsx } from "clsx";
 const items = [
   { to: "/hom-nay", label: "Hôm nay" },
   { to: "/ke-hoach", label: "Kế hoạch" },
-  { to: "/hoi", label: "Hỏi Sống An" },
+  { to: "/hoi", label: "Hỏi" },
+  { to: "/blog", label: "Động viên" },
   { to: "/thu-vien", label: "Thư viện" },
   { to: "/ho-so", label: "Hồ sơ" },
 ];
@@ -22,7 +23,7 @@ export function BottomNav() {
               to={item.to}
               className={({ isActive }) =>
                 clsx(
-                  "flex min-h-14 flex-col items-center justify-center px-1 text-center text-sm",
+                  "flex min-h-14 flex-col items-center justify-center px-0.5 text-center text-[11px] leading-tight sm:text-sm",
                   isActive
                     ? "font-semibold text-[var(--color-green)]"
                     : "text-[var(--color-ink-muted)]",

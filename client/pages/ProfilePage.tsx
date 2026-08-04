@@ -1,9 +1,48 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Button } from "../components/Button";
 import { DISCLAIMER } from "@shared/constants/product";
+import { api } from "../lib/api";
+import {
+  getChatHistoryOptIn,
+  resolveChatHistoryOptIn,
+  setChatHistoryOptIn,
+} from "../lib/preferences";
 
 export function ProfilePage() {
+  const [historyOptIn, setHistoryOptIn] = useState(false);
+  const [savedHint, setSavedHint] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let productDefault = false;
+      try {
+        const meta = await api<{ chatHistoryDefault?: boolean }>("/meta");
+        productDefault = Boolean(meta.chatHistoryDefault);
+      } catch {
+        /* ignore */
+      }
+      if (!cancelled) {
+        setHistoryOptIn(resolveChatHistoryOptIn(productDefault));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function toggleHistory(next: boolean) {
+    setChatHistoryOptIn(next);
+    setHistoryOptIn(next);
+    setSavedHint(
+      next
+        ? "Đã bật lưu hội thoại cho các phiên chat mới trên thiết bị này."
+        : "Đã tắt lưu hội thoại. Phiên mới sẽ không giữ nội dung trên máy chủ.",
+    );
+  }
+
   return (
     <AppShell>
       <div className="space-y-8 fade-up">
@@ -74,6 +113,32 @@ export function ProfilePage() {
               Bạn có thể làm lại bài đánh giá bất cứ lúc nào để cập nhật hồ sơ.
             </li>
           </ul>
+
+          <div className="mt-5 rounded-2xl bg-white/70 p-4">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                className="mt-1 h-5 w-5 accent-[var(--color-green)]"
+                checked={historyOptIn}
+                onChange={(e) => toggleHistory(e.target.checked)}
+              />
+              <span>
+                <span className="font-medium text-[var(--color-ink)]">
+                  Lưu hội thoại Hỏi Sống An trên máy chủ
+                </span>
+                <span className="mt-1 block text-sm text-[var(--color-ink-muted)]">
+                  Chỉ bật khi bạn muốn xem lại câu hỏi đã hỏi trong phiên này.
+                  Lựa chọn được nhớ trên thiết bị
+                  {getChatHistoryOptIn() === null ? " (chưa chọn lần nào)" : ""}.
+                </span>
+              </span>
+            </label>
+            {savedHint ? (
+              <p role="status" className="mt-3 text-sm text-[var(--color-green)]">
+                {savedHint}
+              </p>
+            ) : null}
+          </div>
         </section>
 
         <section className="border-t border-[var(--color-sand)]/40 pt-6">

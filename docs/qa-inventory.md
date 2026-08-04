@@ -22,14 +22,15 @@ Last updated: 2026-08-04. Environment under test: local Wrangler/Vite with `remo
 | `/hoi` | Ask grounded question | Stream or JSON; sources drawer; feedback; suggestions | Empty KB abstain; high-risk; no-diacritics; unsupported invest ask; streaming fail |
 | `/thu-vien` | Browse by category | 6 categories + all; cards show issuer/dates/status | Empty category; API error visible |
 | `/thu-vien/:slug` | Read lesson | Body + metadata | Unknown slug 404 |
-| `/ho-so` | Understand privacy limits | Disclaimer; CTAs to assessment/chat | — |
+| `/ho-so` | Understand privacy limits + chat history toggle | Disclaimer; CTAs; opt-in checkbox | Toggle persists on device |
+| `/blog` | Read motivational posts | List + detail; theme filter | Empty / unknown slug |
 | `/admin` | Manage knowledge | Create+ingest+approve; list; withdraw | Missing auth (staging secret); empty form validation; withdraw active source |
 
 ## Shared chrome
 
 | Control | AC | Edge |
 | --- | --- | --- |
-| Bottom nav (5) | Active state; keyboard focus visible | Not shown on landing/assessment/admin |
+| Bottom nav (6) | Active state; keyboard focus visible | Not shown on landing/assessment/admin |
 | Header brand | Returns home | — |
 | Boot session | Creates session before routes | API down shows migrate/seed hint |
 | CSRF | Mutations send `X-CSRF-Token` | First `/session` exempt |
