@@ -5,28 +5,42 @@ import { Button } from "../components/Button";
 import { EmptyState, ScoreMeter } from "../components/ui";
 import { api } from "../lib/api";
 import { PILLAR_LABELS } from "@shared/constants/product";
+import { currentPlanWeek } from "../lib/plan-week";
+import { weekEncouragement } from "../content/momentum";
 
 type Readiness = {
   result: {
     overallScore: number;
-    pillars: Array<{ pillar: "health" | "finance" | "caregiving"; score: number; interpretation: string }>;
+    pillars: Array<{
+      pillar: "health" | "finance" | "caregiving";
+      score: number;
+      interpretation: string;
+    }>;
     gaps: string[];
   };
 };
 
-import { currentPlanWeek } from "../lib/plan-week";
-
 type Plan = {
   plan: {
     startDate: string;
-    actions: Array<{ status: string; weekNumber: number; title: string }>;
+    actions: Array<{
+      status: string;
+      weekNumber: number;
+      title: string;
+      isOptional?: boolean;
+    }>;
   };
+};
+
+type BlogTeaser = {
+  items: Array<{ slug: string; title: string; excerpt: string }>;
 };
 
 export function TodayPage() {
   const [readiness, setReadiness] = useState<Readiness["result"] | null>(null);
   const [weekActions, setWeekActions] = useState<Plan["plan"]["actions"]>([]);
   const [weekNumber, setWeekNumber] = useState(1);
+  const [blog, setBlog] = useState<BlogTeaser["items"][0] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,12 +57,16 @@ export function TodayPage() {
         if (!cancelled) {
           const week = currentPlanWeek(p.plan.startDate);
           setWeekNumber(week);
-          setWeekActions(
-            p.plan.actions.filter((a) => a.weekNumber === week).slice(0, 3),
-          );
+          setWeekActions(p.plan.actions.filter((a) => a.weekNumber === week));
         }
       } catch {
         /* no plan */
+      }
+      try {
+        const b = await api<BlogTeaser>("/blog");
+        if (!cancelled && b.items?.[0]) setBlog(b.items[0]);
+      } catch {
+        /* blog optional */
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -113,6 +131,18 @@ export function TodayPage() {
               </li>
             </ul>
           </section>
+          {blog ? (
+            <section className="border-t border-[var(--color-sand)]/40 pt-6">
+              <h2 className="font-display text-xl">Bài động viên mới</h2>
+              <p className="mt-2 font-medium text-[var(--color-ink)]">{blog.title}</p>
+              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{blog.excerpt}</p>
+              <div className="mt-3">
+                <Link to={`/blog/${blog.slug}`}>
+                  <Button variant="secondary">Đọc bài</Button>
+                </Link>
+              </div>
+            </section>
+          ) : null}
           <section className="border-t border-[var(--color-sand)]/40 pt-6">
             <h2 className="font-display text-xl text-[var(--color-ink)]">
               Bài đánh giá gồm gì?
@@ -128,7 +158,12 @@ export function TodayPage() {
     );
   }
 
+  const completedCount = weekActions.filter((a) => a.status === "completed").length;
+  const totalCount = weekActions.length;
   const pending = weekActions.filter((a) => a.status !== "completed");
+  const progressPct =
+    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const encouragement = weekEncouragement(completedCount, totalCount);
 
   return (
     <AppShell>
@@ -140,6 +175,29 @@ export function TodayPage() {
             không phải chẩn đoán.
           </p>
         </div>
+
+        <section className="rounded-2xl bg-white/70 p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-xl">Tiến độ tuần {weekNumber}</h2>
+            <p className="text-sm font-medium text-[var(--color-green)]">
+              {completedCount}/{totalCount || "—"} việc
+            </p>
+          </div>
+          <div
+            className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-sand)]/50"
+            role="progressbar"
+            aria-valuenow={progressPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Tiến độ tuần ${weekNumber}`}
+          >
+            <div
+              className="h-full rounded-full bg-[var(--color-green)] transition-[width] duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <p className="mt-3 text-[var(--color-ink-muted)]">{encouragement}</p>
+        </section>
 
         <div className="space-y-3 rounded-2xl bg-white/60 p-4">
           {readiness.pillars.map((p) => (
@@ -184,6 +242,19 @@ export function TodayPage() {
                 <li key={g}>{g}</li>
               ))}
             </ul>
+          </section>
+        ) : null}
+
+        {blog ? (
+          <section className="border-t border-[var(--color-sand)]/40 pt-6">
+            <h2 className="font-display text-xl">Giữ tinh thần</h2>
+            <p className="mt-2 font-medium">{blog.title}</p>
+            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{blog.excerpt}</p>
+            <div className="mt-3">
+              <Link to={`/blog/${blog.slug}`}>
+                <Button variant="secondary">Đọc Góc động viên</Button>
+              </Link>
+            </div>
           </section>
         ) : null}
       </div>

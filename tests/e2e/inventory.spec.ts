@@ -16,11 +16,23 @@ test.describe("inventory — anonymous learner", () => {
     await expect(page.getByRole("link", { name: /quỹ dự phòng/i })).toBeVisible();
   });
 
-  test("bottom nav reaches five destinations", async ({ page }) => {
+  test("bottom nav reaches six destinations", async ({ page }) => {
     await page.goto("/hom-nay");
-    for (const label of ["Hôm nay", "Kế hoạch", "Hỏi Sống An", "Thư viện", "Hồ sơ"]) {
-      await page.getByRole("navigation", { name: /Điều hướng chính/i }).getByRole("link", { name: label }).click();
-      await expect(page.getByRole("navigation", { name: /Điều hướng chính/i })).toBeVisible();
+    for (const label of [
+      "Hôm nay",
+      "Kế hoạch",
+      "Hỏi",
+      "Động viên",
+      "Thư viện",
+      "Hồ sơ",
+    ]) {
+      await page
+        .getByRole("navigation", { name: /Điều hướng chính/i })
+        .getByRole("link", { name: label })
+        .click();
+      await expect(
+        page.getByRole("navigation", { name: /Điều hướng chính/i }),
+      ).toBeVisible();
     }
   });
 

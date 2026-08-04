@@ -166,10 +166,13 @@ pnpm exec wrangler deploy --env staging
 1. **Landing** → bắt đầu đánh giá hoặc hỏi đáp  
 2. **Đánh giá ~20 câu** → điểm health / finance / caregiving (ruleset deterministic)  
 3. **Kết quả** → khoảng trống + điểm mạnh + giải thích  
-4. **Kế hoạch 30 ngày** → 2 việc chính + 1 tùy chọn mỗi tuần  
-5. **Hỏi Sống An** → risk route → retrieve → generate có citation  
-6. **Thư viện** → bài học theo nhóm  
-7. **Admin** → upload/R2, ingest workflow, approve, withdraw  
+4. **Kế hoạch 30 ngày** → 2 việc chính + 1 tùy chọn mỗi tuần (+ phản ánh khi hoàn thành)  
+5. **Hỏi Sống An** → risk route → retrieve → generate có citation (lưu hội thoại tùy chọn)  
+6. **Góc động viên** → bài viết động viên, lịch ~2 ngày/lần  
+7. **Thư viện** → bài học theo nhóm  
+8. **Admin** → upload/R2, ingest workflow, approve, withdraw  
+
+Roadmap sản phẩm: [`docs/roadmap.md`](./docs/roadmap.md).  
 
 ## AI & retrieval
 

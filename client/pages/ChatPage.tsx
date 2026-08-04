@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Button } from "../components/Button";
 import { api, getCsrfToken } from "../lib/api";
 import { EXAMPLE_QUESTIONS } from "@shared/constants/product";
+import { resolveChatHistoryOptIn } from "../lib/preferences";
 
 type Source = {
   key: string;
@@ -25,6 +26,7 @@ type Message = {
 export function ChatPage() {
   const [params] = useSearchParams();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [historyOptIn, setHistoryOptIn] = useState(false);
   const [input, setInput] = useState(params.get("q") ?? "");
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -39,9 +41,45 @@ export function ChatPage() {
     let cancelled = false;
     (async () => {
       try {
+        let productDefault = false;
+        try {
+          const meta = await api<{ chatHistoryDefault?: boolean }>("/meta");
+          productDefault = Boolean(meta.chatHistoryDefault);
+        } catch {
+          /* ignore */
+        }
+        const optIn = resolveChatHistoryOptIn(productDefault);
+        if (cancelled) return;
+        setHistoryOptIn(optIn);
+
+        if (optIn) {
+          const latest = await api<{
+            chatSessionPublicId: string | null;
+            messages: Array<{
+              id: string;
+              role: "user" | "assistant";
+              content: string;
+              kind?: string;
+            }>;
+          }>("/chat/sessions/latest");
+          if (cancelled) return;
+          if (latest.chatSessionPublicId) {
+            setSessionId(latest.chatSessionPublicId);
+            setMessages(
+              (latest.messages ?? []).map((m) => ({
+                id: String(m.id),
+                role: m.role,
+                content: m.content ?? "",
+                kind: m.kind,
+              })),
+            );
+            return;
+          }
+        }
+
         const data = await api<{ chatSessionPublicId: string }>("/chat/sessions", {
           method: "POST",
-          body: { historyOptIn: false },
+          body: { historyOptIn: optIn },
         });
         if (!cancelled) setSessionId(data.chatSessionPublicId);
       } catch (e) {
@@ -210,6 +248,14 @@ export function ChatPage() {
           <h1 className="font-display text-3xl">Hỏi Sống An</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
             Câu trả lời dựa trên nguồn đã duyệt. Có thể gõ tiếng Việt không dấu.
+          </p>
+          <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
+            {historyOptIn
+              ? "Đang lưu hội thoại theo lựa chọn của bạn."
+              : "Hội thoại không được lưu đầy đủ trên máy chủ."}{" "}
+            <Link className="text-[var(--color-green)] underline" to="/ho-so">
+              Đổi trong Hồ sơ
+            </Link>
           </p>
         </div>
 
