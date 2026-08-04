@@ -69,6 +69,8 @@ export function classifyQuestion(question: string): QuestionClassification {
   return "health_education";
 }
 
+import { foldVietnamese } from "../utils/vietnamese";
+
 /** Preserve original query; also produce ASCII-folded form for non-diacritic matching. */
 export function normalizeQuery(original: string): {
   original: string;
@@ -76,15 +78,9 @@ export function normalizeQuery(original: string): {
   withoutDiacritics: string;
 } {
   const trimmed = original.normalize("NFC").trim().replace(/\s+/g, " ");
-  const withoutDiacritics = trimmed
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase();
   return {
     original: trimmed,
     normalized: trimmed.toLowerCase(),
-    withoutDiacritics,
+    withoutDiacritics: foldVietnamese(trimmed),
   };
 }

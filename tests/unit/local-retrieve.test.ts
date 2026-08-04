@@ -17,6 +17,7 @@ describe("scoreTextAgainstQuery", () => {
     const content =
       "Quỹ dự phòng giúp chi trả các việc đột xuất. Đặt mục tiêu nhỏ và đều đặn.";
     expect(scoreTextAgainstQuery(content, "quy du phong la gi")).toBeGreaterThan(0.4);
+    expect(scoreTextAgainstQuery(content, "quy du phong")).toBeGreaterThan(0.4);
     expect(scoreTextAgainstQuery(content, "đầu tư chứng khoán")).toBe(0);
   });
 });

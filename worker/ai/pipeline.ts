@@ -91,9 +91,13 @@ export async function retrieveSources(
   }
 
   // Local / staging fallback: diacritic-insensitive ranking over D1 knowledge
-  const local = await retrieveFromD1(env, query);
-  if (local.length > 0) {
-    return { sources: local, mode: "local_fallback" };
+  try {
+    const local = await retrieveFromD1(env, query);
+    if (local.length > 0) {
+      return { sources: local, mode: "local_fallback" };
+    }
+  } catch {
+    // Keep going to empty — never surface as an uncaught 500 for retrieval misses
   }
 
   return { sources: [], mode: "empty" };

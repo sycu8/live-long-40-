@@ -1,12 +1,43 @@
 import { normalizeQuery } from "@shared/rules/classification";
+import { foldVietnamese } from "@shared/utils/vietnamese";
 
-/** Fold Vietnamese text for diacritic-insensitive matching (đ → d). */
-export function foldVietnamese(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .replace(/đ/gi, "d")
-    .toLowerCase();
+export { foldVietnamese };
+
+const STOP = new Set([
+  "la",
+  "va",
+  "cua",
+  "cho",
+  "voi",
+  "cac",
+  "mot",
+  "nhung",
+  "the",
+  "nao",
+  "gi",
+  "toi",
+  "ban",
+  "nen",
+  "khi",
+  "lam",
+  "de",
+  "co",
+  "khong",
+  "trong",
+  "nay",
+  "do",
+  "duoc",
+  "nhu",
+]);
+
+/** Query tokens for retrieval — keep meaningful 2-letter syllables (du, me, bi…). */
+export function queryTokens(query: string): string[] {
+  const { withoutDiacritics } = normalizeQuery(query);
+  return withoutDiacritics
+    .split(/[^a-z0-9]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2 && !STOP.has(t))
+    .slice(0, 10);
 }
 
 /**
@@ -14,11 +45,7 @@ export function foldVietnamese(text: string): string {
  * SQLite LIKE + lower() is not diacritic-safe for Vietnamese, so scoring is done in JS.
  */
 export function scoreTextAgainstQuery(haystack: string, query: string): number {
-  const { withoutDiacritics } = normalizeQuery(query);
-  const tokens = withoutDiacritics
-    .split(/\s+/)
-    .filter((t) => t.length > 2)
-    .slice(0, 8);
+  const tokens = queryTokens(query);
   if (tokens.length === 0) return 0;
 
   const folded = foldVietnamese(haystack);
@@ -28,10 +55,15 @@ export function scoreTextAgainstQuery(haystack: string, query: string): number {
   }
   if (hits === 0) return 0;
 
-  // Prefer denser overlap; bonus if the full folded phrase appears.
   let score = hits / tokens.length;
-  if (withoutDiacritics.length >= 6 && folded.includes(withoutDiacritics)) {
+  const phrase = tokens.join(" ");
+  if (phrase.length >= 6 && folded.includes(phrase)) {
     score = Math.min(1, score + 0.25);
+  }
+  // Require at least one strong (3+ char) hit when query has such tokens
+  const strong = tokens.filter((t) => t.length >= 3);
+  if (strong.length > 0 && !strong.some((t) => folded.includes(t))) {
+    return 0;
   }
   return score;
 }
@@ -81,8 +113,12 @@ export function rankLocalKnowledge(
   const scored: Array<RankedLocalSource & { _score: number }> = [];
 
   for (const row of chunks) {
-    const blob = `${row.title}\n${row.heading ?? ""}\n${row.content}`;
-    const score = scoreTextAgainstQuery(blob, query);
+    const titleScore = scoreTextAgainstQuery(
+      `${row.title}\n${row.heading ?? ""}`,
+      query,
+    );
+    const bodyScore = scoreTextAgainstQuery(row.content, query);
+    const score = Math.max(titleScore * 1.15, bodyScore, (titleScore + bodyScore) / 2);
     if (score <= 0) continue;
     scored.push({
       _score: score,
