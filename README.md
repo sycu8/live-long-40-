@@ -9,6 +9,7 @@ Progressive Web App giúp người Việt từ tuổi **40+** chuẩn bị cho t
 | Lớp | Công nghệ |
 | --- | --- |
 | Frontend | React + Vite + Tailwind (Workers Static Assets, SPA) |
+| Chữ | **Be Vietnam Pro** (SIL OFL 1.1, tự host qua Fontsource) — hỗ trợ dấu tiếng Việt |
 | API | Hono trên Cloudflare Workers |
 | Dữ liệu | D1 (quan hệ), R2 (tài liệu nguồn), KV (cấu hình công khai) |
 | AI | Workers AI + AI Gateway + Cloudflare AI Search |
