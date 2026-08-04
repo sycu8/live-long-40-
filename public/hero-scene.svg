@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="720" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D8EBE2"/>
+      <stop offset="0.55" stop-color="#E8EEF3"/>
+      <stop offset="1" stop-color="#F7F4EF"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="80" y1="280" x2="680" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F5C45" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#3D5A73" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="520" fill="url(#sky)"/>
+  <path d="M0 340C120 300 210 315 320 350C430 385 520 360 720 320V520H0V340Z" fill="url(#hill)"/>
+  <path d="M80 360C160 320 240 318 310 348" stroke="#1F5C45" stroke-opacity="0.35" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="360" cy="210" r="28" fill="#F7F4EF" stroke="#1F5C45" stroke-width="3"/>
+  <path d="M300 290c28-52 92-52 120 0" stroke="#1F5C45" stroke-width="10" stroke-linecap="round"/>
+  <path d="M430 236c26 8 44 30 48 56-28-2-50-20-60-44 5-5 8-8 12-12z" fill="#D8EBE2" stroke="#1F5C45" stroke-opacity="0.35"/>
+  <!-- three soft markers for pillars -->
+  <circle cx="170" cy="400" r="10" fill="#1F5C45" fill-opacity="0.55"/>
+  <circle cx="360" cy="430" r="10" fill="#3D5A73" fill-opacity="0.5"/>
+  <circle cx="550" cy="405" r="10" fill="#1F5C45" fill-opacity="0.4"/>
+</svg>
