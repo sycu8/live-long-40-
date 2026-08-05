@@ -128,7 +128,7 @@ export function ProfilePage() {
               </li>
               <li>
                 <Link className="font-medium text-[var(--color-green)]" to="/hoi">
-                  Hỏi Sống An
+                  Hỏi VivaAge
                 </Link>
                 {" — "}
                 câu hỏi giáo dục có nguồn đã duyệt.
@@ -185,7 +185,7 @@ export function ProfilePage() {
                 />
                 <span>
                   <span className="font-medium text-[var(--color-ink)]">
-                    Lưu hội thoại Hỏi Sống An trên máy chủ
+                    Lưu hội thoại Hỏi VivaAge trên máy chủ
                   </span>
                   <span className="mt-1 block text-sm text-[var(--color-ink-muted)]">
                     Chỉ bật khi bạn muốn xem lại câu hỏi đã hỏi trong phiên này.
@@ -221,7 +221,7 @@ export function ProfilePage() {
             </Link>
             <Link to="/hoi">
               <Button variant="secondary" className="w-full">
-                Hỏi Sống An
+                Hỏi VivaAge
               </Button>
             </Link>
           </div>

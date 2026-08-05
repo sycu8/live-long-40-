@@ -265,7 +265,7 @@ export async function runChatPipeline(
     return {
       kind: "abstain",
       message:
-        "Tôi chưa thể hỗ trợ yêu cầu này. Sống An 40+ không khuyên mua bán đầu tư, không kê đơn thuốc và không tư vấn luật cho từng người.",
+        "Tôi chưa thể hỗ trợ yêu cầu này. VivaAge không khuyên mua bán đầu tư, không kê đơn thuốc và không tư vấn luật cho từng người.",
       classification,
       sources: [],
       mode: "policy",

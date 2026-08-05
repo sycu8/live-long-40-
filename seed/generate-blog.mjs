@@ -49,7 +49,7 @@ Hãy nghĩ tuổi già như một ngôi nhà bạn sẽ sống lâu dài. Bạn 
 
 Mỗi việc nhỏ là một viên gạch. Viên gạch hôm nay vẫn tính.
 
-## Lời nhắn từ Sống An
+## Lời nhắn từ VivaAge
 
 Bạn không cần trở thành phiên bản hoàn hảo lúc 40. Bạn chỉ cần **không đứng yên trong lo âu**. Bắt đầu bằng bài đánh giá ngắn, hoặc đọc một bài học, hoặc hỏi một câu. Bước nhỏ vẫn là bước đi.`,
   },
@@ -84,7 +84,7 @@ Hãy chọn một việc cho 48 giờ tới. Viết ra. Làm xong thì đánh d�
 
 ## Kết
 
-Kế hoạch 30 ngày của Sống An cố ý không nhồi nhét. Hai việc chính và một việc tùy chọn mỗi tuần là để bạn **thắng cuộc chơi dài**, không phải cháy hết trong tuần đầu.`,
+Kế hoạch 30 ngày của VivaAge cố ý không nhồi nhét. Hai việc chính và một việc tùy chọn mỗi tuần là để bạn **thắng cuộc chơi dài**, không phải cháy hết trong tuần đầu.`,
   },
   {
     slug: "noi-ve-tuoi-gia-khong-so",
@@ -196,7 +196,7 @@ Xong ba việc này, bạn đã hơn “mình chẳng biết gì” rất nhiề
 
 ## Lời nhắn
 
-Sống An không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng lo liệu tiền bạc quan trọng nhất ở tuổi ngoài 40.`,
+VivaAge không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng lo liệu tiền bạc quan trọng nhất ở tuổi ngoài 40.`,
   },
   {
     slug: "co-the-thay-doi-khong-phai-that-bai",
@@ -338,7 +338,7 @@ Hoặc đánh dấu vào sổ. Đơn giản, nhưng hiệu quả.
 
 Bạn không cần giảm 5kg mới được vui. Bạn được vui vì **đã giữ lời với chính mình**.
 
-## Liên hệ Sống An
+## Liên hệ VivaAge
 
 Trong kế hoạch, mỗi việc hoàn thành là một tín hiệu: bạn đang điều hướng đời sống thay vì bị đời sống cuốn. Hãy để những tín hiệu đó tích lại thành sự tự tin.`,
   },
@@ -395,7 +395,7 @@ Hy vọng không phải ngồi chờ cảm xúc đẹp. Hy vọng là:
 
 Bỏ dở không xóa giá trị những gì đã làm. Quay lại kế hoạch. Đọc lại một bài. Hỏi một câu mới. **Mỗi lần quay lại là một lần chọn sống có hướng.**
 
-## Lời kết từ Sống An
+## Lời kết từ VivaAge
 
 Chúng tôi không hứa bạn sẽ không gặp khó khăn. Chúng tôi muốn bạn **không phải đối mặt một mình trong bóng tối thông tin**.
 
@@ -430,7 +430,7 @@ Khóc được. Giận được. Nhưng sau đó hãy chọn **một hành độ
 
 ## Kết
 
-Ổn định không phải là không sóng. Là biết bám vào đâu khi sóng tới — và Sống An muốn là một trong những chỗ bám thông tin dịu dàng đó.`,
+Ổn định không phải là không sóng. Là biết bám vào đâu khi sóng tới — và VivaAge muốn là một trong những chỗ bám thông tin dịu dàng đó.`,
   },
   {
     slug: "tap-the-duc-khong-xau-ho",
@@ -513,7 +513,7 @@ Cả hai đều làm bạn mắc kẹt.
 
 ## Kết
 
-Sống An không dạy bạn giả vờ vui. Chúng tôi muốn bạn **vừa dịu dàng với hiện tại, vừa quyền năng với tương lai**. Đó mới là động lực bền.`,
+VivaAge không dạy bạn giả vờ vui. Chúng tôi muốn bạn **vừa dịu dàng với hiện tại, vừa quyền năng với tương lai**. Đó mới là động lực bền.`,
   },
   {
     slug: "ngay-xau-van-cuu-duoc",
@@ -572,7 +572,7 @@ Sổ của bạn là của bạn. Mục tiêu là thấy rõ, không phải th�
 
 ## Kết
 
-Một trang sổ sách là bước đầu của sự bình tĩnh. Sống An không tư vấn đầu tư — chỉ muốn bạn **bớt sợ vì bớt mơ hồ**.`,
+Một trang sổ sách là bước đầu của sự bình tĩnh. VivaAge không tư vấn đầu tư — chỉ muốn bạn **bớt sợ vì bớt mơ hồ**.`,
   },
   {
     slug: "kham-dinh-ky-khong-hoang",
@@ -732,7 +732,7 @@ Não bộ cần bằng chứng tiến bộ. Một việc xong tạo đà cho tu�
 
 ## Kết
 
-Sống An cố ý thiết kế kế hoạch 30 ngày với ít việc. Không phải bạn chậm — là bạn đang đi **bền**.`,
+VivaAge cố ý thiết kế kế hoạch 30 ngày với ít việc. Không phải bạn chậm — là bạn đang đi **bền**.`,
   },
 ];
 
@@ -779,7 +779,7 @@ POSTS.forEach((post, index) => {
   ${sqlString(status)},
   ${sqlString(scheduledFor)},
   ${publishedAt ? sqlString(publishedAt) : "NULL"},
-  ${sqlString("Biên tập Sống An")},
+  ${sqlString("Biên tập VivaAge")},
   ${sqlString(created)},
   ${sqlString(created)}
 );`);

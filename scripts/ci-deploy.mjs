@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CI deploy for Sống An 40+.
+ * CI deploy for VivaAge.
  * Requires CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID.
  * Provisions D1/KV/R2/Queues if missing, patches wrangler.jsonc IDs, builds, deploys, migrates.
  */

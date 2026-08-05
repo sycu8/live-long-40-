@@ -105,7 +105,7 @@ export function TodayPage() {
               <ul className="mt-4 space-y-4 text-[var(--color-ink-muted)]">
                 <li>
                   <Link className="font-medium text-[var(--color-green)]" to="/hoi">
-                    Hỏi Sống An
+                    Hỏi VivaAge
                   </Link>
                   {" — "}
                   đặt câu hỏi về khám định kỳ, tiền để dành khi đột xuất, phòng ngã hoặc giấy tờ.

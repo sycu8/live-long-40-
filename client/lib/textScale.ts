@@ -17,7 +17,7 @@ export const TEXT_SCALE_OPTIONS: Array<{
   {
     id: "comfortable",
     label: "Rõ",
-    hint: "Mặc định Sống An — dễ đọc hơn một chút",
+    hint: "Mặc định VivaAge — dễ đọc hơn một chút",
   },
   {
     id: "large",

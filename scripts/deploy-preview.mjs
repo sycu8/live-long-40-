@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Deploy Sống An 40+ to Cloudflare.
+ * Deploy VivaAge to Cloudflare.
  *
  * - With CLOUDFLARE_API_TOKEN: full deploy via Vite-built Worker (preferred).
  * - Without credentials: uses `wrangler deploy --temporary` preview account.

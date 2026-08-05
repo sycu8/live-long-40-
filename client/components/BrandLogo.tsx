@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BRAND } from "@shared/brand";
 
 type BrandLogoProps = {
   to?: string;
@@ -34,17 +35,21 @@ export function BrandLogo({
       />
       {showWordmark ? (
         <span className={`font-display leading-none tracking-tight ${s.text}`}>
-          Sống An 40+
+          {BRAND.name}
         </span>
       ) : (
-        <span className="sr-only">Sống An 40+</span>
+        <span className="sr-only">{BRAND.name}</span>
       )}
     </span>
   );
 
   if (!to) return content;
   return (
-    <Link to={to} className="inline-flex no-underline" aria-label="Sống An 40+ — trang chủ">
+    <Link
+      to={to}
+      className="inline-flex no-underline"
+      aria-label={`${BRAND.name} — trang chủ`}
+    >
       {content}
     </Link>
   );

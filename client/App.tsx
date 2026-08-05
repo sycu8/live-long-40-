@@ -40,7 +40,7 @@ export function App() {
   if (!ready) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-[var(--color-ink-muted)] lg:max-w-2xl">
-        Đang khởi tạo Sống An 40+…
+        Đang khởi tạo VivaAge…
       </div>
     );
   }

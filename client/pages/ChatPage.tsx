@@ -246,7 +246,7 @@ export function ChatPage() {
       <div className="flex min-h-[70dvh] flex-col gap-4 lg:min-h-[calc(100dvh-12rem)] lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
         <div className="flex min-h-0 flex-1 flex-col gap-4">
           <div>
-            <h1 className="font-display text-3xl lg:text-4xl">Hỏi Sống An</h1>
+            <h1 className="font-display text-3xl lg:text-4xl">Hỏi VivaAge</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
               Câu trả lời dựa trên nguồn từ Bộ Y tế, Bảo hiểm xã hội Việt Nam, Ngân
               hàng Nhà nước Việt Nam hoặc Tổ chức Y tế Thế giới. Bạn có thể gõ tiếng

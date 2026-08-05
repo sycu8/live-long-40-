@@ -22,7 +22,7 @@ export async function getOrSeedCurrentDefinition(db: D1Database) {
       .prepare(
         `INSERT INTO assessment_definitions
          (id, version, title, description, scoring_ruleset_version, is_current, created_at)
-         VALUES (?, 'v1.0.0', 'Đánh giá mức độ chuẩn bị Sống An 40+', 'Bài đánh giá ngắn về sức khỏe, tiền bạc và chăm sóc', 'v1.0.0', 1, ?)`,
+         VALUES (?, 'v1.0.0', 'Đánh giá mức độ chuẩn bị VivaAge', 'Bài đánh giá ngắn về sức khỏe, tiền bạc và chăm sóc', 'v1.0.0', 1, ?)`,
       )
       .bind(id, now)
       .run();
@@ -55,7 +55,7 @@ export async function getOrSeedCurrentDefinition(db: D1Database) {
     def = {
       id,
       version: "v1.0.0",
-      title: "Đánh giá mức độ chuẩn bị Sống An 40+",
+      title: "Đánh giá mức độ chuẩn bị VivaAge",
       description: "Bài đánh giá ngắn về sức khỏe, tiền bạc và chăm sóc",
       scoring_ruleset_version: "v1.0.0",
     };

@@ -55,11 +55,13 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     classification: "health_education",
     aliases: [
       "tu tuoi 40 toi nen kiem tra suc khoe gi",
+      "tu tuoi 40 nen kiem tra suc khoe gi",
       "tuoi 40 kiem tra suc khoe",
       "kham suc khoe dinh ky tuoi 40",
       "kham dinh ky tu tuoi 40",
       "nen kiem tra suc khoe gi o tuoi 40",
       "tuoi 40 nen kham gi",
+      "tu 40 tuoi nen kham nhung gi moi nam",
     ],
     sources: [
       cite(
@@ -99,10 +101,13 @@ Thông tin này để bạn chuẩn bị cuộc nói chuyện với bác sĩ, **
     classification: "financial_education",
     aliases: [
       "toi nen chuan bi quy du phong the nao",
+      "toi can chuan bi bao nhieu thang chi phi du phong",
+      "bao nhieu thang chi phi du phong",
       "quy du phong la gi",
       "quy du phong",
       "chuan bi quy du phong",
       "lam quy du phong the nao",
+      "quy du phong y te nen tinh the nao",
       "quy khan cap",
       "tien du phong",
     ],
@@ -129,7 +134,7 @@ Thông tin này để bạn chuẩn bị cuộc nói chuyện với bác sĩ, **
 - Không lấy tiền dự phòng để chơi chứng khoán hay chi tiêu không cần thiết.
 
 **Giới hạn rõ**
-Sống An 40+ **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm cụ thể. Nếu cần tư vấn riêng, hãy hỏi người có chuyên môn hoặc xem thông tin trên cổng Ngân hàng Nhà nước Việt Nam / Bảo hiểm xã hội Việt Nam. [S1][S2]`,
+VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm cụ thể. Nếu cần tư vấn riêng, hãy hỏi người có chuyên môn hoặc xem thông tin trên cổng Ngân hàng Nhà nước Việt Nam / Bảo hiểm xã hội Việt Nam. [S1][S2]`,
   },
   {
     id: "parent-fall",
@@ -142,6 +147,8 @@ Sống An 40+ **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo 
       "xu ly khi bi nga",
       "phong nga tai nha",
       "nguoi cao tuoi bi nga",
+      "nha co nguoi lon tuoi thi can thay doi nhung gi",
+      "nha co nguoi lon tuoi nen thay doi gi",
     ],
     sources: [
       cite(
@@ -205,7 +212,7 @@ Sống An 40+ **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo 
 4. Xem lại mỗi 6–12 tháng hoặc khi có thay đổi lớn.
 
 **Giới hạn**
-Sống An 40+ **không** soạn di chúc hay tư vấn luật cho từng người. Thủ tục bảo hiểm: dùng cổng Bảo hiểm xã hội Việt Nam. [S1]`,
+VivaAge **không** soạn di chúc hay tư vấn luật cho từng người. Thủ tục bảo hiểm: dùng cổng Bảo hiểm xã hội Việt Nam. [S1]`,
   },
   {
     id: "blood-pressure-home",

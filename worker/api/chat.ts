@@ -21,7 +21,7 @@ chatRoutes.post("/chat/sessions", async (c) => {
       id,
       publicId,
       c.get("sessionId"),
-      body.title ?? "Hỏi Sống An",
+      body.title ?? "Hỏi VivaAge",
       body.historyOptIn ? 1 : 0,
       now,
       now,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { EmptyState } from "../components/ui";
 import { MarkdownBody } from "../components/MarkdownBody";
@@ -30,10 +30,17 @@ type Item = {
 };
 
 export function LibraryPage() {
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get("category") ?? "";
   const [items, setItems] = useState<Item[]>([]);
-  const [category, setCategory] = useState<string>("");
+  const [category, setCategory] = useState<string>(initialCategory);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const next = searchParams.get("category") ?? "";
+    setCategory(next);
+  }, [searchParams]);
 
   useEffect(() => {
     (async () => {

@@ -1,4 +1,4 @@
-# Sống An 40+
+# VivaAge
 
 Progressive Web App giúp người Việt từ tuổi **40+** chuẩn bị cho tuổi già qua đánh giá mức độ chuẩn bị, kế hoạch 30 ngày, thư viện giáo dục và chatbot trả lời có nguồn.
 
@@ -167,7 +167,7 @@ pnpm exec wrangler deploy --env staging
 2. **Đánh giá ~20 câu** → điểm health / finance / caregiving (ruleset deterministic)  
 3. **Kết quả** → khoảng trống + điểm mạnh + giải thích  
 4. **Kế hoạch 30 ngày** → 2 việc chính + 1 tùy chọn mỗi tuần (+ phản ánh khi hoàn thành)  
-5. **Hỏi Sống An** → risk route → retrieve → generate có citation (lưu hội thoại tùy chọn)  
+5. **Hỏi VivaAge** → risk route → retrieve → generate có citation (lưu hội thoại tùy chọn)  
 6. **Góc động viên** → bài viết động viên, lịch 1 bài/ngày (cron + sitemap/feed)  
 7. **Thư viện** → bài học theo nhóm  
 8. **Admin** → upload/R2, ingest workflow, approve, withdraw  

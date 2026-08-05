@@ -33,7 +33,7 @@ describe("rankLocalKnowledge", () => {
           heading: "Phòng ngã",
           source_id: "src_fall",
           title: "Hướng dẫn giáo dục về phòng ngã tại nhà",
-          issuer: "Sống An",
+          issuer: "VivaAge",
           status: "active",
         },
         {
@@ -43,7 +43,7 @@ describe("rankLocalKnowledge", () => {
           heading: "Quỹ dự phòng",
           source_id: "src_fund",
           title: "Giáo dục về quỹ dự phòng",
-          issuer: "Sống An",
+          issuer: "VivaAge",
           status: "active",
         },
       ],
@@ -66,7 +66,7 @@ describe("rankLocalKnowledge", () => {
           summary: "Gom giấy tùy thân, bảo hiểm và giấy tờ nhà.",
           body_markdown:
             "# Giấy tờ\n\nChuẩn bị giấy tờ cho tuổi già: CMND/CCCD, bảo hiểm, giấy nhà.",
-          issuer: "Sống An",
+          issuer: "VivaAge",
           publication_date: "2026-01-01",
         },
       ],

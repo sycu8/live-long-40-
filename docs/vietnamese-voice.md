@@ -1,4 +1,4 @@
-# Giọng văn tiếng Việt — Sống An 40+
+# Giọng văn tiếng Việt — VivaAge
 
 ## Đối tượng
 Người Việt khoảng 40 tuổi trở lên: đang đi làm, chăm con/cháu, hoặc sắp về hưu. Không giả định kiến thức y khoa hay tài chính chuyên sâu.

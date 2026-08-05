@@ -26,7 +26,7 @@
   },
   "vars": {
     "ENVIRONMENT": "preview",
-    "APP_NAME": "Sống An 40+",
+    "APP_NAME": "VivaAge",
     "AI_SEARCH_INSTANCE": "song-an-40-knowledge",
     "AI_GATEWAY_ID": "song-an-40",
     "SESSION_COOKIE_NAME": "sa_session",

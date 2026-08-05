@@ -78,7 +78,7 @@ const STATIC_PATHS: Array<{ path: string; changefreq: string; priority: string }
 
 crawlRoutes.get("/robots.txt", (c) => {
   const base = siteUrl(c.env, c.req.url);
-  const body = `# Sống An 40+ — ${base}
+  const body = `# VivaAge — ${base}
 User-agent: *
 Allow: /
 Disallow: /admin
@@ -197,7 +197,7 @@ crawlRoutes.get("/feed.xml", async (c) => {
 
   const feed = `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-  <title>Sống An 40+ — Góc động viên</title>
+  <title>VivaAge — Góc động viên</title>
   <subtitle>Bài viết động viên mỗi ngày cho người Việt ngoài 40 tuổi. Cadence: ${BLOG_CADENCE_DAYS} ngày/bài.</subtitle>
   <link href="${xmlEscape(base)}/blog" rel="alternate" type="text/html"/>
   <link href="${xmlEscape(base)}/feed.xml" rel="self" type="application/atom+xml"/>

@@ -1,5 +1,5 @@
 -- Migration: 0001_init.sql
--- Sống An 40+ core schema
+-- VivaAge core schema
 
 PRAGMA foreign_keys = ON;
 

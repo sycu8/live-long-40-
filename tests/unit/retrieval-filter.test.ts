@@ -68,7 +68,7 @@ describe("retrieval filtering", () => {
           status: "active",
           review_status: "approved",
           trust_tier: "editorial",
-          issuer: "Sống An 40+ Biên tập giáo dục",
+          issuer: "VivaAge Biên tập giáo dục",
           title: "Ed",
         },
       },

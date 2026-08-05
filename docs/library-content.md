@@ -1,6 +1,6 @@
 # Thư viện — bài viết giáo dục (không phải checklist)
 
-Thư viện của Sống An 40+ gồm **bài viết giáo dục ngắn**: giải thích khái niệm, vì sao quan trọng, giới hạn, và khi nào cần gặp bác sĩ / cơ quan có thẩm quyền.
+Thư viện của VivaAge gồm **bài viết giáo dục ngắn**: giải thích khái niệm, vì sao quan trọng, giới hạn, và khi nào cần gặp bác sĩ / cơ quan có thẩm quyền.
 
 Không phải:
 

@@ -68,10 +68,10 @@ export type QuestionClassification =
   (typeof QUESTION_CLASSIFICATIONS)[number];
 
 export const DISCLAIMER =
-  "Sống An 40+ giúp bạn tìm hiểu và lập kế hoạch, không phải ứng dụng của Nhà nước, cũng không thay bác sĩ, người tư vấn tiền bạc hay luật sư.";
+  "VivaAge cung cấp nội dung giáo dục và hỗ trợ lập kế hoạch. Thông tin trên nền tảng không thay thế chẩn đoán, điều trị, tư vấn tài chính hoặc tư vấn pháp lý từ người có chuyên môn.";
 
 export const SCORE_DISCLAIMER =
-  "Đây là điểm chuẩn bị của bạn, không phải kết luận bệnh hay dự đoán tuổi thọ.";
+  "Đây là điểm đánh giá mức độ chuẩn bị, không phải chẩn đoán sức khỏe hoặc dự đoán tuổi thọ.";
 
 export const ABSTENTION_MESSAGE =
   "Tôi chưa tìm thấy đủ nguồn tin cậy từ cơ quan nhà nước hoặc Tổ chức Y tế Thế giới để trả lời chắc chắn.";

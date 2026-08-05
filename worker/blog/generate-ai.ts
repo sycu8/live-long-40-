@@ -11,7 +11,7 @@ const DISCLAIMER = `
 
 ---
 
-*Bài viết động viên của Sống An 40+. Không thay lời bác sĩ, không phải tư vấn tiền bạc hay pháp lý.*
+*Bài viết động viên của VivaAge. Không thay lời bác sĩ, không phải tư vấn tiền bạc hay pháp lý.*
 `;
 
 function themeForDate(isoDate: string): BlogTheme {
@@ -60,7 +60,7 @@ export async function generateEditorialPostWithAi(
     "cham-soc": "chăm sóc người thân và an toàn tại nhà",
   };
 
-  const prompt = `Bạn là biên tập viên Góc động viên của Sống An 40+ (người Việt ngoài 40 tuổi).
+  const prompt = `Bạn là biên tập viên Góc động viên của VivaAge (người Việt ngoài 40 tuổi).
 Viết MỘT bài tiếng Việt ấm áp, dễ hiểu, chủ đề: ${themeHint[theme]}.
 Tuyệt đối không chẩn đoán bệnh, không kê đơn, không tư vấn đầu tư/pháp lý.
 Trả về ĐÚNG một JSON (không markdown ngoài JSON):

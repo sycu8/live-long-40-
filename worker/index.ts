@@ -28,7 +28,7 @@ app.use("*", securityHeaders);
 app.get("/api/health", (c) =>
   c.json({
     ok: true,
-    app: c.env.APP_NAME ?? "Sống An 40+",
+    app: c.env.APP_NAME ?? "VivaAge",
     environment: c.env.ENVIRONMENT ?? "unknown",
     // booleans only — never expose secret values
     adminSecretConfigured: Boolean(
@@ -40,7 +40,7 @@ app.get("/api/health", (c) =>
 
 app.get("/api/v1/meta", (c) =>
   c.json({
-    name: "Sống An 40+",
+    name: "VivaAge",
     disclaimer: DISCLAIMER,
     exampleQuestions: EXAMPLE_QUESTIONS,
     chatHistoryDefault: c.env.FEATURE_CHAT_HISTORY_DEFAULT === "true",

@@ -1,4 +1,4 @@
--- Demo seed: educational library articles for Sống An 40+ (not government documents).
+-- Demo seed: educational library articles for VivaAge (not government documents).
 -- Articles explain concepts; they are not task checklists. Safe demonstration content only.
 
 INSERT OR IGNORE INTO library_lessons (
@@ -12,7 +12,7 @@ INSERT OR IGNORE INTO library_lessons (
   'Hiểu vai trò của huyết áp với sức khỏe dài hạn và cách theo dõi tại nhà một cách bình tĩnh.',
   'kham-phong-benh',
   'health',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-01-15',
   '2026-07-01',
   'active',
@@ -52,7 +52,7 @@ Nếu có đau ngực dữ dội, khó thở nặng, nói khó, yếu nửa ngư
   'Vì sao chuyển động đều đặn quan trọng hơn “tập mạnh”, và mức nào thường vừa với đời sống đi làm, chăm nhà.',
   'suc-khoe-trung-nien',
   'health',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-01-15',
   '2026-07-01',
   'active',
@@ -92,7 +92,7 @@ Mục tiêu không phải thành tích. Mục tiêu là **giữ khả năng đi 
   'Khám định kỳ giúp nhìn xu hướng sức khỏe theo thời gian — khác với đi khám khi đã thấy bất thường.',
   'kham-phong-benh',
   'health',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-02-01',
   '2026-07-01',
   'active',
@@ -128,7 +128,7 @@ Khám định kỳ **không thay** việc đến cơ sở y tế khi có dấu h
   'Hiểu quỹ dự phòng là gì, vì sao giúp bớt phụ thuộc vay nóng, và cách nghĩ về mục tiêu vừa sức.',
   'chuan-bi-tai-chinh',
   'finance',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-02-10',
   '2026-07-01',
   'active',
@@ -166,7 +166,7 @@ Không dùng tiền đang cần cho sinh hoạt thiết yếu để mạo hiểm
   'Vì sao ước lượng nhu cầu tương lai giúp bớt mơ hồ — và các nhóm chi tiêu thường gặp cần nghĩ tới.',
   'chuan-bi-tai-chinh',
   'finance',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-02-10',
   '2026-07-01',
   'active',
@@ -202,7 +202,7 @@ So sánh sơ bộ với nguồn thu dự kiến (lương hưu, tiết kiệm, h�
   'Vì sao biết chỗ cất căn cước, sổ bảo hiểm và giấy tờ nhà giúp cả nhà nhẹ hơn khi có việc đột xuất.',
   'nha-o-giay-to',
   'finance',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-03-01',
   '2026-07-01',
   'active',
@@ -240,7 +240,7 @@ Bài này không hướng dẫn thủ tục pháp lý cụ thể. Khi cần làm
   'Hiểu vì sao ngã nguy hiểm với người cao tuổi và những thay đổi môi trường nhà cửa thường được nhắc trong giáo dục phòng ngừa.',
   'cham-soc-cha-me',
   'caregiving',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-03-05',
   '2026-07-01',
   'active',
@@ -280,7 +280,7 @@ Kiểm tra tỉnh táo. Không đỡ dậy mạnh nếu nghi chấn thương n�
   'Vì sao cần biết trước người và số điện thoại sẽ gọi khi có việc đột xuất — cho bạn và người thân.',
   'cham-soc-cha-me',
   'caregiving',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-03-05',
   '2026-07-01',
   'active',
@@ -317,7 +317,7 @@ Mạng hỗ trợ là một phần của chăm sóc dài hạn, không kém thu�
   'Vì sao mở lời sớm giúp cả nhà nhẹ hơn, và khung trao đổi ngắn thường hữu ích hơn một cuộc “họp lớn”.',
   'nha-o-giay-to',
   'caregiving',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-03-12',
   '2026-07-01',
   'active',
@@ -357,7 +357,7 @@ Mở lời sớm biến tình yêu thành sự rõ ràng — và sự rõ ràng 
   'Vì sao biết rõ thuốc đang dùng giúp giảm nhầm lẫn khi khám, nhập viện, hoặc nhờ người thân hỗ trợ.',
   'kham-phong-benh',
   'health',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-03-20',
   '2026-07-01',
   'active',
@@ -396,7 +396,7 @@ Buồn nôn kéo dài, chóng mặt bất thường sau đổi thuốc, hoặc n
   'Vì sao ngủ kém làm lo âu nặng hơn, và những thói quen nền tảng thường được nhắc trong giáo dục sức khỏe.',
   'tri-nho-tinh-than',
   'health',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-04-01',
   '2026-07-01',
   'active',
@@ -432,7 +432,7 @@ Ngáy to kèm ngừng thở, buồn ngủ ban ngày mức ảnh hưởng công v
   'Hiểu các nhóm nguồn thu thường gặp và vì sao viết chúng ra giúp bạn chủ động hơn — không phải để so với hàng xóm.',
   'chuan-bi-tai-chinh',
   'finance',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   '2026-04-01',
   '2026-07-01',
   'active',
@@ -463,7 +463,7 @@ Không so với hàng xóm. Dùng để:
 
 ## Giới hạn
 
-Sống An không tư vấn đầu tư, bảo hiểm hay pháp lý. Khi cần số liệu chính thức về BHXH, hãy hỏi cơ quan Bảo hiểm xã hội Việt Nam hoặc nơi bạn đang tham gia.',
+VivaAge không tư vấn đầu tư, bảo hiểm hay pháp lý. Khi cần số liệu chính thức về BHXH, hãy hỏi cơ quan Bảo hiểm xã hội Việt Nam hoặc nơi bạn đang tham gia.',
   datetime('now'),
   datetime('now')
 );
@@ -834,7 +834,7 @@ Không so với hàng xóm. Dùng để:
 
 ## Giới hạn
 
-Sống An không tư vấn đầu tư, bảo hiểm hay pháp lý. Khi cần số liệu chính thức về BHXH, hãy hỏi cơ quan Bảo hiểm xã hội Việt Nam hoặc nơi bạn đang tham gia.',
+VivaAge không tư vấn đầu tư, bảo hiểm hay pháp lý. Khi cần số liệu chính thức về BHXH, hãy hỏi cơ quan Bảo hiểm xã hội Việt Nam hoặc nơi bạn đang tham gia.',
   updated_at = datetime('now')
 WHERE slug = 'nguon-thu';
 
@@ -849,7 +849,7 @@ INSERT OR IGNORE INTO source_documents (
   'huong-dan-phong-nga-giao-duc',
   'Hướng dẫn giáo dục về phòng ngã tại nhà',
   'Nội dung giáo dục minh họa cho truy vấn RAG cục bộ.',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   'VN',
   'education',
   'vi',
@@ -899,7 +899,7 @@ INSERT OR IGNORE INTO source_chunks (
   'chunk-0',
   'Phòng ngã tại nhà. Khi người cao tuổi đi lại trong nhà, hãy giữ lối đi thông thoáng và đủ ánh sáng.',
   'seedchunk1',
-  '{"source_id":"src_demo_fall","title":"Hướng dẫn giáo dục về phòng ngã tại nhà","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-03-05","category":"cham-soc-cha-me"}',
+  '{"source_id":"src_demo_fall","title":"Hướng dẫn giáo dục về phòng ngã tại nhà","issuer":"VivaAge Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-03-05","category":"cham-soc-cha-me"}',
   'indexed',
   datetime('now')
 ),
@@ -912,7 +912,7 @@ INSERT OR IGNORE INTO source_chunks (
   'chunk-1',
   'Nếu có người bị ngã: kiểm tra tỉnh táo; không đỡ dậy mạnh nếu nghi chấn thương nặng; gọi hỗ trợ y tế khi không đứng dậy được hoặc đau nhiều. Đây là thông tin giáo dục, không thay thế cấp cứu.',
   'seedchunk2',
-  '{"source_id":"src_demo_fall","title":"Hướng dẫn giáo dục về phòng ngã tại nhà","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-03-05","category":"cham-soc-cha-me"}',
+  '{"source_id":"src_demo_fall","title":"Hướng dẫn giáo dục về phòng ngã tại nhà","issuer":"VivaAge Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-03-05","category":"cham-soc-cha-me"}',
   'indexed',
   datetime('now')
 );
@@ -926,7 +926,7 @@ INSERT OR IGNORE INTO source_documents (
   'quy-du-phong-giao-duc',
   'Giáo dục về quỹ dự phòng',
   'Bài minh họa về quỹ dự phòng cho truy vấn cục bộ.',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   'VN',
   'education',
   'vi',
@@ -970,7 +970,7 @@ INSERT OR IGNORE INTO source_chunks (
   'chunk-0',
   'Quỹ dự phòng giúp chi trả các việc đột xuất. Ước lượng chi phí thiết yếu mỗi tháng, rồi đặt mục tiêu nhỏ và đều đặn. Đây không phải tư vấn đầu tư.',
   'seedchunk3',
-  '{"source_id":"src_demo_fund","title":"Giáo dục về quỹ dự phòng","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-02-10","category":"chuan-bi-tai-chinh"}',
+  '{"source_id":"src_demo_fund","title":"Giáo dục về quỹ dự phòng","issuer":"VivaAge Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-02-10","category":"chuan-bi-tai-chinh"}',
   'indexed',
   datetime('now')
 );
@@ -985,7 +985,7 @@ INSERT OR IGNORE INTO source_documents (
   'bai-cu-da-thay-the',
   'Bài cũ đã bị thay thế',
   'Nguồn superseded để kiểm thử bộ lọc.',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   'VN',
   'education',
   'vi',
@@ -1008,7 +1008,7 @@ INSERT OR IGNORE INTO source_chunks (
   'chunk-0',
   'Nội dung cũ về sức khỏe không còn dùng.',
   'seedchunkold',
-  '{"source_id":"src_demo_old","title":"Bài cũ đã bị thay thế","issuer":"Sống An 40+ Biên tập giáo dục","status":"superseded","review_status":"approved"}',
+  '{"source_id":"src_demo_old","title":"Bài cũ đã bị thay thế","issuer":"VivaAge Biên tập giáo dục","status":"superseded","review_status":"approved"}',
   'indexed',
   datetime('now')
 );
@@ -1024,7 +1024,7 @@ INSERT OR IGNORE INTO source_documents (
   'kham-suc-khoe-tuoi-40-giao-duc',
   'Khám sức khỏe định kỳ từ tuổi 40 (giáo dục)',
   'Gợi ý giáo dục về việc trao đổi với nhân viên y tế các hạng mục theo dõi thường gặp.',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   'VN',
   'education',
   'vi',
@@ -1073,7 +1073,7 @@ INSERT OR IGNORE INTO source_chunks (
   'chunk-0',
   'Từ tuổi 40, nên chủ động khám định kỳ và trao đổi với nhân viên y tế về huyết áp, đường huyết, cholesterol, cân nặng và lối sống. Mang theo danh sách thuốc; ghi triệu chứng; hỏi lịch tái khám. Đây là thông tin giáo dục, không chỉ định xét nghiệm.',
   'seedchunk_checkup',
-  '{"source_id":"src_demo_checkup","title":"Khám sức khỏe định kỳ từ tuổi 40 (giáo dục)","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-04-01","category":"kham-phong-benh"}',
+  '{"source_id":"src_demo_checkup","title":"Khám sức khỏe định kỳ từ tuổi 40 (giáo dục)","issuer":"VivaAge Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-04-01","category":"kham-phong-benh"}',
   'indexed',
   datetime('now')
 );
@@ -1088,7 +1088,7 @@ INSERT OR IGNORE INTO source_documents (
   'giay-to-tuoi-gia-giao-duc',
   'Chuẩn bị giấy tờ quan trọng cho tuổi già (giáo dục)',
   'Gợi ý giáo dục về việc sắp xếp giấy tờ cá nhân và cho người thân tin cậy biết vị trí lưu.',
-  'Sống An 40+ Biên tập giáo dục',
+  'VivaAge Biên tập giáo dục',
   'VN',
   'education',
   'vi',
@@ -1137,7 +1137,7 @@ INSERT OR IGNORE INTO source_chunks (
   'chunk-0',
   'Chuẩn bị giấy tờ cho tuổi già: giấy tùy thân, bảo hiểm, giấy tờ nhà đất và liên hệ khẩn cấp. Gom bản gốc và bản sao; cho người thân tin cậy biết vị trí lưu; rà soát khi có thay đổi. Không phải tư vấn pháp lý.',
   'seedchunk_docs',
-  '{"source_id":"src_demo_docs","title":"Chuẩn bị giấy tờ quan trọng cho tuổi già (giáo dục)","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-04-01","category":"nha-o-giay-to"}',
+  '{"source_id":"src_demo_docs","title":"Chuẩn bị giấy tờ quan trọng cho tuổi già (giáo dục)","issuer":"VivaAge Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-04-01","category":"nha-o-giay-to"}',
   'indexed',
   datetime('now')
 );

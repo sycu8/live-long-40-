@@ -42,13 +42,13 @@ Hãy nghĩ tuổi già như một ngôi nhà bạn sẽ sống lâu dài. Bạn 
 
 Mỗi việc nhỏ là một viên gạch. Viên gạch hôm nay vẫn tính.
 
-## Lời nhắn từ Sống An
+## Lời nhắn từ VivaAge
 
 Bạn không cần trở thành phiên bản hoàn hảo lúc 40. Bạn chỉ cần **không đứng yên trong lo âu**. Bắt đầu bằng bài đánh giá ngắn, hoặc đọc một bài học, hoặc hỏi một câu. Bước nhỏ vẫn là bước đi.',
   'published',
   '2026-07-01',
   '2026-07-01T02:00:00.000Z',
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-07-01T01:00:00.000Z',
   '2026-07-01T01:00:00.000Z'
 );
@@ -87,11 +87,11 @@ Hãy chọn một việc cho 48 giờ tới. Viết ra. Làm xong thì đánh d�
 
 ## Kết
 
-Kế hoạch 30 ngày của Sống An cố ý không nhồi nhét. Hai việc chính và một việc tùy chọn mỗi tuần là để bạn **thắng cuộc chơi dài**, không phải cháy hết trong tuần đầu.',
+Kế hoạch 30 ngày của VivaAge cố ý không nhồi nhét. Hai việc chính và một việc tùy chọn mỗi tuần là để bạn **thắng cuộc chơi dài**, không phải cháy hết trong tuần đầu.',
   'published',
   '2026-07-02',
   '2026-07-02T02:00:00.000Z',
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-07-02T01:00:00.000Z',
   '2026-07-02T01:00:00.000Z'
 );
@@ -140,7 +140,7 @@ Bạn không cần “yêu” mọi thay đổi. Bạn chỉ cần **không đ�
   'published',
   '2026-07-03',
   '2026-07-03T02:00:00.000Z',
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-07-03T01:00:00.000Z',
   '2026-07-03T01:00:00.000Z'
 );
@@ -186,7 +186,7 @@ Bạn xứng đáng được khỏe. Chăm sóc tốt nhất thường đến t�
   'published',
   '2026-07-04',
   '2026-07-04T02:00:00.000Z',
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-07-04T01:00:00.000Z',
   '2026-07-04T01:00:00.000Z'
 );
@@ -229,11 +229,11 @@ Xong ba việc này, bạn đã hơn “mình chẳng biết gì” rất nhiề
 
 ## Lời nhắn
 
-Sống An không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng lo liệu tiền bạc quan trọng nhất ở tuổi ngoài 40.',
+VivaAge không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng lo liệu tiền bạc quan trọng nhất ở tuổi ngoài 40.',
   'published',
   '2026-07-05',
   '2026-07-05T02:00:00.000Z',
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-07-05T01:00:00.000Z',
   '2026-07-05T01:00:00.000Z'
 );
@@ -274,7 +274,7 @@ Bạn không cần phạt bản thân. Bạn cần đồng hành với cơ thể
   'published',
   '2026-07-06',
   '2026-07-06T02:00:00.000Z',
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-07-06T01:00:00.000Z',
   '2026-07-06T01:00:00.000Z'
 );
@@ -311,7 +311,7 @@ Chuẩn bị tuổi già không chỉ là tiền và thuốc. Đó còn là **c�
   'published',
   '2026-07-07',
   '2026-07-07T02:00:00.000Z',
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-07-07T01:00:00.000Z',
   '2026-07-07T01:00:00.000Z'
 );
@@ -348,7 +348,7 @@ Ngủ tốt không giải quyết hết mọi việc. Nhưng nó làm mọi vi�
   'published',
   '2026-07-08',
   '2026-07-08T02:00:00.000Z',
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-07-08T01:00:00.000Z',
   '2026-07-08T01:00:00.000Z'
 );
@@ -389,7 +389,7 @@ Người khôn ngoan không phải người không cần ai. Là người **bi�
   'scheduled',
   '2026-08-05',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-05T01:00:00.000Z',
   '2026-08-05T01:00:00.000Z'
 );
@@ -421,13 +421,13 @@ Hoặc đánh dấu vào sổ. Đơn giản, nhưng hiệu quả.
 
 Bạn không cần giảm 5kg mới được vui. Bạn được vui vì **đã giữ lời với chính mình**.
 
-## Liên hệ Sống An
+## Liên hệ VivaAge
 
 Trong kế hoạch, mỗi việc hoàn thành là một tín hiệu: bạn đang điều hướng đời sống thay vì bị đời sống cuốn. Hãy để những tín hiệu đó tích lại thành sự tự tin.',
   'scheduled',
   '2026-08-06',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-06T01:00:00.000Z',
   '2026-08-06T01:00:00.000Z'
 );
@@ -463,7 +463,7 @@ Mỗi chỉnh sửa nhỏ là một món quà cho tương lai: bạn giảm kh�
   'scheduled',
   '2026-08-07',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-07T01:00:00.000Z',
   '2026-08-07T01:00:00.000Z'
 );
@@ -498,7 +498,7 @@ Hy vọng không phải ngồi chờ cảm xúc đẹp. Hy vọng là:
 
 Bỏ dở không xóa giá trị những gì đã làm. Quay lại kế hoạch. Đọc lại một bài. Hỏi một câu mới. **Mỗi lần quay lại là một lần chọn sống có hướng.**
 
-## Lời kết từ Sống An
+## Lời kết từ VivaAge
 
 Chúng tôi không hứa bạn sẽ không gặp khó khăn. Chúng tôi muốn bạn **không phải đối mặt một mình trong bóng tối thông tin**.
 
@@ -508,7 +508,7 @@ Hẹn bạn ở bài viết tiếp theo — đều đặn mỗi ngày, như mộ
   'scheduled',
   '2026-08-08',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-08T01:00:00.000Z',
   '2026-08-08T01:00:00.000Z'
 );
@@ -543,11 +543,11 @@ Khóc được. Giận được. Nhưng sau đó hãy chọn **một hành độ
 
 ## Kết
 
-Ổn định không phải là không sóng. Là biết bám vào đâu khi sóng tới — và Sống An muốn là một trong những chỗ bám thông tin dịu dàng đó.',
+Ổn định không phải là không sóng. Là biết bám vào đâu khi sóng tới — và VivaAge muốn là một trong những chỗ bám thông tin dịu dàng đó.',
   'scheduled',
   '2026-08-09',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-09T01:00:00.000Z',
   '2026-08-09T01:00:00.000Z'
 );
@@ -587,7 +587,7 @@ Mỗi bước chân là lời khẳng định: mình vẫn đầu tư cho thập
   'scheduled',
   '2026-08-10',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-10T01:00:00.000Z',
   '2026-08-10T01:00:00.000Z'
 );
@@ -626,7 +626,7 @@ Cuộc nói chuyện sớm là món quà. Nó biến tình yêu thành kế ho�
   'scheduled',
   '2026-08-11',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-11T01:00:00.000Z',
   '2026-08-11T01:00:00.000Z'
 );
@@ -656,11 +656,11 @@ Cả hai đều làm bạn mắc kẹt.
 
 ## Kết
 
-Sống An không dạy bạn giả vờ vui. Chúng tôi muốn bạn **vừa dịu dàng với hiện tại, vừa quyền năng với tương lai**. Đó mới là động lực bền.',
+VivaAge không dạy bạn giả vờ vui. Chúng tôi muốn bạn **vừa dịu dàng với hiện tại, vừa quyền năng với tương lai**. Đó mới là động lực bền.',
   'scheduled',
   '2026-08-12',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-12T01:00:00.000Z',
   '2026-08-12T01:00:00.000Z'
 );
@@ -699,7 +699,7 @@ Ngày xấu không xóa giá trị bạn. Protocol nhỏ giúp bạn nhớ: mìn
   'scheduled',
   '2026-08-13',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-13T01:00:00.000Z',
   '2026-08-13T01:00:00.000Z'
 );
@@ -735,11 +735,11 @@ Sổ của bạn là của bạn. Mục tiêu là thấy rõ, không phải th�
 
 ## Kết
 
-Một trang sổ sách là bước đầu của sự bình tĩnh. Sống An không tư vấn đầu tư — chỉ muốn bạn **bớt sợ vì bớt mơ hồ**.',
+Một trang sổ sách là bước đầu của sự bình tĩnh. VivaAge không tư vấn đầu tư — chỉ muốn bạn **bớt sợ vì bớt mơ hồ**.',
   'scheduled',
   '2026-08-14',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-14T01:00:00.000Z',
   '2026-08-14T01:00:00.000Z'
 );
@@ -774,7 +774,7 @@ Khám định kỳ là cách bạn **chăm sóc tương lai**, không phải ch�
   'scheduled',
   '2026-08-15',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-15T01:00:00.000Z',
   '2026-08-15T01:00:00.000Z'
 );
@@ -805,7 +805,7 @@ Bạn được phép quý trọng sức mình. Đó cũng là cách chuẩn bị
   'scheduled',
   '2026-08-16',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-16T01:00:00.000Z',
   '2026-08-16T01:00:00.000Z'
 );
@@ -836,7 +836,7 @@ Mỗi vòng đi bộ là một viên gạch nhỏ cho sức khỏe dài hạn. �
   'scheduled',
   '2026-08-17',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-17T01:00:00.000Z',
   '2026-08-17T01:00:00.000Z'
 );
@@ -868,7 +868,7 @@ Mang theo danh sách. Đừng dựa vào trí nhớ lúc hồi hộp.
   'scheduled',
   '2026-08-18',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-18T01:00:00.000Z',
   '2026-08-18T01:00:00.000Z'
 );
@@ -899,7 +899,7 @@ Chuẩn bị tuổi già cũng là nuôi vài mối liên hệ ổn định. B�
   'scheduled',
   '2026-08-19',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-19T01:00:00.000Z',
   '2026-08-19T01:00:00.000Z'
 );
@@ -934,7 +934,7 @@ Bạn không đang “nghĩ chuyện xấu”. Bạn đang **giảm tải cho ng
   'scheduled',
   '2026-08-20',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-20T01:00:00.000Z',
   '2026-08-20T01:00:00.000Z'
 );
@@ -965,11 +965,11 @@ Não bộ cần bằng chứng tiến bộ. Một việc xong tạo đà cho tu�
 
 ## Kết
 
-Sống An cố ý thiết kế kế hoạch 30 ngày với ít việc. Không phải bạn chậm — là bạn đang đi **bền**.',
+VivaAge cố ý thiết kế kế hoạch 30 ngày với ít việc. Không phải bạn chậm — là bạn đang đi **bền**.',
   'scheduled',
   '2026-08-21',
   NULL,
-  'Biên tập Sống An',
+  'Biên tập VivaAge',
   '2026-08-21T01:00:00.000Z',
   '2026-08-21T01:00:00.000Z'
 );

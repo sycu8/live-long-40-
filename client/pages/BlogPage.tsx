@@ -78,7 +78,7 @@ export function BlogPage() {
             Góc động viên để khích lệ tinh thần, không thay lời bác sĩ hay người tư
             vấn tiền bạc. Câu hỏi về sức khỏe / tiền bạc / chăm sóc nằm ở{" "}
             <Link className="text-[var(--color-green)] underline" to="/hoi">
-              Hỏi Sống An
+              Hỏi VivaAge
             </Link>{" "}
             (có kèm nguồn tin cậy).
           </p>
@@ -110,7 +110,7 @@ export function BlogPage() {
         {!loading && !error && items.length === 0 ? (
           <EmptyState
             title="Chưa có bài mới"
-            description="Bài viết mới được lên lịch mỗi ngày. Bạn có thể đọc Thư viện hoặc hỏi Sống An trong lúc chờ."
+            description="Bài viết mới được lên lịch mỗi ngày. Bạn có thể đọc Thư viện hoặc hỏi VivaAge trong lúc chờ."
             action={
               <Link to="/thu-vien">
                 <Button variant="secondary">Xem Thư viện</Button>
@@ -207,14 +207,14 @@ export function BlogDetailPage() {
           <div className="border-t border-[var(--color-sand)]/40 pt-6">
             <p className="text-sm text-[var(--color-ink-muted)]">
               Nếu bài viết này chạm đến bạn, hãy làm một việc nhỏ hôm nay — hoặc hỏi
-              Sống An một câu đang khiến bạn băn khoăn.
+              VivaAge một câu đang khiến bạn băn khoăn.
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Link to="/danh-gia">
                 <Button>Kiểm tra mức độ chuẩn bị</Button>
               </Link>
               <Link to="/hoi">
-                <Button variant="secondary">Hỏi Sống An</Button>
+                <Button variant="secondary">Hỏi VivaAge</Button>
               </Link>
             </div>
           </div>

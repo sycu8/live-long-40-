@@ -1,9 +1,9 @@
-# Nguồn chính thống trong Sống An 40+
+# Nguồn chính thống trong VivaAge
 
 ## Nguyên tắc
 - Câu trả lời chat **bắt buộc** kèm nguồn chính thống (cơ quan VN hoặc hướng dẫn quốc tế uy tín như WHO) với đường dẫn gốc.
 - Thư viện bài học nên gắn `source_document_id` tới `source_documents` đã duyệt.
-- Góc động viên mang tính khích lệ — không thay tư vấn chuyên môn; câu hỏi chuyên môn dùng **Hỏi Sống An**.
+- Góc động viên mang tính khích lệ — không thay tư vấn chuyên môn; câu hỏi chuyên môn dùng **Hỏi VivaAge**.
 
 ## Trust tier (`source_documents.trust_tier`)
 | Tier | Nghĩa | Dùng làm bằng chứng chat? |
