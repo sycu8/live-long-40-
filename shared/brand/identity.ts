@@ -25,6 +25,10 @@ export const BRAND = {
   themeColor: "#1f5c45",
   backgroundColor: "#f7f4ef",
   siteUrl: "https://song-an-40.sycu-lee.workers.dev",
+  /** Open Graph / social share image (1200×630). */
+  ogImagePath: "/og-image.jpg",
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
   askLabel: "Hỏi VivaAge",
   editorialIssuer: "VivaAge Biên tập giáo dục",
   blogAuthor: "Biên tập VivaAge",
