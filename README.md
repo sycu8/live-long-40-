@@ -1,6 +1,12 @@
 # VivaAge
 
-Progressive Web App giúp người Việt từ tuổi **40+** chuẩn bị cho tuổi già qua đánh giá mức độ chuẩn bị, kế hoạch 30 ngày, thư viện giáo dục và chatbot trả lời có nguồn.
+**Chuẩn bị hôm nay, tự chủ về sau.**
+
+Progressive Web App giúp người Việt từ tuổi **40+** chủ động chuẩn bị sức khỏe, tài chính và kỹ năng chăm sóc — qua đánh giá mức độ sẵn sàng, kế hoạch 30 ngày, thư viện giáo dục và chatbot trả lời có nguồn.
+
+- **Live:** https://song-an-40.sycu-lee.workers.dev
+- **Tên:** “Viva” gợi sức sống; “Age” gắn healthy aging.
+- **Repo:** https://github.com/sycu8/live-long-40-
 
 > Công cụ giáo dục và lập kế hoạch — **không** phải ứng dụng Nhà nước, không thay thế bác sĩ, tư vấn tiền bạc hay tư vấn pháp lý.
 
