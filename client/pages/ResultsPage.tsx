@@ -5,6 +5,7 @@ import { Button } from "../components/Button";
 import { ScoreMeter } from "../components/ui";
 import { api } from "../lib/api";
 import { PILLAR_LABELS, SCORE_DISCLAIMER } from "@shared/constants/product";
+import { questionTopicLabel } from "@shared/rules/scoring";
 
 type Result = {
   publicId: string;
@@ -133,7 +134,7 @@ export function ResultsPage() {
           <ul className="mt-3 space-y-1">
             {result.explainability.breakdown.map((b) => (
               <li key={b.questionKey}>
-                {b.questionKey}:{" "}
+                {questionTopicLabel(b.questionKey)}:{" "}
                 {b.answered ? `điểm ${b.rawScore}` : "chưa trả lời"}
               </li>
             ))}

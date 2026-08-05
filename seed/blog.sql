@@ -69,7 +69,7 @@ Không phải bạn yếu. Là kế hoạch **không khớp với năng lượng
 
 ## Nguyên tắc “vừa đủ khó”
 
-Một việc tốt cho tuổi trung niên thường có ba đặc điểm:
+Một việc tốt cho tuổi ngoài 40 thường có ba đặc điểm:
 
 - Làm được trong **15–30 phút**
 - Không cần dụng cụ đắt tiền
@@ -195,11 +195,11 @@ INSERT OR IGNORE INTO blog_posts (
 ) VALUES (
   'blog_005',
   'tien-bac-binh-tinh',
-  'Tiền bạc bình tĩnh: chuẩn bị tài chính tuổi già mà không tự làm mình hoảng',
+  'Tiền bạc bình tĩnh: lo liệu tiền bạc cho tuổi già mà không tự làm mình hoảng',
   'Lo về tiền là hợp lý. Hoảng về tiền thì làm bạn đóng băng. Bài này giúp bạn có khung tư duy bình tĩnh và các bước vừa sức.',
   'tai-chinh',
   7,
-  '## Lo ≠ Hoảng
+  '## Lo khác với Hoảng
 
 Lo giúp bạn hành động. Hoảng khiến bạn tránh né sổ sách, tránh né cuộc nói chuyện, rồi càng lo hơn.
 
@@ -227,7 +227,7 @@ Xong ba việc này, bạn đã hơn “mình chẳng biết gì” rất nhiề
 
 ## Lời nhắn
 
-Sống An không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng tài chính quan trọng nhất ở tuổi trung niên.',
+Sống An không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng lo liệu tiền bạc quan trọng nhất ở tuổi ngoài 40.',
   'published',
   '2026-07-09',
   '2026-07-09T02:00:00.000Z',
@@ -252,7 +252,7 @@ Cơ thể tuổi 40+ thường nói nhỏ hơn lúc 20, nhưng nói thật hơn.
 
 Đó là **dữ liệu**, không phải bằng chứng bạn “hỏng”.
 
-## Chăm sóc khôn ngoan hơn là “cố bằng ngày xưa”
+## Chăm sóc khôn ngoan hơn là không “cố bằng ngày xưa”
 
 Ngày xưa có thể thức khuya rồi vẫn đi làm. Bây giờ, một đêm thiếu ngủ có thể ảnh hưởng cả tuần. Vì vậy:
 
@@ -283,8 +283,8 @@ INSERT OR IGNORE INTO blog_posts (
 ) VALUES (
   'blog_007',
   'co-don-va-ket-noi',
-  'Khi cảm thấy cô đơn giữa đám đông: nuôi các mối nối nhỏ nhưng thật',
-  'Cô đơn ở tuổi trung niên thường kín đáo. Bài viết gợi ý cách xây kết nối vừa sức — không cần trở thành người hướng ngoại.',
+  'Khi cảm thấy cô đơn giữa đám đông: nuôi vài mối liên hệ nhỏ nhưng thật',
+  'Cô đơn ở tuổi ngoài 40 thường kín đáo. Bài viết gợi ý cách xây kết nối vừa sức — không cần trở thành người hướng ngoại.',
   'tinh-than',
   6,
   '## Cô đơn không luôn ồn ào
@@ -297,7 +297,7 @@ Bạn có thể có gia đình, đồng nghiệp, nhóm chat… mà vẫn thấy
 2. **Một cuộc đi bộ chung** 20 phút
 3. **Một thói quen cộng đồng nhẹ**: lớp học, nhóm tình nguyện, hoặc chỉ là hàng xóm chào hỏi
 
-Không cần mạng lưới lớn. Cần vài mối nối **ổn định**.
+Không cần mạng lưới lớn. Cần vài mối liên hệ **ổn định**.
 
 ## Nói ra một phần
 
@@ -517,13 +517,13 @@ INSERT OR IGNORE INTO blog_posts (
 ) VALUES (
   'blog_013',
   'on-dinh-cam-xuc-tuoi-trung-nien',
-  'Ổn định cảm xúc tuổi trung niên: khi mọi thứ đổi mà bạn vẫn muốn đứng vững',
+  'Ổn định cảm xúc tuổi ngoài 40: khi mọi thứ đổi mà bạn vẫn muốn đứng vững',
   'Công việc, gia đình, sức khỏe cùng lúc thay đổi. Học cách giữ nhịp cảm xúc mà không phủ nhận khó khăn.',
   'tinh-than',
   7,
   '## Sóng chồng sóng
 
-Tuổi trung niên ít khi chỉ có một việc. Thường là nhiều việc cùng lúc. Cảm xúc vì thế cũng chồng lớp: lo, mệt, đôi khi trống rỗng.
+Tuổi ngoài 40 ít khi chỉ có một việc. Thường là nhiều việc cùng lúc. Cảm xúc vì thế cũng chồng lớp: lo, mệt, đôi khi trống rỗng.
 
 Bạn không “yếu”. Bạn đang chịu tải.
 

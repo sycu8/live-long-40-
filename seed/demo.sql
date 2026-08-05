@@ -9,7 +9,7 @@ INSERT OR IGNORE INTO library_lessons (
   'lesson_bp_001',
   'theo-doi-huyet-ap',
   'Theo dõi huyết áp tại nhà',
-  'Cách ghi nhận huyết áp đơn giản để mang theo khi gặp nhân viên y tế.',
+  'Cách ghi nhận huyết áp đơn giản để mang theo khi gặp bác sĩ.',
   'kham-phong-benh',
   'health',
   'Sống An 40+ Biên tập giáo dục',
@@ -34,7 +34,7 @@ Nếu huyết áp cao kéo dài hoặc có triệu chứng nặng (đau ngực d
 (
   'lesson_walk_001',
   'van-dong-trung-nien',
-  'Vận động nhẹ ở tuổi trung niên',
+  'Vận động nhẹ ở tuổi ngoài 40',
   'Gợi ý đi bộ đều đặn với cường độ phù hợp.',
   'suc-khoe-trung-nien',
   'health',
@@ -43,11 +43,11 @@ Nếu huyết áp cao kéo dài hoặc có triệu chứng nặng (đau ngực d
   '2026-07-01',
   'active',
   3,
-  '# Vận động nhẹ ở tuổi trung niên
+  '# Vận động nhẹ ở tuổi ngoài 40
 
 Bắt đầu với mức bạn chịu được. Đi bộ 20 phút, 3 ngày mỗi tuần là một mục tiêu thực tế.
 
-Nếu đang có bệnh nền, hãy hỏi ý kiến nhân viên y tế trước khi tăng cường độ.',
+Nếu đang có bệnh nền, hãy hỏi ý kiến bác sĩ trước khi tăng cường độ.',
   datetime('now'),
   datetime('now')
 ),
@@ -65,15 +65,15 @@ Nếu đang có bệnh nền, hãy hỏi ý kiến nhân viên y tế trước k
   3,
   '# Vì sao nên khám định kỳ
 
-Khám định kỳ không thay thế việc đến cơ sở y tế khi có triệu chứng bất thường. Mục tiêu là theo dõi các chỉ số cơ bản và trao đổi với nhân viên y tế.',
+Khám định kỳ không thay thế việc đến cơ sở y tế khi có triệu chứng bất thường. Mục tiêu là theo dõi các chỉ số cơ bản và trao đổi với bác sĩ.',
   datetime('now'),
   datetime('now')
 ),
 (
   'lesson_fund_001',
   'quy-du-phong',
-  'Quỹ dự phòng cơ bản',
-  'Cách nghĩ về quỹ dự phòng theo tháng chi phí thiết yếu.',
+  'Tiền để dành khi đột xuất (quỹ dự phòng)',
+  'Cách nghĩ về quỹ dự phòng theo tháng chi tiêu cần thiết.',
   'chuan-bi-tai-chinh',
   'finance',
   'Sống An 40+ Biên tập giáo dục',
@@ -81,11 +81,11 @@ Khám định kỳ không thay thế việc đến cơ sở y tế khi có tri�
   '2026-07-01',
   'active',
   4,
-  '# Quỹ dự phòng cơ bản
+  '# Tiền để dành khi đột xuất (quỹ dự phòng)
 
 Đây là thông tin giáo dục, không phải tư vấn đầu tư.
 
-1. Ước lượng chi phí thiết yếu mỗi tháng.
+1. Ước lượng chi tiêu cần thiết mỗi tháng.
 2. Đặt mục tiêu nhỏ, đều đặn.
 3. Tách khoản dự phòng nếu có thể.
 
@@ -358,7 +358,7 @@ INSERT OR IGNORE INTO source_versions (
 Quỹ dự phòng giúp chi trả các việc đột xuất mà không phải vay nóng.
 
 ## Cách bắt đầu
-Ước lượng chi phí thiết yếu mỗi tháng, rồi đặt mục tiêu nhỏ và đều đặn. Đây không phải tư vấn đầu tư hay sản phẩm tài chính.',
+Ước lượng chi tiêu cần thiết mỗi tháng, rồi đặt mục tiêu nhỏ và đều đặn. Đây không phải tư vấn đầu tư hay sản phẩm tiền gửi hay bảo hiểm.',
   datetime('now'),
   'seed'
 );
@@ -372,7 +372,7 @@ INSERT OR IGNORE INTO source_chunks (
   0,
   'Quỹ dự phòng',
   'chunk-0',
-  'Quỹ dự phòng giúp chi trả các việc đột xuất. Ước lượng chi phí thiết yếu mỗi tháng, rồi đặt mục tiêu nhỏ và đều đặn. Đây không phải tư vấn đầu tư.',
+  'Quỹ dự phòng giúp chi trả các việc đột xuất. Ước lượng chi tiêu cần thiết mỗi tháng, rồi đặt mục tiêu nhỏ và đều đặn. Đây không phải tư vấn đầu tư.',
   'seedchunk3',
   '{"source_id":"src_demo_fund","title":"Giáo dục về quỹ dự phòng","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-02-10","category":"chuan-bi-tai-chinh"}',
   'indexed',
@@ -427,7 +427,7 @@ INSERT OR IGNORE INTO source_documents (
   'psrc_demo_checkup',
   'kham-suc-khoe-tuoi-40-giao-duc',
   'Khám sức khỏe định kỳ từ tuổi 40 (giáo dục)',
-  'Gợi ý giáo dục về việc trao đổi với nhân viên y tế các hạng mục theo dõi thường gặp.',
+  'Gợi ý giáo dục về việc trao đổi với bác sĩ các hạng mục theo dõi thường gặp.',
   'Sống An 40+ Biên tập giáo dục',
   'VN',
   'education',
@@ -454,14 +454,14 @@ INSERT OR IGNORE INTO source_versions (
   'seedhash_checkup',
   '# Khám sức khỏe từ tuổi 40
 
-Từ tuổi 40, nhiều người được khuyên chủ động khám định kỳ và trao đổi với nhân viên y tế về huyết áp, đường huyết, cholesterol, cân nặng và lối sống.
+Từ tuổi 40, nhiều người được khuyên chủ động khám định kỳ và trao đổi với bác sĩ về huyết áp, đường huyết, mỡ máu (cholesterol), cân nặng và lối sống.
 
 ## Việc có thể chuẩn bị
 - Mang theo danh sách thuốc đang dùng.
 - Ghi triệu chứng hoặc thay đổi gần đây.
 - Hỏi rõ lịch tái khám và dấu hiệu cần đi khám sớm.
 
-Ứng dụng này không chỉ định xét nghiệm và không chẩn đoán.',
+Ứng dụng này không phải danh sách xét nghiệm bắt buộc và không chẩn đoán.',
   datetime('now'),
   'seed'
 );
@@ -475,7 +475,7 @@ INSERT OR IGNORE INTO source_chunks (
   0,
   'Khám sức khỏe từ tuổi 40',
   'chunk-0',
-  'Từ tuổi 40, nên chủ động khám định kỳ và trao đổi với nhân viên y tế về huyết áp, đường huyết, cholesterol, cân nặng và lối sống. Mang theo danh sách thuốc; ghi triệu chứng; hỏi lịch tái khám. Đây là thông tin giáo dục, không chỉ định xét nghiệm.',
+  'Từ tuổi 40, nên chủ động khám định kỳ và trao đổi với bác sĩ về huyết áp, đường huyết, mỡ máu (cholesterol), cân nặng và lối sống. Mang theo danh sách thuốc; ghi triệu chứng; hỏi lịch tái khám. Đây là thông tin giáo dục, không phải danh sách xét nghiệm bắt buộc.',
   'seedchunk_checkup',
   '{"source_id":"src_demo_checkup","title":"Khám sức khỏe định kỳ từ tuổi 40 (giáo dục)","issuer":"Sống An 40+ Biên tập giáo dục","status":"active","review_status":"approved","publication_date":"2026-04-01","category":"kham-phong-benh"}',
   'indexed',
@@ -552,7 +552,7 @@ INSERT OR IGNORE INTO source_chunks (
 -- =============================================================================
 
 UPDATE source_documents SET
-  title = 'WHO Fact sheet: Falls (Ngã)',
+  title = 'Ngã ở người cao tuổi — Tổ chức Y tế Thế giới',
   summary = 'Hướng dẫn quốc tế về dự phòng và xử trí ngã, đặc biệt ở người cao tuổi.',
   issuer = 'Tổ chức Y tế Thế giới (WHO)',
   jurisdiction = 'INTL',
@@ -565,13 +565,13 @@ UPDATE source_documents SET
 WHERE id = 'src_demo_fall';
 
 UPDATE source_chunks SET
-  content = 'WHO: ngã là nguyên nhân chấn thương hàng đầu ở người cao tuổi. Dự phòng gồm môi trường an toàn, ánh sáng đủ, hỗ trợ đi lại. Khi ngã có chấn thương hoặc không đứng dậy được cần hỗ trợ y tế kịp thời. Nguồn: https://www.who.int/news-room/fact-sheets/detail/falls',
-  metadata_json = '{"source_id":"src_demo_fall","title":"WHO Fact sheet: Falls (Ngã)","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2021-04-26","category":"cham-soc-cha-me","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/falls"}'
+  content = 'Tổ chức Y tế Thế giới cho biết ngã là nguyên nhân chấn thương hàng đầu ở người cao tuổi. Dự phòng gồm môi trường an toàn, ánh sáng đủ, hỗ trợ đi lại. Khi ngã có chấn thương hoặc không đứng dậy được cần hỗ trợ y tế kịp thời. Nguồn: https://www.who.int/news-room/fact-sheets/detail/falls',
+  metadata_json = '{"source_id":"src_demo_fall","title":"Ngã ở người cao tuổi — Tổ chức Y tế Thế giới","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2021-04-26","category":"cham-soc-cha-me","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/falls"}'
 WHERE source_id = 'src_demo_fall';
 
 UPDATE source_documents SET
   title = 'Cổng thông tin Ngân hàng Nhà nước Việt Nam',
-  summary = 'Thông tin chính thống về hệ thống ngân hàng; tham chiếu cho giáo dục tài chính và thói quen dự phòng.',
+  summary = 'Thông tin chính thống về hệ thống ngân hàng; tham chiếu cho giáo dục về lo liệu tiền bạc và thói quen để dành.',
   issuer = 'Ngân hàng Nhà nước Việt Nam',
   document_type = 'education',
   original_url = 'https://www.sbv.gov.vn/',
@@ -582,13 +582,13 @@ UPDATE source_documents SET
 WHERE id = 'src_demo_fund';
 
 UPDATE source_chunks SET
-  content = 'NHNN công bố thông tin chính sách ngân hàng chính thống. Giáo dục tài chính cá nhân (tiết kiệm, quỹ dự phòng cho chi đột xuất) nên dựa trên nguồn chính thống và không đồng nghĩa tư vấn đầu tư cá nhân hóa. Nguồn: https://www.sbv.gov.vn/',
+  content = 'Ngân hàng Nhà nước công bố thông tin chính sách ngân hàng chính thống. Giáo dục về lo liệu tiền bạc (tiết kiệm, quỹ dự phòng cho chi đột xuất) nên dựa trên nguồn chính thống và không đồng nghĩa tư vấn đầu tư cá nhân hóa. Nguồn: https://www.sbv.gov.vn/',
   metadata_json = '{"source_id":"src_demo_fund","title":"Cổng thông tin Ngân hàng Nhà nước Việt Nam","issuer":"Ngân hàng Nhà nước Việt Nam","status":"active","review_status":"approved","publication_date":"2024-01-01","category":"chuan-bi-tai-chinh","trust_tier":"official_vn","original_url":"https://www.sbv.gov.vn/"}'
 WHERE source_id = 'src_demo_fund';
 
 UPDATE source_documents SET
-  title = 'WHO Fact sheet: Ageing and health',
-  summary = 'Hướng dẫn quốc tế về già hóa khỏe mạnh và tiếp cận dịch vụ y tế từ trung niên.',
+  title = 'Già hóa và sức khỏe — Tổ chức Y tế Thế giới',
+  summary = 'Hướng dẫn quốc tế về già hóa khỏe mạnh và tiếp cận dịch vụ y tế từ tuổi ngoài 40.',
   issuer = 'Tổ chức Y tế Thế giới (WHO)',
   jurisdiction = 'INTL',
   document_type = 'guideline',
@@ -600,8 +600,8 @@ UPDATE source_documents SET
 WHERE id = 'src_demo_checkup';
 
 UPDATE source_chunks SET
-  content = 'WHO nhấn mạnh già hóa khỏe mạnh gắn với dự phòng bệnh mạn tính, hoạt động thể lực phù hợp và tiếp cận dịch vụ y tế. Chuẩn bị sớm từ trung niên giúp duy trì chức năng và tự chủ. Nguồn: https://www.who.int/news-room/fact-sheets/detail/ageing-and-health',
-  metadata_json = '{"source_id":"src_demo_checkup","title":"WHO Fact sheet: Ageing and health","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2024-10-01","category":"kham-phong-benh","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/ageing-and-health"}'
+  content = 'Tổ chức Y tế Thế giới nhấn mạnh già hóa khỏe mạnh gắn với phòng bệnh lâu ngày, vận động vừa sức và tiếp cận dịch vụ y tế. Chuẩn bị sớm từ tuổi ngoài 40 giúp duy trì chức năng và tự chủ. Nguồn: https://www.who.int/news-room/fact-sheets/detail/ageing-and-health',
+  metadata_json = '{"source_id":"src_demo_checkup","title":"Già hóa và sức khỏe — Tổ chức Y tế Thế giới","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2024-10-01","category":"kham-phong-benh","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/ageing-and-health"}'
 WHERE source_id = 'src_demo_checkup';
 
 UPDATE source_documents SET
@@ -617,7 +617,7 @@ UPDATE source_documents SET
 WHERE id = 'src_demo_docs';
 
 UPDATE source_chunks SET
-  content = 'BHXH Việt Nam công bố thông tin chính thức về bảo hiểm y tế, bảo hiểm xã hội và thủ tục liên quan. Nên kiểm tra quyền lợi và hồ sơ trên kênh chính thống khi chuẩn bị giấy tờ tuổi già. Nguồn: https://baohiemxahoi.gov.vn/',
+  content = 'Bảo hiểm xã hội Việt Nam công bố thông tin chính thức về bảo hiểm y tế, bảo hiểm xã hội và thủ tục liên quan. Nên kiểm tra quyền lợi và hồ sơ trên kênh chính thống khi chuẩn bị giấy tờ tuổi già. Nguồn: https://baohiemxahoi.gov.vn/',
   metadata_json = '{"source_id":"src_demo_docs","title":"Cổng thông tin Bảo hiểm xã hội Việt Nam","issuer":"Bảo hiểm xã hội Việt Nam","status":"active","review_status":"approved","publication_date":"2024-01-01","category":"nha-o-giay-to","trust_tier":"official_vn","original_url":"https://baohiemxahoi.gov.vn/"}'
 WHERE source_id = 'src_demo_docs';
 
@@ -654,7 +654,7 @@ INSERT OR IGNORE INTO source_documents (
   'src_official_who_bp',
   'psrc_official_who_bp',
   'who-hypertension-fact-sheet',
-  'WHO Fact sheet: Hypertension (Tăng huyết áp)',
+  'Tăng huyết áp — Tổ chức Y tế Thế giới',
   'Hướng dẫn quốc tế về tăng huyết áp và theo dõi huyết áp.',
   'Tổ chức Y tế Thế giới (WHO)',
   'INTL',
@@ -689,9 +689,9 @@ Người dân nên dùng thông tin chính thống khi chuẩn bị khám chữa
   'sver_official_who_bp', 'src_official_who_bp', 1, 'seedhash_who_bp',
   '# WHO Hypertension
 
-WHO nêu tăng huyết áp là yếu tố nguy cơ tim mạch quan trọng. Đo huyết áp, lối sống lành mạnh và điều trị theo chỉ định chuyên môn giúp kiểm soát.
+Tổ chức Y tế Thế giới nêu tăng huyết áp là nguy cơ bệnh tim mạch quan trọng. Đo huyết áp, lối sống lành mạnh và điều trị theo lời bác sĩ giúp kiểm soát.
 
-Không tự ý thay đổi thuốc khi chưa được nhân viên y tế hướng dẫn.
+Không tự ý thay đổi thuốc khi chưa được bác sĩ hướng dẫn.
 https://www.who.int/news-room/fact-sheets/detail/hypertension',
   datetime('now'), 'seed'
 );
@@ -708,9 +708,9 @@ INSERT OR IGNORE INTO source_chunks (
 ),
 (
   'chk_official_who_bp_1', 'src_official_who_bp', 'sver_official_who_bp', 0, 'WHO Hypertension', 'chunk-0',
-  'WHO: tăng huyết áp là yếu tố nguy cơ tim mạch quan trọng; đo và theo dõi huyết áp; không tự ý thay đổi thuốc. https://www.who.int/news-room/fact-sheets/detail/hypertension',
+  'WHO: tăng huyết áp là nguy cơ bệnh tim mạch quan trọng; đo và theo dõi huyết áp; không tự ý thay đổi thuốc. https://www.who.int/news-room/fact-sheets/detail/hypertension',
   'seedchunk_who_bp',
-  '{"source_id":"src_official_who_bp","title":"WHO Fact sheet: Hypertension (Tăng huyết áp)","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2023-03-16","category":"kham-phong-benh","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/hypertension"}',
+  '{"source_id":"src_official_who_bp","title":"Tăng huyết áp — Tổ chức Y tế Thế giới","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2023-03-16","category":"kham-phong-benh","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/hypertension"}',
   'indexed', datetime('now')
 );
 

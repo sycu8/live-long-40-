@@ -56,7 +56,7 @@ export async function getOrSeedCurrentDefinition(db: D1Database) {
       id,
       version: "v1.0.0",
       title: "Đánh giá mức độ chuẩn bị Sống An 40+",
-      description: "Bài đánh giá ngắn về sức khỏe, tài chính và chăm sóc",
+      description: "Bài đánh giá ngắn về sức khỏe, tiền bạc và chăm sóc",
       scoring_ruleset_version: "v1.0.0",
     };
   }

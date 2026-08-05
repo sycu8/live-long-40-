@@ -9,7 +9,7 @@ const THEME_LABELS: Record<string, string> = {
   "tinh-than": "Tinh thần",
   "thoi-quen": "Thói quen",
   "cham-soc": "Chăm sóc",
-  "tai-chinh": "Tài chính bình tĩnh",
+  "tai-chinh": "Tiền bạc bình tĩnh",
   "suc-khoe": "Sức khỏe dịu dàng",
 };
 

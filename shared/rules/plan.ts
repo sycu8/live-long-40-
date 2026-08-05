@@ -59,9 +59,9 @@ export const ACTION_CATALOG: PlanActionTemplate[] = [
   },
   {
     actionKey: "estimate_expenses",
-    title: "Ước lượng chi phí thiết yếu khi về hưu",
+    title: "Ước lượng chi tiêu cần thiết khi về hưu",
     description: "Liệt kê ăn uống, nhà ở, thuốc men, đi lại theo tháng.",
-    reason: "Ước lượng chi phí là bước đầu để chuẩn bị tài chính.",
+    reason: "Ước lượng chi tiêu là bước đầu để lo liệu tiền bạc.",
     effortMinutes: 30,
     pillar: "finance",
     sourceRef: "lesson:chi-phi-ve-huu",
@@ -71,7 +71,7 @@ export const ACTION_CATALOG: PlanActionTemplate[] = [
   },
   {
     actionKey: "emergency_fund_start",
-    title: "Đặt mục tiêu quỹ dự phòng tháng này",
+    title: "Đặt mục tiêu tiền để dành (quỹ dự phòng) tháng này",
     description: "Chọn một số tiền nhỏ, thực tế và tách riêng nếu có thể.",
     reason: "Quỹ dự phòng giúp giảm áp lực khi có việc đột xuất.",
     effortMinutes: 25,
@@ -84,7 +84,7 @@ export const ACTION_CATALOG: PlanActionTemplate[] = [
   {
     actionKey: "organize_docs",
     title: "Sắp xếp một bộ giấy tờ quan trọng",
-    description: "Gom CCCD, sổ BHXH/BHYT và giấy tờ nhà vào một chỗ dễ tìm.",
+    description: "Gom căn cước, sổ bảo hiểm xã hội / thẻ bảo hiểm y tế và giấy tờ nhà vào một chỗ dễ tìm.",
     reason: "Giấy tờ ngăn nắp giúp gia đình hỗ trợ nhanh khi cần.",
     effortMinutes: 40,
     pillar: "finance",

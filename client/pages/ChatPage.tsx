@@ -248,8 +248,9 @@ export function ChatPage() {
           <div>
             <h1 className="font-display text-3xl lg:text-4xl">Hỏi Sống An</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
-              Câu trả lời dựa trên nguồn từ Bộ Y tế, Bảo hiểm xã hội, Ngân hàng Nhà
-              nước hoặc Tổ chức Y tế Thế giới. Bạn có thể gõ tiếng Việt không dấu.
+              Câu trả lời dựa trên nguồn từ Bộ Y tế, Bảo hiểm xã hội Việt Nam, Ngân
+              hàng Nhà nước Việt Nam hoặc Tổ chức Y tế Thế giới. Bạn có thể gõ tiếng
+              Việt không dấu.
             </p>
             <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
               {historyOptIn

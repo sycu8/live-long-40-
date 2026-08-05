@@ -12,9 +12,9 @@ import path from "node:path";
 const root = path.dirname(fileURLToPath(import.meta.url));
 
 const CATEGORIES = [
-  ["suc-khoe-trung-nien", "health", "Sức khỏe tuổi trung niên"],
+  ["suc-khoe-trung-nien", "health", "Sức khỏe tuổi ngoài 40"],
   ["kham-phong-benh", "health", "Khám và phòng bệnh"],
-  ["chuan-bi-tai-chinh", "finance", "Chuẩn bị tài chính"],
+  ["chuan-bi-tai-chinh", "finance", "Lo liệu tiền bạc"],
   ["cham-soc-cha-me", "caregiving", "Chăm sóc cha mẹ"],
   ["tri-nho-tinh-than", "health", "Trí nhớ và sức khỏe tinh thần"],
   ["nha-o-giay-to", "finance", "Nhà ở, gia đình và giấy tờ"],
@@ -134,7 +134,7 @@ for (const [catId, pillar, catLabel] of CATEGORIES) {
     const id = `lesson_scale_${catId}_${i + 1}`;
     const slug = `${slugify(topic)}-${catId}-${i + 1}`;
     const title = `${topic}: hướng dẫn giáo dục ngắn`;
-    const summary = `Bài học giáo dục về «${topic}» trong nhóm ${catLabel}. Không thay thế tư vấn chuyên môn.`;
+    const summary = `Bài học giáo dục về «${topic}» trong nhóm ${catLabel}. Không thay lời bác sĩ hay người tư vấn tiền bạc.`;
     const body = `# ${topic}
 
 Đây là nội dung giáo dục của Sống An 40+ Biên tập, phục vụ luyện tập cục bộ.
@@ -142,7 +142,7 @@ for (const [catId, pillar, catLabel] of CATEGORIES) {
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến ${topic.toLowerCase()}.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -202,7 +202,7 @@ Kiểm tra tỉnh táo. Không đỡ dậy mạnh nếu nghi chấn thương n�
 Quỹ dự phòng giúp chi trả việc đột xuất.
 
 ## Cách bắt đầu
-Ước lượng chi phí thiết yếu mỗi tháng, đặt mục tiêu nhỏ và đều đặn. Không phải tư vấn đầu tư.`,
+Ước lượng chi tiêu cần thiết mỗi tháng, đặt mục tiêu nhỏ và đều đặn. Không phải tư vấn đầu tư.`,
   },
   {
     key: "bp",

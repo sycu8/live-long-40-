@@ -23,7 +23,7 @@ const THEME_FILTERS = [
   { id: "tinh-than", label: "Tinh thần" },
   { id: "thoi-quen", label: "Thói quen" },
   { id: "suc-khoe", label: "Sức khỏe" },
-  { id: "tai-chinh", label: "Tài chính" },
+  { id: "tai-chinh", label: "Tiền bạc" },
   { id: "cham-soc", label: "Chăm sóc" },
 ] as const;
 

@@ -9,7 +9,7 @@ export function weekEncouragement(completed: number, total: number): string {
     return "Tuần này bắt đầu bằng một việc vừa sức — không cần hoàn hảo.";
   }
   if (ratio < 0.5) {
-    return "Bạn đã mở đà rồi. Việc tiếp theo vẫn tính, dù chỉ 15 phút.";
+    return "Bạn đã có đà rồi. Việc tiếp theo vẫn tính, dù chỉ 15 phút.";
   }
   if (ratio < 1) {
     return "Gần xong tuần này rồi. Giữ nhịp nhẹ — đó là cách bền.";

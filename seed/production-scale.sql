@@ -25,7 +25,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_suc-khoe-trung-nien_1', 'van-dong-deu-dan-suc-khoe-trung-nien-1', 'Vận động đều đặn: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Vận động đều đặn» trong nhóm Sức khỏe tuổi trung niên. Không thay thế tư vấn chuyên môn.', 'suc-khoe-trung-nien', 'health',
+  'lesson_scale_suc-khoe-trung-nien_1', 'van-dong-deu-dan-suc-khoe-trung-nien-1', 'Vận động đều đặn: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Vận động đều đặn» trong nhóm Sức khỏe tuổi ngoài 40. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'suc-khoe-trung-nien', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-01-01', '2026-07-15', 'active', 2,
   '# Vận động đều đặn
 
@@ -34,7 +34,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến vận động đều đặn.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -44,7 +44,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_suc-khoe-trung-nien_2', 'giac-ngu-on-dinh-suc-khoe-trung-nien-2', 'Giấc ngủ ổn định: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Giấc ngủ ổn định» trong nhóm Sức khỏe tuổi trung niên. Không thay thế tư vấn chuyên môn.', 'suc-khoe-trung-nien', 'health',
+  'lesson_scale_suc-khoe-trung-nien_2', 'giac-ngu-on-dinh-suc-khoe-trung-nien-2', 'Giấc ngủ ổn định: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Giấc ngủ ổn định» trong nhóm Sức khỏe tuổi ngoài 40. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'suc-khoe-trung-nien', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-02-02', '2026-07-15', 'active', 3,
   '# Giấc ngủ ổn định
 
@@ -53,7 +53,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến giấc ngủ ổn định.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -63,7 +63,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_suc-khoe-trung-nien_3', 'dinh-duong-don-gian-suc-khoe-trung-nien-3', 'Dinh dưỡng đơn giản: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Dinh dưỡng đơn giản» trong nhóm Sức khỏe tuổi trung niên. Không thay thế tư vấn chuyên môn.', 'suc-khoe-trung-nien', 'health',
+  'lesson_scale_suc-khoe-trung-nien_3', 'dinh-duong-don-gian-suc-khoe-trung-nien-3', 'Dinh dưỡng đơn giản: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Dinh dưỡng đơn giản» trong nhóm Sức khỏe tuổi ngoài 40. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'suc-khoe-trung-nien', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-03-03', '2026-07-15', 'active', 4,
   '# Dinh dưỡng đơn giản
 
@@ -72,7 +72,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến dinh dưỡng đơn giản.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -82,7 +82,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_suc-khoe-trung-nien_4', 'theo-doi-can-nang-suc-khoe-trung-nien-4', 'Theo dõi cân nặng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Theo dõi cân nặng» trong nhóm Sức khỏe tuổi trung niên. Không thay thế tư vấn chuyên môn.', 'suc-khoe-trung-nien', 'health',
+  'lesson_scale_suc-khoe-trung-nien_4', 'theo-doi-can-nang-suc-khoe-trung-nien-4', 'Theo dõi cân nặng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Theo dõi cân nặng» trong nhóm Sức khỏe tuổi ngoài 40. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'suc-khoe-trung-nien', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-04-04', '2026-07-15', 'active', 5,
   '# Theo dõi cân nặng
 
@@ -91,7 +91,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến theo dõi cân nặng.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -101,7 +101,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_suc-khoe-trung-nien_5', 'giam-ngoi-lau-suc-khoe-trung-nien-5', 'Giảm ngồi lâu: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Giảm ngồi lâu» trong nhóm Sức khỏe tuổi trung niên. Không thay thế tư vấn chuyên môn.', 'suc-khoe-trung-nien', 'health',
+  'lesson_scale_suc-khoe-trung-nien_5', 'giam-ngoi-lau-suc-khoe-trung-nien-5', 'Giảm ngồi lâu: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Giảm ngồi lâu» trong nhóm Sức khỏe tuổi ngoài 40. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'suc-khoe-trung-nien', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-05-05', '2026-07-15', 'active', 6,
   '# Giảm ngồi lâu
 
@@ -110,7 +110,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến giảm ngồi lâu.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -120,7 +120,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_suc-khoe-trung-nien_6', 'uong-du-nuoc-suc-khoe-trung-nien-6', 'Uống đủ nước: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Uống đủ nước» trong nhóm Sức khỏe tuổi trung niên. Không thay thế tư vấn chuyên môn.', 'suc-khoe-trung-nien', 'health',
+  'lesson_scale_suc-khoe-trung-nien_6', 'uong-du-nuoc-suc-khoe-trung-nien-6', 'Uống đủ nước: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Uống đủ nước» trong nhóm Sức khỏe tuổi ngoài 40. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'suc-khoe-trung-nien', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-06-06', '2026-07-15', 'active', 2,
   '# Uống đủ nước
 
@@ -129,7 +129,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến uống đủ nước.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -139,7 +139,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_suc-khoe-trung-nien_7', 'bo-thuoc-la-neu-co-suc-khoe-trung-nien-7', 'Bỏ thuốc lá (nếu có): hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Bỏ thuốc lá (nếu có)» trong nhóm Sức khỏe tuổi trung niên. Không thay thế tư vấn chuyên môn.', 'suc-khoe-trung-nien', 'health',
+  'lesson_scale_suc-khoe-trung-nien_7', 'bo-thuoc-la-neu-co-suc-khoe-trung-nien-7', 'Bỏ thuốc lá (nếu có): hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Bỏ thuốc lá (nếu có)» trong nhóm Sức khỏe tuổi ngoài 40. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'suc-khoe-trung-nien', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-01-07', '2026-07-15', 'active', 3,
   '# Bỏ thuốc lá (nếu có)
 
@@ -148,7 +148,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến bỏ thuốc lá (nếu có).
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -158,7 +158,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_suc-khoe-trung-nien_8', 'han-che-ruou-bia-suc-khoe-trung-nien-8', 'Hạn chế rượu bia: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Hạn chế rượu bia» trong nhóm Sức khỏe tuổi trung niên. Không thay thế tư vấn chuyên môn.', 'suc-khoe-trung-nien', 'health',
+  'lesson_scale_suc-khoe-trung-nien_8', 'han-che-ruou-bia-suc-khoe-trung-nien-8', 'Hạn chế rượu bia: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Hạn chế rượu bia» trong nhóm Sức khỏe tuổi ngoài 40. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'suc-khoe-trung-nien', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-02-08', '2026-07-15', 'active', 4,
   '# Hạn chế rượu bia
 
@@ -167,7 +167,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến hạn chế rượu bia.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -177,7 +177,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_kham-phong-benh_1', 'kham-dinh-ky-kham-phong-benh-1', 'Khám định kỳ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Khám định kỳ» trong nhóm Khám và phòng bệnh. Không thay thế tư vấn chuyên môn.', 'kham-phong-benh', 'health',
+  'lesson_scale_kham-phong-benh_1', 'kham-dinh-ky-kham-phong-benh-1', 'Khám định kỳ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Khám định kỳ» trong nhóm Khám và phòng bệnh. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'kham-phong-benh', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-01-01', '2026-07-15', 'active', 2,
   '# Khám định kỳ
 
@@ -186,7 +186,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến khám định kỳ.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -196,7 +196,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_kham-phong-benh_2', 'theo-doi-huyet-ap-kham-phong-benh-2', 'Theo dõi huyết áp: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Theo dõi huyết áp» trong nhóm Khám và phòng bệnh. Không thay thế tư vấn chuyên môn.', 'kham-phong-benh', 'health',
+  'lesson_scale_kham-phong-benh_2', 'theo-doi-huyet-ap-kham-phong-benh-2', 'Theo dõi huyết áp: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Theo dõi huyết áp» trong nhóm Khám và phòng bệnh. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'kham-phong-benh', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-02-02', '2026-07-15', 'active', 3,
   '# Theo dõi huyết áp
 
@@ -205,7 +205,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến theo dõi huyết áp.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -215,7 +215,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_kham-phong-benh_3', 'danh-sach-thuoc-kham-phong-benh-3', 'Danh sách thuốc: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Danh sách thuốc» trong nhóm Khám và phòng bệnh. Không thay thế tư vấn chuyên môn.', 'kham-phong-benh', 'health',
+  'lesson_scale_kham-phong-benh_3', 'danh-sach-thuoc-kham-phong-benh-3', 'Danh sách thuốc: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Danh sách thuốc» trong nhóm Khám và phòng bệnh. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'kham-phong-benh', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-03-03', '2026-07-15', 'active', 4,
   '# Danh sách thuốc
 
@@ -224,7 +224,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến danh sách thuốc.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -234,7 +234,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_kham-phong-benh_4', 'chuan-bi-truoc-khi-kham-kham-phong-benh-4', 'Chuẩn bị trước khi khám: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Chuẩn bị trước khi khám» trong nhóm Khám và phòng bệnh. Không thay thế tư vấn chuyên môn.', 'kham-phong-benh', 'health',
+  'lesson_scale_kham-phong-benh_4', 'chuan-bi-truoc-khi-kham-kham-phong-benh-4', 'Chuẩn bị trước khi khám: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Chuẩn bị trước khi khám» trong nhóm Khám và phòng bệnh. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'kham-phong-benh', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-04-04', '2026-07-15', 'active', 5,
   '# Chuẩn bị trước khi khám
 
@@ -243,7 +243,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến chuẩn bị trước khi khám.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -253,7 +253,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_kham-phong-benh_5', 'tiem-phong-theo-chi-dinh-kham-phong-benh-5', 'Tiêm phòng theo chỉ định: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Tiêm phòng theo chỉ định» trong nhóm Khám và phòng bệnh. Không thay thế tư vấn chuyên môn.', 'kham-phong-benh', 'health',
+  'lesson_scale_kham-phong-benh_5', 'tiem-phong-theo-chi-dinh-kham-phong-benh-5', 'Tiêm phòng theo chỉ định: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Tiêm phòng theo chỉ định» trong nhóm Khám và phòng bệnh. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'kham-phong-benh', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-05-05', '2026-07-15', 'active', 6,
   '# Tiêm phòng theo chỉ định
 
@@ -262,7 +262,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến tiêm phòng theo chỉ định.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -272,7 +272,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_kham-phong-benh_6', 'kham-mat-dinh-ky-kham-phong-benh-6', 'Khám mắt định kỳ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Khám mắt định kỳ» trong nhóm Khám và phòng bệnh. Không thay thế tư vấn chuyên môn.', 'kham-phong-benh', 'health',
+  'lesson_scale_kham-phong-benh_6', 'kham-mat-dinh-ky-kham-phong-benh-6', 'Khám mắt định kỳ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Khám mắt định kỳ» trong nhóm Khám và phòng bệnh. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'kham-phong-benh', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-06-06', '2026-07-15', 'active', 2,
   '# Khám mắt định kỳ
 
@@ -281,7 +281,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến khám mắt định kỳ.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -291,7 +291,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_kham-phong-benh_7', 'kham-rang-dinh-ky-kham-phong-benh-7', 'Khám răng định kỳ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Khám răng định kỳ» trong nhóm Khám và phòng bệnh. Không thay thế tư vấn chuyên môn.', 'kham-phong-benh', 'health',
+  'lesson_scale_kham-phong-benh_7', 'kham-rang-dinh-ky-kham-phong-benh-7', 'Khám răng định kỳ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Khám răng định kỳ» trong nhóm Khám và phòng bệnh. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'kham-phong-benh', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-01-07', '2026-07-15', 'active', 3,
   '# Khám răng định kỳ
 
@@ -300,7 +300,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến khám răng định kỳ.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -310,7 +310,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_kham-phong-benh_8', 'ghi-nhan-trieu-chung-kham-phong-benh-8', 'Ghi nhận triệu chứng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ghi nhận triệu chứng» trong nhóm Khám và phòng bệnh. Không thay thế tư vấn chuyên môn.', 'kham-phong-benh', 'health',
+  'lesson_scale_kham-phong-benh_8', 'ghi-nhan-trieu-chung-kham-phong-benh-8', 'Ghi nhận triệu chứng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ghi nhận triệu chứng» trong nhóm Khám và phòng bệnh. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'kham-phong-benh', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-02-08', '2026-07-15', 'active', 4,
   '# Ghi nhận triệu chứng
 
@@ -319,7 +319,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến ghi nhận triệu chứng.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -329,7 +329,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_chuan-bi-tai-chinh_1', 'quy-du-phong-chuan-bi-tai-chinh-1', 'Quỹ dự phòng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Quỹ dự phòng» trong nhóm Chuẩn bị tài chính. Không thay thế tư vấn chuyên môn.', 'chuan-bi-tai-chinh', 'finance',
+  'lesson_scale_chuan-bi-tai-chinh_1', 'quy-du-phong-chuan-bi-tai-chinh-1', 'Quỹ dự phòng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Quỹ dự phòng» trong nhóm Lo liệu tiền bạc. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'chuan-bi-tai-chinh', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-01-01', '2026-07-15', 'active', 2,
   '# Quỹ dự phòng
 
@@ -338,7 +338,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến quỹ dự phòng.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -348,7 +348,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_chuan-bi-tai-chinh_2', 'uoc-luong-chi-phi-chuan-bi-tai-chinh-2', 'Ước lượng chi phí: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ước lượng chi phí» trong nhóm Chuẩn bị tài chính. Không thay thế tư vấn chuyên môn.', 'chuan-bi-tai-chinh', 'finance',
+  'lesson_scale_chuan-bi-tai-chinh_2', 'uoc-luong-chi-phi-chuan-bi-tai-chinh-2', 'Ước lượng chi phí: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ước lượng chi phí» trong nhóm Lo liệu tiền bạc. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'chuan-bi-tai-chinh', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-02-02', '2026-07-15', 'active', 3,
   '# Ước lượng chi phí
 
@@ -357,7 +357,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến ước lượng chi phí.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -367,7 +367,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_chuan-bi-tai-chinh_3', 'nguon-thu-du-kien-chuan-bi-tai-chinh-3', 'Nguồn thu dự kiến: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Nguồn thu dự kiến» trong nhóm Chuẩn bị tài chính. Không thay thế tư vấn chuyên môn.', 'chuan-bi-tai-chinh', 'finance',
+  'lesson_scale_chuan-bi-tai-chinh_3', 'nguon-thu-du-kien-chuan-bi-tai-chinh-3', 'Nguồn thu dự kiến: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Nguồn thu dự kiến» trong nhóm Lo liệu tiền bạc. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'chuan-bi-tai-chinh', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-03-03', '2026-07-15', 'active', 4,
   '# Nguồn thu dự kiến
 
@@ -376,7 +376,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến nguồn thu dự kiến.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -386,7 +386,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_chuan-bi-tai-chinh_4', 'theo-doi-chi-tieu-chuan-bi-tai-chinh-4', 'Theo dõi chi tiêu: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Theo dõi chi tiêu» trong nhóm Chuẩn bị tài chính. Không thay thế tư vấn chuyên môn.', 'chuan-bi-tai-chinh', 'finance',
+  'lesson_scale_chuan-bi-tai-chinh_4', 'theo-doi-chi-tieu-chuan-bi-tai-chinh-4', 'Theo dõi chi tiêu: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Theo dõi chi tiêu» trong nhóm Lo liệu tiền bạc. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'chuan-bi-tai-chinh', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-04-04', '2026-07-15', 'active', 5,
   '# Theo dõi chi tiêu
 
@@ -395,7 +395,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến theo dõi chi tiêu.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -405,7 +405,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_chuan-bi-tai-chinh_5', 'bao-hiem-y-te-chuan-bi-tai-chinh-5', 'Bảo hiểm y tế: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Bảo hiểm y tế» trong nhóm Chuẩn bị tài chính. Không thay thế tư vấn chuyên môn.', 'chuan-bi-tai-chinh', 'finance',
+  'lesson_scale_chuan-bi-tai-chinh_5', 'bao-hiem-y-te-chuan-bi-tai-chinh-5', 'Bảo hiểm y tế: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Bảo hiểm y tế» trong nhóm Lo liệu tiền bạc. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'chuan-bi-tai-chinh', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-05-05', '2026-07-15', 'active', 6,
   '# Bảo hiểm y tế
 
@@ -414,7 +414,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến bảo hiểm y tế.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -424,7 +424,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_chuan-bi-tai-chinh_6', 'so-tiet-kiem-rieng-chuan-bi-tai-chinh-6', 'Sổ tiết kiệm riêng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Sổ tiết kiệm riêng» trong nhóm Chuẩn bị tài chính. Không thay thế tư vấn chuyên môn.', 'chuan-bi-tai-chinh', 'finance',
+  'lesson_scale_chuan-bi-tai-chinh_6', 'so-tiet-kiem-rieng-chuan-bi-tai-chinh-6', 'Sổ tiết kiệm riêng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Sổ tiết kiệm riêng» trong nhóm Lo liệu tiền bạc. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'chuan-bi-tai-chinh', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-06-06', '2026-07-15', 'active', 2,
   '# Sổ tiết kiệm riêng
 
@@ -433,7 +433,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến sổ tiết kiệm riêng.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -443,7 +443,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_chuan-bi-tai-chinh_7', 'tranh-vay-nong-chuan-bi-tai-chinh-7', 'Tránh vay nóng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Tránh vay nóng» trong nhóm Chuẩn bị tài chính. Không thay thế tư vấn chuyên môn.', 'chuan-bi-tai-chinh', 'finance',
+  'lesson_scale_chuan-bi-tai-chinh_7', 'tranh-vay-nong-chuan-bi-tai-chinh-7', 'Tránh vay nóng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Tránh vay nóng» trong nhóm Lo liệu tiền bạc. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'chuan-bi-tai-chinh', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-01-07', '2026-07-15', 'active', 3,
   '# Tránh vay nóng
 
@@ -452,7 +452,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến tránh vay nóng.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -462,7 +462,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_chuan-bi-tai-chinh_8', 'lap-ngan-sach-thang-chuan-bi-tai-chinh-8', 'Lập ngân sách tháng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Lập ngân sách tháng» trong nhóm Chuẩn bị tài chính. Không thay thế tư vấn chuyên môn.', 'chuan-bi-tai-chinh', 'finance',
+  'lesson_scale_chuan-bi-tai-chinh_8', 'lap-ngan-sach-thang-chuan-bi-tai-chinh-8', 'Lập ngân sách tháng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Lập ngân sách tháng» trong nhóm Lo liệu tiền bạc. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'chuan-bi-tai-chinh', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-02-08', '2026-07-15', 'active', 4,
   '# Lập ngân sách tháng
 
@@ -471,7 +471,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến lập ngân sách tháng.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -481,7 +481,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_cham-soc-cha-me_1', 'phong-nga-cham-soc-cha-me-1', 'Phòng ngã: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Phòng ngã» trong nhóm Chăm sóc cha mẹ. Không thay thế tư vấn chuyên môn.', 'cham-soc-cha-me', 'caregiving',
+  'lesson_scale_cham-soc-cha-me_1', 'phong-nga-cham-soc-cha-me-1', 'Phòng ngã: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Phòng ngã» trong nhóm Chăm sóc cha mẹ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'cham-soc-cha-me', 'caregiving',
   'Sống An 40+ Biên tập giáo dục', '2026-01-01', '2026-07-15', 'active', 2,
   '# Phòng ngã
 
@@ -490,7 +490,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến phòng ngã.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -500,7 +500,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_cham-soc-cha-me_2', 'lien-he-khan-cap-cham-soc-cha-me-2', 'Liên hệ khẩn cấp: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Liên hệ khẩn cấp» trong nhóm Chăm sóc cha mẹ. Không thay thế tư vấn chuyên môn.', 'cham-soc-cha-me', 'caregiving',
+  'lesson_scale_cham-soc-cha-me_2', 'lien-he-khan-cap-cham-soc-cha-me-2', 'Liên hệ khẩn cấp: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Liên hệ khẩn cấp» trong nhóm Chăm sóc cha mẹ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'cham-soc-cha-me', 'caregiving',
   'Sống An 40+ Biên tập giáo dục', '2026-02-02', '2026-07-15', 'active', 3,
   '# Liên hệ khẩn cấp
 
@@ -509,7 +509,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến liên hệ khẩn cấp.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -519,7 +519,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_cham-soc-cha-me_3', 'ho-tro-uong-thuoc-cham-soc-cha-me-3', 'Hỗ trợ uống thuốc: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Hỗ trợ uống thuốc» trong nhóm Chăm sóc cha mẹ. Không thay thế tư vấn chuyên môn.', 'cham-soc-cha-me', 'caregiving',
+  'lesson_scale_cham-soc-cha-me_3', 'ho-tro-uong-thuoc-cham-soc-cha-me-3', 'Hỗ trợ uống thuốc: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Hỗ trợ uống thuốc» trong nhóm Chăm sóc cha mẹ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'cham-soc-cha-me', 'caregiving',
   'Sống An 40+ Biên tập giáo dục', '2026-03-03', '2026-07-15', 'active', 4,
   '# Hỗ trợ uống thuốc
 
@@ -528,7 +528,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến hỗ trợ uống thuốc.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -538,7 +538,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_cham-soc-cha-me_4', 'quan-sat-thay-doi-suc-khoe-cham-soc-cha-me-4', 'Quan sát thay đổi sức khỏe: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Quan sát thay đổi sức khỏe» trong nhóm Chăm sóc cha mẹ. Không thay thế tư vấn chuyên môn.', 'cham-soc-cha-me', 'caregiving',
+  'lesson_scale_cham-soc-cha-me_4', 'quan-sat-thay-doi-suc-khoe-cham-soc-cha-me-4', 'Quan sát thay đổi sức khỏe: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Quan sát thay đổi sức khỏe» trong nhóm Chăm sóc cha mẹ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'cham-soc-cha-me', 'caregiving',
   'Sống An 40+ Biên tập giáo dục', '2026-04-04', '2026-07-15', 'active', 5,
   '# Quan sát thay đổi sức khỏe
 
@@ -547,7 +547,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến quan sát thay đổi sức khỏe.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -557,7 +557,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_cham-soc-cha-me_5', 'cham-soc-khi-sot-nhe-cham-soc-cha-me-5', 'Chăm sóc khi sốt nhẹ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Chăm sóc khi sốt nhẹ» trong nhóm Chăm sóc cha mẹ. Không thay thế tư vấn chuyên môn.', 'cham-soc-cha-me', 'caregiving',
+  'lesson_scale_cham-soc-cha-me_5', 'cham-soc-khi-sot-nhe-cham-soc-cha-me-5', 'Chăm sóc khi sốt nhẹ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Chăm sóc khi sốt nhẹ» trong nhóm Chăm sóc cha mẹ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'cham-soc-cha-me', 'caregiving',
   'Sống An 40+ Biên tập giáo dục', '2026-05-05', '2026-07-15', 'active', 6,
   '# Chăm sóc khi sốt nhẹ
 
@@ -566,7 +566,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến chăm sóc khi sốt nhẹ.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -576,7 +576,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_cham-soc-cha-me_6', 'dinh-duong-nguoi-lon-tuoi-cham-soc-cha-me-6', 'Dinh dưỡng người lớn tuổi: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Dinh dưỡng người lớn tuổi» trong nhóm Chăm sóc cha mẹ. Không thay thế tư vấn chuyên môn.', 'cham-soc-cha-me', 'caregiving',
+  'lesson_scale_cham-soc-cha-me_6', 'dinh-duong-nguoi-lon-tuoi-cham-soc-cha-me-6', 'Dinh dưỡng người lớn tuổi: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Dinh dưỡng người lớn tuổi» trong nhóm Chăm sóc cha mẹ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'cham-soc-cha-me', 'caregiving',
   'Sống An 40+ Biên tập giáo dục', '2026-06-06', '2026-07-15', 'active', 2,
   '# Dinh dưỡng người lớn tuổi
 
@@ -585,7 +585,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến dinh dưỡng người lớn tuổi.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -595,7 +595,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_cham-soc-cha-me_7', 'tranh-co-lap-xa-hoi-cham-soc-cha-me-7', 'Tránh cô lập xã hội: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Tránh cô lập xã hội» trong nhóm Chăm sóc cha mẹ. Không thay thế tư vấn chuyên môn.', 'cham-soc-cha-me', 'caregiving',
+  'lesson_scale_cham-soc-cha-me_7', 'tranh-co-lap-xa-hoi-cham-soc-cha-me-7', 'Tránh cô lập xã hội: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Tránh cô lập xã hội» trong nhóm Chăm sóc cha mẹ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'cham-soc-cha-me', 'caregiving',
   'Sống An 40+ Biên tập giáo dục', '2026-01-07', '2026-07-15', 'active', 3,
   '# Tránh cô lập xã hội
 
@@ -604,7 +604,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến tránh cô lập xã hội.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -614,7 +614,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_cham-soc-cha-me_8', 'chia-se-viec-cham-soc-cham-soc-cha-me-8', 'Chia sẻ việc chăm sóc: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Chia sẻ việc chăm sóc» trong nhóm Chăm sóc cha mẹ. Không thay thế tư vấn chuyên môn.', 'cham-soc-cha-me', 'caregiving',
+  'lesson_scale_cham-soc-cha-me_8', 'chia-se-viec-cham-soc-cham-soc-cha-me-8', 'Chia sẻ việc chăm sóc: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Chia sẻ việc chăm sóc» trong nhóm Chăm sóc cha mẹ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'cham-soc-cha-me', 'caregiving',
   'Sống An 40+ Biên tập giáo dục', '2026-02-08', '2026-07-15', 'active', 4,
   '# Chia sẻ việc chăm sóc
 
@@ -623,7 +623,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến chia sẻ việc chăm sóc.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -633,7 +633,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_tri-nho-tinh-than_1', 'giu-thoi-quen-hang-ngay-tri-nho-tinh-than-1', 'Giữ thói quen hàng ngày: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Giữ thói quen hàng ngày» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay thế tư vấn chuyên môn.', 'tri-nho-tinh-than', 'health',
+  'lesson_scale_tri-nho-tinh-than_1', 'giu-thoi-quen-hang-ngay-tri-nho-tinh-than-1', 'Giữ thói quen hàng ngày: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Giữ thói quen hàng ngày» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'tri-nho-tinh-than', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-01-01', '2026-07-15', 'active', 2,
   '# Giữ thói quen hàng ngày
 
@@ -642,7 +642,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến giữ thói quen hàng ngày.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -652,7 +652,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_tri-nho-tinh-than_2', 'hoat-dong-tri-oc-nhe-tri-nho-tinh-than-2', 'Hoạt động trí óc nhẹ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Hoạt động trí óc nhẹ» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay thế tư vấn chuyên môn.', 'tri-nho-tinh-than', 'health',
+  'lesson_scale_tri-nho-tinh-than_2', 'hoat-dong-tri-oc-nhe-tri-nho-tinh-than-2', 'Hoạt động trí óc nhẹ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Hoạt động trí óc nhẹ» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'tri-nho-tinh-than', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-02-02', '2026-07-15', 'active', 3,
   '# Hoạt động trí óc nhẹ
 
@@ -661,7 +661,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến hoạt động trí óc nhẹ.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -671,7 +671,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_tri-nho-tinh-than_3', 'ket-noi-ban-be-tri-nho-tinh-than-3', 'Kết nối bạn bè: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Kết nối bạn bè» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay thế tư vấn chuyên môn.', 'tri-nho-tinh-than', 'health',
+  'lesson_scale_tri-nho-tinh-than_3', 'ket-noi-ban-be-tri-nho-tinh-than-3', 'Kết nối bạn bè: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Kết nối bạn bè» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'tri-nho-tinh-than', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-03-03', '2026-07-15', 'active', 4,
   '# Kết nối bạn bè
 
@@ -680,7 +680,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến kết nối bạn bè.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -690,7 +690,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_tri-nho-tinh-than_4', 'quan-ly-cang-thang-tri-nho-tinh-than-4', 'Quản lý căng thẳng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Quản lý căng thẳng» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay thế tư vấn chuyên môn.', 'tri-nho-tinh-than', 'health',
+  'lesson_scale_tri-nho-tinh-than_4', 'quan-ly-cang-thang-tri-nho-tinh-than-4', 'Quản lý căng thẳng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Quản lý căng thẳng» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'tri-nho-tinh-than', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-04-04', '2026-07-15', 'active', 5,
   '# Quản lý căng thẳng
 
@@ -699,7 +699,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến quản lý căng thẳng.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -709,7 +709,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_tri-nho-tinh-than_5', 'ngu-du-gio-tri-nho-tinh-than-5', 'Ngủ đủ giờ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ngủ đủ giờ» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay thế tư vấn chuyên môn.', 'tri-nho-tinh-than', 'health',
+  'lesson_scale_tri-nho-tinh-than_5', 'ngu-du-gio-tri-nho-tinh-than-5', 'Ngủ đủ giờ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ngủ đủ giờ» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'tri-nho-tinh-than', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-05-05', '2026-07-15', 'active', 6,
   '# Ngủ đủ giờ
 
@@ -718,7 +718,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến ngủ đủ giờ.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -728,7 +728,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_tri-nho-tinh-than_6', 'han-che-da-nhiem-qua-muc-tri-nho-tinh-than-6', 'Hạn chế đa nhiệm quá mức: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Hạn chế đa nhiệm quá mức» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay thế tư vấn chuyên môn.', 'tri-nho-tinh-than', 'health',
+  'lesson_scale_tri-nho-tinh-than_6', 'han-che-da-nhiem-qua-muc-tri-nho-tinh-than-6', 'Hạn chế đa nhiệm quá mức: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Hạn chế đa nhiệm quá mức» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'tri-nho-tinh-than', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-06-06', '2026-07-15', 'active', 2,
   '# Hạn chế đa nhiệm quá mức
 
@@ -737,7 +737,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến hạn chế đa nhiệm quá mức.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -747,7 +747,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_tri-nho-tinh-than_7', 'ghi-chu-nhac-viec-tri-nho-tinh-than-7', 'Ghi chú nhắc việc: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ghi chú nhắc việc» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay thế tư vấn chuyên môn.', 'tri-nho-tinh-than', 'health',
+  'lesson_scale_tri-nho-tinh-than_7', 'ghi-chu-nhac-viec-tri-nho-tinh-than-7', 'Ghi chú nhắc việc: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ghi chú nhắc việc» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'tri-nho-tinh-than', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-01-07', '2026-07-15', 'active', 3,
   '# Ghi chú nhắc việc
 
@@ -756,7 +756,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến ghi chú nhắc việc.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -766,7 +766,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_tri-nho-tinh-than_8', 'khi-nao-nen-gap-chuyen-gia-tri-nho-tinh-than-8', 'Khi nào nên gặp chuyên gia: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Khi nào nên gặp chuyên gia» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay thế tư vấn chuyên môn.', 'tri-nho-tinh-than', 'health',
+  'lesson_scale_tri-nho-tinh-than_8', 'khi-nao-nen-gap-chuyen-gia-tri-nho-tinh-than-8', 'Khi nào nên gặp chuyên gia: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Khi nào nên gặp chuyên gia» trong nhóm Trí nhớ và sức khỏe tinh thần. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'tri-nho-tinh-than', 'health',
   'Sống An 40+ Biên tập giáo dục', '2026-02-08', '2026-07-15', 'active', 4,
   '# Khi nào nên gặp chuyên gia
 
@@ -775,7 +775,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến khi nào nên gặp chuyên gia.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -785,7 +785,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_nha-o-giay-to_1', 'sap-xep-giay-to-nha-o-giay-to-1', 'Sắp xếp giấy tờ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Sắp xếp giấy tờ» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay thế tư vấn chuyên môn.', 'nha-o-giay-to', 'finance',
+  'lesson_scale_nha-o-giay-to_1', 'sap-xep-giay-to-nha-o-giay-to-1', 'Sắp xếp giấy tờ: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Sắp xếp giấy tờ» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'nha-o-giay-to', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-01-01', '2026-07-15', 'active', 2,
   '# Sắp xếp giấy tờ
 
@@ -794,7 +794,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến sắp xếp giấy tờ.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -804,7 +804,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_nha-o-giay-to_2', 'trao-doi-voi-gia-dinh-nha-o-giay-to-2', 'Trao đổi với gia đình: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Trao đổi với gia đình» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay thế tư vấn chuyên môn.', 'nha-o-giay-to', 'finance',
+  'lesson_scale_nha-o-giay-to_2', 'trao-doi-voi-gia-dinh-nha-o-giay-to-2', 'Trao đổi với gia đình: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Trao đổi với gia đình» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'nha-o-giay-to', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-02-02', '2026-07-15', 'active', 3,
   '# Trao đổi với gia đình
 
@@ -813,7 +813,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến trao đổi với gia đình.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -823,7 +823,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_nha-o-giay-to_3', 'an-toan-nha-o-nha-o-giay-to-3', 'An toàn nhà ở: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «An toàn nhà ở» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay thế tư vấn chuyên môn.', 'nha-o-giay-to', 'finance',
+  'lesson_scale_nha-o-giay-to_3', 'an-toan-nha-o-nha-o-giay-to-3', 'An toàn nhà ở: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «An toàn nhà ở» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'nha-o-giay-to', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-03-03', '2026-07-15', 'active', 4,
   '# An toàn nhà ở
 
@@ -832,7 +832,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến an toàn nhà ở.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -842,7 +842,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_nha-o-giay-to_4', 'anh-sang-cau-thang-nha-o-giay-to-4', 'Ánh sáng cầu thang: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ánh sáng cầu thang» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay thế tư vấn chuyên môn.', 'nha-o-giay-to', 'finance',
+  'lesson_scale_nha-o-giay-to_4', 'anh-sang-cau-thang-nha-o-giay-to-4', 'Ánh sáng cầu thang: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Ánh sáng cầu thang» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'nha-o-giay-to', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-04-04', '2026-07-15', 'active', 5,
   '# Ánh sáng cầu thang
 
@@ -851,7 +851,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến ánh sáng cầu thang.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -861,7 +861,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_nha-o-giay-to_5', 'luu-mat-khau-quan-trong-nha-o-giay-to-5', 'Lưu mật khẩu quan trọng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Lưu mật khẩu quan trọng» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay thế tư vấn chuyên môn.', 'nha-o-giay-to', 'finance',
+  'lesson_scale_nha-o-giay-to_5', 'luu-mat-khau-quan-trong-nha-o-giay-to-5', 'Lưu mật khẩu quan trọng: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Lưu mật khẩu quan trọng» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'nha-o-giay-to', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-05-05', '2026-07-15', 'active', 6,
   '# Lưu mật khẩu quan trọng
 
@@ -870,7 +870,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến lưu mật khẩu quan trọng.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -880,7 +880,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_nha-o-giay-to_6', 'thong-tin-bao-hiem-nha-o-giay-to-6', 'Thông tin bảo hiểm: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Thông tin bảo hiểm» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay thế tư vấn chuyên môn.', 'nha-o-giay-to', 'finance',
+  'lesson_scale_nha-o-giay-to_6', 'thong-tin-bao-hiem-nha-o-giay-to-6', 'Thông tin bảo hiểm: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Thông tin bảo hiểm» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'nha-o-giay-to', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-06-06', '2026-07-15', 'active', 2,
   '# Thông tin bảo hiểm
 
@@ -889,7 +889,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến thông tin bảo hiểm.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -899,7 +899,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_nha-o-giay-to_7', 'dia-chi-co-so-y-te-gan-nha-o-giay-to-7', 'Địa chỉ cơ sở y tế gần: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Địa chỉ cơ sở y tế gần» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay thế tư vấn chuyên môn.', 'nha-o-giay-to', 'finance',
+  'lesson_scale_nha-o-giay-to_7', 'dia-chi-co-so-y-te-gan-nha-o-giay-to-7', 'Địa chỉ cơ sở y tế gần: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Địa chỉ cơ sở y tế gần» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'nha-o-giay-to', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-01-07', '2026-07-15', 'active', 3,
   '# Địa chỉ cơ sở y tế gần
 
@@ -908,7 +908,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến địa chỉ cơ sở y tế gần.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
@@ -918,7 +918,7 @@ INSERT INTO library_lessons (
   id, slug, title, summary, category, pillar, issuer, publication_date, last_reviewed_at,
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
-  'lesson_scale_nha-o-giay-to_8', 'nguoi-lien-he-tin-cay-nha-o-giay-to-8', 'Người liên hệ tin cậy: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Người liên hệ tin cậy» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay thế tư vấn chuyên môn.', 'nha-o-giay-to', 'finance',
+  'lesson_scale_nha-o-giay-to_8', 'nguoi-lien-he-tin-cay-nha-o-giay-to-8', 'Người liên hệ tin cậy: hướng dẫn giáo dục ngắn', 'Bài học giáo dục về «Người liên hệ tin cậy» trong nhóm Nhà ở, gia đình và giấy tờ. Không thay lời bác sĩ hay người tư vấn tiền bạc.', 'nha-o-giay-to', 'finance',
   'Sống An 40+ Biên tập giáo dục', '2026-02-08', '2026-07-15', 'active', 4,
   '# Người liên hệ tin cậy
 
@@ -927,7 +927,7 @@ INSERT INTO library_lessons (
 ## Việc có thể làm
 1. Chọn một bước nhỏ liên quan đến người liên hệ tin cậy.
 2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
 
 ## Giới hạn
 Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.

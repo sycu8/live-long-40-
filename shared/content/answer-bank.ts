@@ -129,7 +129,7 @@ Thông tin này để bạn chuẩn bị cuộc nói chuyện với bác sĩ, **
 - Không lấy tiền dự phòng để chơi chứng khoán hay chi tiêu không cần thiết.
 
 **Giới hạn rõ**
-Sống An 40+ **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm cụ thể. Nếu cần tư vấn riêng, hãy hỏi người có chuyên môn hoặc xem thông tin trên cổng Ngân hàng Nhà nước / Bảo hiểm xã hội. [S1][S2]`,
+Sống An 40+ **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm cụ thể. Nếu cần tư vấn riêng, hãy hỏi người có chuyên môn hoặc xem thông tin trên cổng Ngân hàng Nhà nước Việt Nam / Bảo hiểm xã hội Việt Nam. [S1][S2]`,
   },
   {
     id: "parent-fall",
@@ -165,7 +165,7 @@ Sống An 40+ **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo 
 - Lối đi thông thoáng, đủ đèn; gọn dây điện, thảm trơn. [S1]
 - Đi dép chống trượt; đồ hay dùng để trong tầm với.
 
-Đây là hướng dẫn tham khảo theo Tổ chức Y tế Thế giới và Bộ Y tế, **không thay** cấp cứu. Việc nặng: gọi cấp cứu địa phương ngay. [S2]`,
+Đây là hướng dẫn tham khảo theo Tổ chức Y tế Thế giới và Bộ Y tế, **không thay** cấp cứu. Khi tình trạng nặng: gọi cấp cứu địa phương ngay. [S2]`,
   },
   {
     id: "aging-documents",
@@ -243,7 +243,7 @@ Nếu số đo thường xuyên cao hoặc bạn lo lắng, hãy hẹn bác sĩ 
   },
   {
     id: "sleep-habit",
-    question: "Làm sao để ngủ ngon hơn ở tuổi trung niên?",
+    question: "Làm sao để ngủ ngon hơn ở tuổi ngoài 40?",
     classification: "health_education",
     aliases: [
       "lam sao de ngu ngon",

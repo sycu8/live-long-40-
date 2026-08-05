@@ -1,8 +1,8 @@
 # Sống An 40+
 
-Progressive Web App giúp người Việt từ tuổi **40+** chuẩn bị cho tuổi già qua đánh giá sẵn sàng, kế hoạch 30 ngày, thư viện giáo dục và chatbot trả lời có nguồn.
+Progressive Web App giúp người Việt từ tuổi **40+** chuẩn bị cho tuổi già qua đánh giá mức độ chuẩn bị, kế hoạch 30 ngày, thư viện giáo dục và chatbot trả lời có nguồn.
 
-> Công cụ giáo dục và lập kế hoạch — **không** phải ứng dụng Nhà nước, không thay thế bác sĩ, tư vấn tài chính hay tư vấn pháp lý.
+> Công cụ giáo dục và lập kế hoạch — **không** phải ứng dụng Nhà nước, không thay thế bác sĩ, tư vấn tiền bạc hay tư vấn pháp lý.
 
 ## Kiến trúc
 

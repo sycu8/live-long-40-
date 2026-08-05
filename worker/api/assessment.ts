@@ -270,7 +270,7 @@ assessmentRoutes.post("/assessment/runs/:id/complete", async (c) => {
       },
       scoringRulesetVersion: scored.rulesetVersion,
       disclaimer:
-        "Đây là điểm chuẩn bị, không phải chẩn đoán sức khỏe hoặc dự đoán tuổi thọ.",
+        "Đây là điểm chuẩn bị của bạn, không phải kết luận bệnh hay dự đoán tuổi thọ.",
     },
   });
 });
@@ -324,7 +324,7 @@ assessmentRoutes.get("/readiness/current", async (c) => {
       scoringRulesetVersion: row.scoring_ruleset_version,
       createdAt: row.created_at,
       disclaimer:
-        "Đây là điểm chuẩn bị, không phải chẩn đoán sức khỏe hoặc dự đoán tuổi thọ.",
+        "Đây là điểm chuẩn bị của bạn, không phải kết luận bệnh hay dự đoán tuổi thọ.",
     },
   });
 });

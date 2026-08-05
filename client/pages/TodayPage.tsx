@@ -108,7 +108,7 @@ export function TodayPage() {
                     Hỏi Sống An
                   </Link>
                   {" — "}
-                  đặt câu hỏi về khám định kỳ, quỹ dự phòng, phòng ngã hoặc giấy tờ.
+                  đặt câu hỏi về khám định kỳ, tiền để dành khi đột xuất, phòng ngã hoặc giấy tờ.
                 </li>
                 <li>
                   <Link
@@ -154,7 +154,7 @@ export function TodayPage() {
               <p className="mt-2 leading-relaxed text-[var(--color-ink-muted)]">
                 Khoảng 20 câu, làm trong khoảng 7 phút. Bạn sẽ nhận điểm chuẩn bị
                 theo ba trụ cột, khoảng trống ưu tiên và gợi ý việc nhỏ cho 30 ngày
-                tới — không phải chẩn đoán sức khỏe.
+                tới — không phải kết luận bệnh.
               </p>
             </section>
           </div>
@@ -178,7 +178,7 @@ export function TodayPage() {
             <h1 className="font-display text-3xl text-[var(--color-ink)] lg:text-4xl">Hôm nay</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
               Điểm tổng quan: {readiness.overallScore}/100 — đây là điểm chuẩn bị,
-              không phải chẩn đoán.
+              không phải kết luận bệnh.
             </p>
           </div>
 

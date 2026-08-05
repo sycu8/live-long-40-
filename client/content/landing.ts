@@ -2,12 +2,12 @@ export const LANDING_PILLARS = [
   {
     id: "health",
     title: "Sức khỏe",
-    body: "Đo huyết áp, khám định kỳ, đi bộ đều, ngủ đủ và ghi sổ thuốc — những thói quen nền từ tuổi 40.",
+    body: "Đo huyết áp, khám định kỳ, đi bộ đều, ngủ đủ và ghi sổ thuốc — những thói quen nền tảng từ tuổi 40.",
   },
   {
     id: "finance",
     title: "Tiền bạc",
-    body: "Tiền để dành khi có việc đột xuất, ước lượng chi tiêu, bảo hiểm đang tham gia và giấy tờ để ngăn nắp.",
+    body: "Tiền để dành khi có việc đột xuất, ước lượng chi tiêu, bảo hiểm đang tham gia và giấy tờ xếp ngăn nắp.",
   },
   {
     id: "caregiving",

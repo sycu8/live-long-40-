@@ -100,7 +100,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
   // Turnstile check when secret configured
   if (c.env.TURNSTILE_SECRET_KEY) {
     if (!body.turnstileToken) {
-      return jsonError(c, 403, "TURNSTILE_FAILED", "Thiếu xác minh Turnstile.");
+      return jsonError(c, 403, "TURNSTILE_FAILED", "Thiếu xác minh chống bot.");
     }
     const form = new FormData();
     form.set("secret", c.env.TURNSTILE_SECRET_KEY);
@@ -111,7 +111,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
     );
     const verifyJson = (await verify.json()) as { success?: boolean };
     if (!verifyJson.success) {
-      return jsonError(c, 403, "TURNSTILE_FAILED", "Xác minh Turnstile thất bại.");
+      return jsonError(c, 403, "TURNSTILE_FAILED", "Xác minh chống bot thất bại.");
     }
   }
 
