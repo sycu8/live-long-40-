@@ -1,12 +1,17 @@
 {
+  "id": "/",
   "name": "VivaAge",
   "short_name": "VivaAge",
   "description": "VivaAge - Chuẩn bị hôm nay, tự chủ về sau.",
-  "start_url": "/",
+  "lang": "vi-VN",
+  "dir": "ltr",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f7f4ef",
   "theme_color": "#1f5c45",
-  "lang": "vi",
+  "categories": ["education", "health", "lifestyle"],
   "icons": [
     {
       "src": "/logo-mark.svg",
@@ -24,7 +29,38 @@
       "src": "/logo-mark-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-mark-maskable.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo-mark-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Đánh giá sẵn sàng",
+      "short_name": "Đánh giá",
+      "description": "Kiểm tra mức độ sẵn sàng khoảng 7 phút",
+      "url": "/danh-gia?utm_source=pwa_shortcut"
+    },
+    {
+      "name": "Hỏi VivaAge",
+      "short_name": "Hỏi",
+      "description": "Đặt câu hỏi giáo dục có nguồn",
+      "url": "/hoi?utm_source=pwa_shortcut"
+    },
+    {
+      "name": "Góc động viên",
+      "short_name": "Blog",
+      "url": "/blog?utm_source=pwa_shortcut"
     }
   ]
 }
