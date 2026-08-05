@@ -36,9 +36,9 @@ export function applyHomepageLinkHeaders(res: Response, origin: string): Respons
   for (const link of homepageLinkHeaders(origin)) {
     headers.append("Link", link);
   }
-  // Allow public caching of the HTML shell; discovery links stay on the response.
+  // Allow brief public caching of the HTML shell; discovery links stay on the response.
   if (!headers.has("Cache-Control") || headers.get("Cache-Control") === "no-store") {
-    headers.set("Cache-Control", "public, max-age=60");
+    headers.set("Cache-Control", "public, max-age=0, must-revalidate");
   }
   return new Response(res.body, {
     status: res.status,

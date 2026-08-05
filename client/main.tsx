@@ -10,14 +10,29 @@ import "./styles/index.css";
 
 applyStoredTextScale();
 
-// WebMCP: register browser tools as early as possible for agent scanners.
-registerWebMcpTools();
-
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
   </StrictMode>,
 );
+
+function afterFirstPaint(fn: () => void): void {
+  const ric = (
+    window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+  if (typeof ric === "function") {
+    ric(() => fn(), { timeout: 2500 });
+    return;
+  }
+  window.setTimeout(fn, 1);
+}
+
+// Defer WebMCP so agent tooling does not compete with first paint / LCP.
+afterFirstPaint(() => {
+  registerWebMcpTools();
+});
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

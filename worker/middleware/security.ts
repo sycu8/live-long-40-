@@ -41,6 +41,7 @@ export const securityHeaders = createMiddleware(async (c, next) => {
     ].join("; "),
   );
   const path = new URL(c.req.url).pathname;
+  const isHashedAsset = path.startsWith("/assets/");
   const isPublicDiscovery =
     path === "/" ||
     path === "/robots.txt" ||
@@ -53,7 +54,12 @@ export const securityHeaders = createMiddleware(async (c, next) => {
     path === "/mcp" ||
     path.startsWith("/mcp/") ||
     path.startsWith("/.well-known/");
-  if (!isPublicDiscovery) {
+  if (isHashedAsset) {
+    c.res.headers.set(
+      "Cache-Control",
+      "public, max-age=31536000, immutable",
+    );
+  } else if (!isPublicDiscovery) {
     c.res.headers.set("Cache-Control", "no-store");
   }
 });
