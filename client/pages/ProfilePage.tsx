@@ -60,10 +60,10 @@ export function ProfilePage() {
           <ul className="mt-3 space-y-3 text-[var(--color-ink-muted)]">
             <li>
               <Link className="font-medium text-[var(--color-green)]" to="/danh-gia">
-                Đánh giá sẵn sàng
+                Đánh giá mức độ chuẩn bị
               </Link>
               {" — "}
-              khoảng 7 phút, nhận hồ sơ theo sức khỏe, tài chính và chăm sóc.
+              khoảng 7 phút, nhận điểm theo sức khỏe, tiền bạc và chăm sóc.
             </li>
             <li>
               <Link className="font-medium text-[var(--color-green)]" to="/ke-hoach">
@@ -77,7 +77,7 @@ export function ProfilePage() {
                 Hỏi Sống An
               </Link>
               {" — "}
-              câu hỏi giáo dục có nguồn đã duyệt.
+              câu hỏi có nguồn từ cơ quan tin cậy.
             </li>
             <li>
               <Link className="font-medium text-[var(--color-green)]" to="/blog">

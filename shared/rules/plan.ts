@@ -230,7 +230,7 @@ export function humanizePlanReason(
   if (template) {
     return buildSelectionReason(template, 0);
   }
-  return "Việc này phù hợp với mức độ sẵn sàng hiện tại của bạn trong kế hoạch 30 ngày.";
+  return "Việc này phù hợp với mức độ chuẩn bị hiện tại của bạn trong kế hoạch 30 ngày.";
 }
 
 export function generateThirtyDayPlan(result: ScoringResult): GeneratedPlan {

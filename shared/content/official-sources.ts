@@ -1,7 +1,6 @@
 /**
- * Registry of official / authoritative references used in answer bank,
- * library lessons, and seed knowledge. Snippets are educational paraphrases
- * aligned with public guidance — always open the URL for the full text.
+ * Registry of official references. Titles/snippets use plain Vietnamese
+ * for display; URLs point to the authoritative page.
  */
 export type OfficialSourceRef = {
   id: string;
@@ -14,7 +13,7 @@ export type OfficialSourceRef = {
   pillar: "health" | "finance" | "caregiving";
   publicationDate: string;
   url: string;
-  /** Short educational paraphrase for citation chips / RAG chunks */
+  /** Short plain-Vietnamese paraphrase for citation chips / RAG chunks */
   snippet: string;
 };
 
@@ -31,11 +30,11 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     publicationDate: "2024-01-01",
     url: "https://moh.gov.vn/",
     snippet:
-      "Bộ Y tế công bố thông tin y tế công cộng và hướng dẫn chuyên môn trên cổng thông tin chính thức. Người dân nên dùng thông tin chính thống khi chuẩn bị khám chữa bệnh và hỏi ý kiến cơ sở y tế khi có triệu chứng.",
+      "Bộ Y tế đăng thông tin sức khỏe và hướng dẫn khám chữa bệnh trên cổng chính thức. Nên xem thông tin tại đây và hỏi bác sĩ hoặc trạm y tế gần nhà khi thấy bất thường.",
   },
   {
     id: "who-hypertension",
-    title: "WHO Fact sheet: Hypertension (Tăng huyết áp)",
+    title: "Tăng huyết áp — Tổ chức Y tế Thế giới",
     issuer: "Tổ chức Y tế Thế giới (WHO)",
     trustTier: "intl_guideline",
     jurisdiction: "INTL",
@@ -45,11 +44,11 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     publicationDate: "2023-03-16",
     url: "https://www.who.int/news-room/fact-sheets/detail/hypertension",
     snippet:
-      "WHO nêu tăng huyết áp là yếu tố nguy cơ tim mạch quan trọng; đo huyết áp, lối sống lành mạnh và điều trị theo chỉ định chuyên môn giúp kiểm soát. Không tự ý thay đổi thuốc khi chưa được nhân viên y tế hướng dẫn.",
+      "Tổ chức Y tế Thế giới cho biết huyết áp cao làm tăng nguy cơ bệnh tim mạch. Nên đo huyết áp đều, sống lành mạnh và chỉ đổi thuốc khi có lời bác sĩ — không tự ý tăng, giảm hay ngưng thuốc.",
   },
   {
     id: "who-falls",
-    title: "WHO Fact sheet: Falls (Ngã)",
+    title: "Ngã ở người cao tuổi — Tổ chức Y tế Thế giới",
     issuer: "Tổ chức Y tế Thế giới (WHO)",
     trustTier: "intl_guideline",
     jurisdiction: "INTL",
@@ -59,11 +58,11 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     publicationDate: "2021-04-26",
     url: "https://www.who.int/news-room/fact-sheets/detail/falls",
     snippet:
-      "WHO xác định ngã là nguyên nhân chấn thương hàng đầu ở người cao tuổi. Dự phòng gồm môi trường an toàn, ánh sáng đủ, hỗ trợ đi lại; khi ngã có chấn thương hoặc không đứng dậy được cần hỗ trợ y tế kịp thời.",
+      "Tổ chức Y tế Thế giới cho biết ngã là nguyên nhân chấn thương phổ biến ở người lớn tuổi. Nên giữ nhà cửa thông thoáng, đủ sáng; nếu ngã mà không đứng dậy được hoặc đau nhiều thì cần đưa đi cấp cứu kịp thời.",
   },
   {
     id: "who-ageing",
-    title: "WHO Fact sheet: Ageing and health",
+    title: "Già hóa và sức khỏe — Tổ chức Y tế Thế giới",
     issuer: "Tổ chức Y tế Thế giới (WHO)",
     trustTier: "intl_guideline",
     jurisdiction: "INTL",
@@ -73,7 +72,7 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     publicationDate: "2024-10-01",
     url: "https://www.who.int/news-room/fact-sheets/detail/ageing-and-health",
     snippet:
-      "WHO nhấn mạnh già hóa khỏe mạnh gắn với dự phòng bệnh mạn tính, hoạt động thể lực phù hợp, dinh dưỡng và tiếp cận dịch vụ y tế. Chuẩn bị sớm từ trung niên giúp duy trì chức năng và tự chủ lâu hơn.",
+      "Tổ chức Y tế Thế giới khuyến khích chuẩn bị sớm từ tuổi ngoài 40: khám bệnh đều, vận động vừa sức, ăn uống hợp lý và đi khám khi cần — để giữ sức và sống tự chủ lâu hơn.",
   },
   {
     id: "bhxh-portal",
@@ -87,7 +86,7 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     publicationDate: "2024-01-01",
     url: "https://baohiemxahoi.gov.vn/",
     snippet:
-      "BHXH Việt Nam công bố thông tin chính thức về bảo hiểm y tế, bảo hiểm xã hội và các thủ tục liên quan. Người tham gia nên kiểm tra quyền lợi, thẻ/bản điện tử và hồ sơ trên kênh chính thống của ngành.",
+      "Bảo hiểm xã hội Việt Nam công bố thông tin về bảo hiểm y tế, bảo hiểm xã hội và thủ tục liên quan. Nên kiểm tra thẻ/bảo hiểm và hồ sơ trên trang chính thức của ngành.",
   },
   {
     id: "sbv-portal",
@@ -101,11 +100,11 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     publicationDate: "2024-01-01",
     url: "https://www.sbv.gov.vn/",
     snippet:
-      "NHNN công bố chính sách và thông tin liên quan hệ thống ngân hàng. Giáo dục tài chính cá nhân (tiết kiệm, dự phòng) nên dựa trên nguồn chính thống và không đồng nghĩa tư vấn đầu tư cá nhân hóa.",
+      "Ngân hàng Nhà nước đăng thông tin chính thức về hệ thống ngân hàng. Việc để dành và lo liệu tiền trong gia đình nên dựa trên nguồn tin cậy — đây không phải lời khuyên mua bán đầu tư cho từng người.",
   },
   {
     id: "who-physical-activity",
-    title: "WHO guidelines on physical activity and sedentary behaviour",
+    title: "Vận động thể chất — Tổ chức Y tế Thế giới",
     issuer: "Tổ chức Y tế Thế giới (WHO)",
     trustTier: "intl_guideline",
     jurisdiction: "INTL",
@@ -115,11 +114,11 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     publicationDate: "2020-11-25",
     url: "https://www.who.int/publications/i/item/9789240015128",
     snippet:
-      "WHO khuyến nghị người trưởng thành duy trì hoạt động thể lực đều đặn và giảm ngồi lâu; cường độ và hình thức cần phù hợp sức khỏe từng người, đặc biệt khi có bệnh nền — hãy hỏi nhân viên y tế trước khi tăng mức vận động.",
+      "Tổ chức Y tế Thế giới khuyến khích người lớn vận động đều và bớt ngồi lâu. Mức độ vận động nên vừa với sức mình; nếu đang có bệnh, hãy hỏi bác sĩ trước khi tập nặng hơn.",
   },
   {
     id: "who-mental-sleep",
-    title: "WHO: Mental health of older adults",
+    title: "Sức khỏe tinh thần người lớn tuổi — Tổ chức Y tế Thế giới",
     issuer: "Tổ chức Y tế Thế giới (WHO)",
     trustTier: "intl_guideline",
     jurisdiction: "INTL",
@@ -129,7 +128,7 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     publicationDate: "2023-10-20",
     url: "https://www.who.int/news-room/fact-sheets/detail/mental-health-of-older-adults",
     snippet:
-      "WHO nêu sức khỏe tinh thần người lớn tuổi chịu ảnh hưởng bởi giấc ngủ, bệnh mạn tính và hỗ trợ xã hội. Rối loạn giấc ngủ kéo dài hoặc suy giảm chức năng cần được đánh giá bởi nhân viên y tế, không tự điều trị.",
+      "Tổ chức Y tế Thế giới cho biết giấc ngủ, bệnh lâu ngày và sự quan tâm của người thân đều ảnh hưởng tinh thần người lớn tuổi. Mất ngủ kéo dài hoặc mệt mỏi nhiều nên đi khám, không tự chữa.",
   },
 ];
 

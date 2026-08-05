@@ -86,7 +86,7 @@ export function ResultsPage() {
     <AppShell>
       <div className="space-y-6 fade-up">
         <div>
-          <h1 className="font-display text-3xl">Hồ sơ sẵn sàng của bạn</h1>
+          <h1 className="font-display text-3xl">Mức độ chuẩn bị của bạn</h1>
           <p className="mt-2 text-lg">
             Điểm tổng quan: <strong>{result.overallScore}/100</strong>
           </p>

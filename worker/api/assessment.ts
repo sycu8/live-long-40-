@@ -297,7 +297,7 @@ assessmentRoutes.get("/readiness/current", async (c) => {
     }>();
 
   if (!row) {
-    return jsonError(c, 404, "NOT_FOUND", "Chưa có kết quả sẵn sàng.");
+    return jsonError(c, 404, "NOT_FOUND", "Chưa có kết quả đánh giá mức độ chuẩn bị.");
   }
 
   const interpretations = JSON.parse(row.interpretation_json) as Record<

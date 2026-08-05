@@ -91,10 +91,10 @@ export function TodayPage() {
           <div className="space-y-8">
             <EmptyState
               title="Bắt đầu từ việc hiểu mình đang ở đâu"
-              description="Hoàn thành bài đánh giá ngắn để nhận hồ sơ sẵn sàng và kế hoạch 30 ngày."
+              description="Hoàn thành bài đánh giá ngắn để xem mức độ chuẩn bị và nhận kế hoạch 30 ngày."
               action={
                 <Link to="/danh-gia">
-                  <Button>Kiểm tra mức độ sẵn sàng</Button>
+                  <Button>Kiểm tra mức độ chuẩn bị</Button>
                 </Link>
               }
             />
@@ -128,7 +128,7 @@ export function TodayPage() {
                     Đọc Thư viện
                   </Link>
                   {" — "}
-                  bài học ngắn theo sức khỏe, tài chính và kỹ năng chăm sóc.
+                  bài học ngắn theo sức khỏe, tiền bạc và chăm sóc người thân.
                 </li>
               </ul>
             </section>

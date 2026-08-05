@@ -4,24 +4,24 @@ export type Pillar = (typeof PILLARS)[number];
 
 export const PILLAR_LABELS: Record<Pillar, string> = {
   health: "Sức khỏe",
-  finance: "Tài chính",
-  caregiving: "Kỹ năng chăm sóc",
+  finance: "Tiền bạc",
+  caregiving: "Chăm sóc người thân",
 };
 
 export const LIBRARY_CATEGORIES = [
   {
     id: "suc-khoe-trung-nien",
-    label: "Sức khỏe tuổi trung niên",
+    label: "Sức khỏe tuổi ngoài 40",
     pillar: "health" as const,
   },
   {
     id: "kham-phong-benh",
-    label: "Khám và phòng bệnh",
+    label: "Khám bệnh và phòng bệnh",
     pillar: "health" as const,
   },
   {
     id: "chuan-bi-tai-chinh",
-    label: "Chuẩn bị tài chính",
+    label: "Lo liệu tiền bạc",
     pillar: "finance" as const,
   },
   {
@@ -31,12 +31,12 @@ export const LIBRARY_CATEGORIES = [
   },
   {
     id: "tri-nho-tinh-than",
-    label: "Trí nhớ và sức khỏe tinh thần",
+    label: "Trí nhớ và tinh thần",
     pillar: "health" as const,
   },
   {
     id: "nha-o-giay-to",
-    label: "Nhà ở, gia đình và giấy tờ",
+    label: "Nhà cửa, gia đình và giấy tờ",
     pillar: "finance" as const,
   },
 ] as const;
@@ -68,13 +68,13 @@ export type QuestionClassification =
   (typeof QUESTION_CLASSIFICATIONS)[number];
 
 export const DISCLAIMER =
-  "Sống An 40+ là công cụ giáo dục và lập kế hoạch, không phải ứng dụng chính thức của Nhà nước, không thay thế bác sĩ, tư vấn tài chính hay tư vấn pháp lý.";
+  "Sống An 40+ giúp bạn tìm hiểu và lập kế hoạch, không phải ứng dụng của Nhà nước, cũng không thay bác sĩ, người tư vấn tiền bạc hay luật sư.";
 
 export const SCORE_DISCLAIMER =
-  "Đây là điểm chuẩn bị, không phải chẩn đoán sức khỏe hoặc dự đoán tuổi thọ.";
+  "Đây là điểm chuẩn bị của bạn, không phải kết luận bệnh hay dự đoán tuổi thọ.";
 
 export const ABSTENTION_MESSAGE =
-  "Tôi chưa tìm thấy đủ nguồn chính thống đã được xác minh để trả lời chắc chắn.";
+  "Tôi chưa tìm thấy đủ nguồn tin cậy từ cơ quan nhà nước hoặc Tổ chức Y tế Thế giới để trả lời chắc chắn.";
 
 export const EXAMPLE_QUESTIONS = [
   "Từ tuổi 40 tôi nên kiểm tra sức khỏe gì?",
@@ -87,5 +87,5 @@ export const EXAMPLE_QUESTIONS = [
 export const EXTENDED_EXAMPLE_QUESTIONS = [
   ...EXAMPLE_QUESTIONS,
   "Theo dõi huyết áp tại nhà thế nào?",
-  "Làm sao để ngủ ngon hơn ở tuổi trung niên?",
+  "Làm sao để ngủ ngon hơn ở tuổi ngoài 40?",
 ] as const;

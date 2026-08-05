@@ -248,7 +248,8 @@ export function ChatPage() {
           <div>
             <h1 className="font-display text-3xl lg:text-4xl">Hỏi Sống An</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
-              Câu trả lời dựa trên nguồn chính thống đã duyệt (Bộ Y tế, BHXH, NHNN, WHO…). Có thể gõ tiếng Việt không dấu.
+              Câu trả lời dựa trên nguồn từ Bộ Y tế, Bảo hiểm xã hội, Ngân hàng Nhà
+              nước hoặc Tổ chức Y tế Thế giới. Bạn có thể gõ tiếng Việt không dấu.
             </p>
             <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
               {historyOptIn
@@ -391,8 +392,8 @@ export function ChatPage() {
               {drawerSource.issuer}
               {drawerSource.date ? ` · ${drawerSource.date}` : ""}
             </p>
-            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-[var(--color-green)]">
-              Nguồn chính thống / đã xác minh
+            <p className="mt-2 text-xs font-medium text-[var(--color-green)]">
+              Nguồn từ cơ quan tin cậy
             </p>
             {drawerSource.url ? (
               <a
@@ -401,7 +402,7 @@ export function ChatPage() {
                 rel="noopener noreferrer"
                 className="mt-2 block break-all text-sm text-[var(--color-blue)] underline"
               >
-                Mở nguồn gốc: {drawerSource.url}
+                Xem trang nguồn: {drawerSource.url}
               </a>
             ) : null}
             <p className="mt-4 whitespace-pre-wrap text-[var(--color-ink)]">

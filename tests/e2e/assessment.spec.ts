@@ -6,7 +6,7 @@ test.describe("mobile assessment smoke", () => {
     await expect(page.getByText("Sống An 40+", { exact: false }).first()).toBeVisible();
     await expect(
       page.getByRole("link", {
-        name: /Kiểm tra mức độ sẵn sàng trong 7 phút/i,
+        name: /Kiểm tra mức độ chuẩn bị trong 7 phút/i,
       }),
     ).toBeVisible();
   });

@@ -50,11 +50,11 @@ function buildExtractiveAnswer(sources: RetrievedSource[]): string {
     return `• ${s.snippet} [${s.key}] — ${s.issuer}${link}`;
   });
   return [
-    "Dựa trên nguồn chính thống đã duyệt:",
+    "Dựa trên nguồn từ cơ quan nhà nước hoặc Tổ chức Y tế Thế giới:",
     "",
     ...lines,
     "",
-    "Đây là thông tin giáo dục. Hãy mở liên kết nguồn để đọc đầy đủ và hỏi chuyên gia khi cần quyết định cá nhân.",
+    "Đây là thông tin để tham khảo. Hãy mở đường dẫn nguồn để đọc đầy đủ và hỏi bác sĩ khi cần quyết định cho bản thân.",
   ].join("\n");
 }
 
@@ -265,7 +265,7 @@ export async function runChatPipeline(
     return {
       kind: "abstain",
       message:
-        "Tôi chưa thể hỗ trợ yêu cầu này. Sống An 40+ không đưa khuyến nghị đầu tư, kê đơn thuốc hoặc tư vấn pháp lý cá nhân hóa.",
+        "Tôi chưa thể hỗ trợ yêu cầu này. Sống An 40+ không khuyên mua bán đầu tư, không kê đơn thuốc và không tư vấn luật cho từng người.",
       classification,
       sources: [],
       mode: "policy",

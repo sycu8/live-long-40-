@@ -62,13 +62,13 @@ export function LandingPage() {
               Bắt đầu từ tuổi 40 để sống khỏe và tự chủ lâu hơn.
             </h1>
             <p className="mt-4 max-w-[34ch] text-lg leading-relaxed text-[var(--color-ink-muted)] lg:max-w-xl lg:text-xl">
-              Hiểu mức độ sẵn sàng, rồi làm những việc nhỏ mỗi tuần — không ồn ào,
-              không hứa hẹn thần kỳ.
+              Hiểu mình đang chuẩn bị đến đâu, rồi làm từng việc nhỏ mỗi tuần — không
+              ồn ào, không hứa hẹn thần kỳ.
             </p>
             <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:items-center">
               <Link to="/danh-gia" className="lg:w-auto">
                 <Button className="w-full lg:w-auto lg:px-8">
-                  Kiểm tra mức độ sẵn sàng trong 7 phút
+                  Kiểm tra mức độ chuẩn bị trong 7 phút
                 </Button>
               </Link>
               <Link to="/hoi" className="lg:w-auto">

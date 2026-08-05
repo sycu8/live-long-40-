@@ -57,7 +57,7 @@ export function LibraryPage() {
         <div>
           <h1 className="font-display text-3xl">Thư viện</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
-            Bài học ngắn kèm nguồn chính thống (tổ chức ban hành và đường dẫn gốc).
+            Bài học ngắn kèm nguồn từ cơ quan nhà nước hoặc Tổ chức Y tế Thế giới.
           </p>
         </div>
 
@@ -182,8 +182,8 @@ export function LibraryDetailPage() {
         </p>
         {item.source ? (
           <aside className="rounded-2xl border border-[var(--color-green-soft)] bg-[var(--color-green-soft)]/40 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-green)]">
-              Nguồn chính thống
+            <p className="text-xs font-semibold text-[var(--color-green)]">
+              Nguồn tham khảo
             </p>
             <p className="mt-1 font-medium text-[var(--color-ink)]">{item.source.title}</p>
             <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
@@ -202,13 +202,13 @@ export function LibraryDetailPage() {
                 rel="noopener noreferrer"
                 className="mt-3 inline-block break-all text-sm text-[var(--color-blue)] underline"
               >
-                Mở nguồn gốc
+                Xem trang nguồn
               </a>
             ) : null}
           </aside>
         ) : (
           <p className="text-sm text-[var(--color-danger)]">
-            Bài này chưa gắn nguồn chính thống — nội dung chỉ mang tính tham khảo chung.
+            Bài này chưa gắn nguồn từ cơ quan tin cậy — chỉ mang tính tham khảo chung.
           </p>
         )}
         <p className="text-[var(--color-ink-muted)] lg:text-lg">{item.summary}</p>

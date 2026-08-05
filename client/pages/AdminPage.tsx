@@ -181,9 +181,9 @@ export function AdminPage() {
                 })
               }
             >
-              <option value="official_vn">Chính thống VN (official_vn)</option>
-              <option value="intl_guideline">Hướng dẫn quốc tế (WHO…)</option>
-              <option value="editorial">Biên tập nội bộ (không dùng làm bằng chứng chat)</option>
+              <option value="official_vn">Cơ quan nhà nước Việt Nam</option>
+              <option value="intl_guideline">Tổ chức Y tế Thế giới / hướng dẫn quốc tế</option>
+              <option value="editorial">Biên tập nội bộ (không dùng làm bằng chứng khi trả lời)</option>
             </select>
           </label>
           <label className="block text-sm">
@@ -212,9 +212,9 @@ export function AdminPage() {
                 })
               }
             >
-              <option value="guideline">Guideline</option>
-              <option value="policy">Policy</option>
-              <option value="education">Education</option>
+              <option value="guideline">Hướng dẫn</option>
+              <option value="policy">Chính sách / quy định</option>
+              <option value="education">Giới thiệu / phổ biến</option>
             </select>
           </label>
           <label className="block text-sm">

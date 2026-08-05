@@ -6,7 +6,7 @@ import { ABSTENTION_MESSAGE } from "@shared/constants/product";
 describe("empty knowledge / abstention messaging", () => {
   it("exposes a stable abstention message", () => {
     expect(ABSTENTION_MESSAGE).toContain("chưa tìm thấy đủ nguồn");
-    expect(ABSTENTION_MESSAGE).toContain("chính thống");
+    expect(ABSTENTION_MESSAGE).toMatch(/cơ quan nhà nước|Tổ chức Y tế Thế giới/);
   });
 });
 

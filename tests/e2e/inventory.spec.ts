@@ -10,7 +10,7 @@ test.describe("inventory — anonymous learner", () => {
     await page.goto("/");
     await expect(page.getByText("Sống An 40+", { exact: false }).first()).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Kiểm tra mức độ sẵn sàng trong 7 phút/i }),
+      page.getByRole("link", { name: /Kiểm tra mức độ chuẩn bị trong 7 phút/i }),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: /Hỏi một câu hỏi/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /quỹ dự phòng/i })).toBeVisible();
@@ -117,7 +117,7 @@ test.describe("inventory — anonymous learner", () => {
 
   test("unknown route redirects home", async ({ page }) => {
     await page.goto("/does-not-exist-xyz");
-    await expect(page.getByRole("link", { name: /Kiểm tra mức độ sẵn sàng/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Kiểm tra mức độ chuẩn bị/i })).toBeVisible();
   });
 });
 

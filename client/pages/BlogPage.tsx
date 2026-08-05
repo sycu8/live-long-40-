@@ -71,16 +71,16 @@ export function BlogPage() {
         <div>
           <h1 className="font-display text-3xl">Góc động viên</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
-            Bài viết dài hơi, ấm áp — giúp bạn bớt tiêu cực và thích nghi với hành
-            trình tuổi trung niên đến tuổi già. Cập nhật khoảng hai ngày một lần.
+            Bài viết dài hơi, ấm áp — giúp bạn bớt tiêu cực và quen dần với hành
+            trình tuổi ngoài 40 đến tuổi già. Cập nhật khoảng hai ngày một lần.
           </p>
           <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
-            Góc động viên mang tính khích lệ tinh thần, không thay tư vấn y tế /
-            tài chính. Câu trả lời chuyên môn nằm ở{" "}
+            Góc động viên để khích lệ tinh thần, không thay lời bác sĩ hay người tư
+            vấn tiền bạc. Câu hỏi về sức khỏe / tiền bạc / chăm sóc nằm ở{" "}
             <Link className="text-[var(--color-green)] underline" to="/hoi">
               Hỏi Sống An
             </Link>{" "}
-            với nguồn chính thống kèm theo.
+            (có kèm nguồn tin cậy).
           </p>
         </div>
 
@@ -211,7 +211,7 @@ export function BlogDetailPage() {
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Link to="/danh-gia">
-                <Button>Kiểm tra mức độ sẵn sàng</Button>
+                <Button>Kiểm tra mức độ chuẩn bị</Button>
               </Link>
               <Link to="/hoi">
                 <Button variant="secondary">Hỏi Sống An</Button>

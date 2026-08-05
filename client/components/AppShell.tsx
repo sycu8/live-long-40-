@@ -40,10 +40,10 @@ export function AppShell({
             {!showNav ? <BrandLogo size="md" /> : null}
             <p className="ml-auto max-w-[55%] text-right text-xs text-[var(--color-ink-muted)] lg:max-w-none lg:text-sm">
               <span className="lg:hidden">
-                Công cụ giáo dục, không phải dịch vụ y tế
+                Thông tin tham khảo, không thay bác sĩ
               </span>
               <span className="hidden lg:inline">
-                Phiên bản máy tính · Công cụ giáo dục, không phải dịch vụ y tế
+                Phiên bản máy tính · Thông tin tham khảo, không thay bác sĩ
               </span>
             </p>
           </div>
