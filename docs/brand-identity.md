@@ -1,12 +1,13 @@
 # Nhận diện thương hiệu — VivaAge
 
 ## Tên gọi
-- **Tên đầy đủ:** VivaAge
-- **Tên ngắn (PWA):** VivaAge
-- **Không viết:** Song An, SốngAn, sống an 40
+- **Tên đầy đủ / UI:** VivaAge
+- **Dạng cách điệu:** Viva Age (khi giải thích nguồn gốc tên)
+- **Tagline:** Chuẩn bị hôm nay, tự chủ về sau
 
 ## Ý nghĩa
-“VivaAge” = sống bình an, tự chủ. “40+” = bắt đầu chuẩn bị từ tuổi trung niên, không chờ đến già.
+- **Viva** gợi sức sống, tích cực, không nhấn mạnh sự già yếu.
+- **Age** thể hiện lĩnh vực tuổi tác và healthy aging.
 
 ## Màu sắc
 | Token | Hex | Vai trò |
@@ -25,7 +26,7 @@ Nguồn token: `shared/brand/identity.ts` + `client/styles/index.css`.
 Tránh: tím neon, glow công nghệ, nền tối làm chủ đạo.
 
 ## Chữ
-- **Display / UI:** Be Vietnam Pro (hỗ trợ dấu tiếng Việt)
+- **Display / UI:** Lexica Ultralegible (+ Be Vietnam Pro fallback)
 - Không dùng Inter / Roboto / Arial làm font chính
 
 ## Logo & asset
@@ -34,27 +35,17 @@ Tránh: tím neon, glow công nghệ, nền tối làm chủ đạo.
 | `/logo-mark.svg` | Mark vuông (nav, favicon vector) |
 | `/logo-lockup.svg` | Mark + chữ |
 | `/logo-mark-192.png` / `512.png` | PWA icons |
-| `/logo-mark-maskable.svg` | Adaptive / maskable |
+| `/logo-mark-maskable.svg` / `.png` | Adaptive / maskable |
 | `/apple-touch-icon.png` | iOS home screen |
 | `/og-image.jpg` | Open Graph / Twitter (1200×630) |
 | `/favicon.svg` | Tab icon |
-
-- Clear space tối thiểu ≈ ¼ cạnh mark
-- Không kéo méo, không đổi màu tùy tiện
-- Nền xanh tối: dùng mark cream / lockup sáng
-
-## Giọng văn
-Ấm, rõ, thực tế, không hù dọa tuổi già. Luôn nhắc đây là **công cụ giáo dục**, không thay bác sĩ / tư vấn tài chính / pháp lý.
-
-Tagline chuẩn: *Chuẩn bị tuổi già từ tuổi 40 — khỏe, tự chủ, bình tĩnh.*
+| `/llms.txt` | Tóm tắt sản phẩm cho AI crawler |
 
 ## SEO / GEO
-- Ngôn ngữ: `vi-VN`, quốc gia: Việt Nam (`geo.region=VN`)
-- Canonical + `hreflang` vi-VN / x-default
-- Schema: Organization + WebApplication + WebSite + FAQPage (`shared/brand/jsonld.ts`)
-- Open Graph / Twitter: `/og-image.jpg`
-- `robots.txt`, `sitemap.xml`, `llms.txt`
-- Client `DocumentHead` cập nhật title/meta theo route SPA
-- Không index: `/admin`, `/api/*`, `/ket-qua`
+- Meta `og:*` / `twitter:*` trong `index.html` (first paint cho crawler)
+- `DocumentHead` cập nhật title / OG / JSON-LD theo route SPA
+- `/sitemap.xml`, `/robots.txt`, `/feed.xml` do Worker phục vụ động
+- JSON-LD: Organization, WebApplication, WebSite, FAQPage
 
-Khi gắn domain riêng: cập nhật `BRAND.siteUrl` trong `shared/brand/identity.ts` và regenerate sitemap/canonicals.
+## Giọng điệu
+Xem `docs/vietnamese-voice.md`. Giáo dục, rõ ràng, không hù dọa, không thay bác sĩ.
