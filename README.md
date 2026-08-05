@@ -179,6 +179,7 @@ pnpm exec wrangler deploy --env staging
 8. **Admin** → upload/R2, ingest workflow, approve, withdraw  
 
 Roadmap sản phẩm: [`docs/roadmap.md`](./docs/roadmap.md).  
+Agent discovery (API catalog, Link headers, MCP, skills): [`docs/agent-discovery.md`](./docs/agent-discovery.md).
 
 ## AI & retrieval
 
