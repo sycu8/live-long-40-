@@ -22,7 +22,7 @@ Job `runBlogDailyJob`:
 | Path | Mục đích |
 | --- | --- |
 | `/robots.txt` | Allow nội dung công khai; Sitemap URL |
-| `/sitemap.xml` | Route tĩnh + mọi `/blog/:slug` đã publish |
+| `/sitemap.xml` | Route tĩnh + `/thu-vien/:slug` (active) + mọi `/blog/:slug` đã publish |
 | `/feed.xml` | Atom feed (full text) cho crawler không chạy SPA JS |
 
 `PUBLIC_SITE_URL` trong `wrangler.jsonc` đặt canonical origin.

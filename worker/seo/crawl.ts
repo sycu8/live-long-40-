@@ -3,6 +3,7 @@ import {
   BLOG_CADENCE_DAYS,
   DEFAULT_PUBLIC_SITE_URL,
 } from "@shared/constants/blog";
+import { INDEXABLE_ROUTES } from "@shared/brand";
 import type { Env, AppVariables } from "../env";
 import { themeLabel } from "../api/blog";
 import { publishDueBlogPosts } from "../blog/schedule";
@@ -19,7 +20,7 @@ function siteUrl(env: Env, requestUrl: string): string {
   }
 }
 
-function xmlEscape(value: string): string {
+export function xmlEscape(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -51,6 +52,13 @@ type BlogRow = {
   updated_at: string;
 };
 
+type LibraryRow = {
+  slug: string;
+  updated_at: string;
+  last_reviewed_at: string | null;
+  publication_date: string | null;
+};
+
 async function publishedPosts(db: D1Database): Promise<BlogRow[]> {
   await publishDueBlogPosts(db);
   const rows = await db
@@ -65,16 +73,114 @@ async function publishedPosts(db: D1Database): Promise<BlogRow[]> {
   return rows.results ?? [];
 }
 
-const STATIC_PATHS: Array<{ path: string; changefreq: string; priority: string }> = [
-  { path: "/", changefreq: "weekly", priority: "1.0" },
-  { path: "/hom-nay", changefreq: "weekly", priority: "0.8" },
-  { path: "/danh-gia", changefreq: "monthly", priority: "0.9" },
-  { path: "/ke-hoach", changefreq: "weekly", priority: "0.8" },
-  { path: "/hoi", changefreq: "weekly", priority: "0.9" },
-  { path: "/blog", changefreq: "daily", priority: "0.9" },
-  { path: "/thu-vien", changefreq: "weekly", priority: "0.85" },
-  { path: "/ho-so", changefreq: "monthly", priority: "0.5" },
-];
+async function activeLibraryLessons(db: D1Database): Promise<LibraryRow[]> {
+  const rows = await db
+    .prepare(
+      `SELECT slug, updated_at, last_reviewed_at, publication_date
+       FROM library_lessons
+       WHERE status = 'active'
+       ORDER BY category, title`,
+    )
+    .all<LibraryRow>();
+  return rows.results ?? [];
+}
+
+/** Sitemap changefreq / priority keyed by path (INDEXABLE_ROUTES order). */
+const ROUTE_SEO: Record<string, { changefreq: string; priority: string }> = {
+  "/": { changefreq: "weekly", priority: "1.0" },
+  "/hom-nay": { changefreq: "weekly", priority: "0.8" },
+  "/danh-gia": { changefreq: "monthly", priority: "0.9" },
+  "/ke-hoach": { changefreq: "weekly", priority: "0.8" },
+  "/hoi": { changefreq: "weekly", priority: "0.9" },
+  "/blog": { changefreq: "daily", priority: "0.9" },
+  "/thu-vien": { changefreq: "weekly", priority: "0.85" },
+  "/ho-so": { changefreq: "monthly", priority: "0.5" },
+};
+
+export type SitemapUrl = {
+  path: string;
+  lastmod: string;
+  changefreq: string;
+  priority: string;
+};
+
+export function buildSitemapUrls(input: {
+  today: string;
+  blogPosts: Array<{ slug: string; published_at?: string; updated_at?: string }>;
+  libraryLessons: Array<{
+    slug: string;
+    updated_at?: string;
+    last_reviewed_at?: string | null;
+    publication_date?: string | null;
+  }>;
+}): SitemapUrl[] {
+  const urls: SitemapUrl[] = [];
+
+  for (const route of INDEXABLE_ROUTES) {
+    const seo = ROUTE_SEO[route.path] ?? {
+      changefreq: "weekly",
+      priority: "0.6",
+    };
+    urls.push({
+      path: route.path,
+      lastmod: input.today,
+      changefreq: seo.changefreq,
+      priority: seo.priority,
+    });
+  }
+
+  for (const lesson of input.libraryLessons) {
+    const lastmod = (
+      lesson.updated_at ||
+      lesson.last_reviewed_at ||
+      lesson.publication_date ||
+      input.today
+    ).slice(0, 10);
+    urls.push({
+      path: `/thu-vien/${lesson.slug}`,
+      lastmod,
+      changefreq: "monthly",
+      priority: "0.75",
+    });
+  }
+
+  for (const post of input.blogPosts) {
+    const lastmod = (post.published_at || post.updated_at || input.today).slice(
+      0,
+      10,
+    );
+    urls.push({
+      path: `/blog/${post.slug}`,
+      lastmod,
+      changefreq: "weekly",
+      priority: "0.7",
+    });
+  }
+
+  return urls;
+}
+
+export function renderSitemapXml(base: string, urls: SitemapUrl[]): string {
+  const origin = base.replace(/\/$/, "");
+  const blocks = urls.map((u) => {
+    const loc = `${origin}${u.path === "/" ? "/" : u.path}`;
+    return `  <url>
+    <loc>${xmlEscape(loc)}</loc>
+    <xhtml:link rel="alternate" hreflang="vi-VN" href="${xmlEscape(loc)}"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="${xmlEscape(loc)}"/>
+    <lastmod>${xmlEscape(u.lastmod)}</lastmod>
+    <changefreq>${u.changefreq}</changefreq>
+    <priority>${u.priority}</priority>
+  </url>`;
+  });
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${blocks.join("\n")}
+</urlset>
+`;
+}
 
 crawlRoutes.get("/robots.txt", (c) => {
   const base = siteUrl(c.env, c.req.url);
@@ -130,40 +236,19 @@ Sitemap: ${base}/sitemap.xml
 
 crawlRoutes.get("/sitemap.xml", async (c) => {
   const base = siteUrl(c.env, c.req.url);
-  const posts = await publishedPosts(c.env.DB);
   const today = new Date().toISOString().slice(0, 10);
+  const [posts, lessons] = await Promise.all([
+    publishedPosts(c.env.DB),
+    activeLibraryLessons(c.env.DB),
+  ]);
 
-  const urls: string[] = [];
-  for (const route of STATIC_PATHS) {
-    const loc = `${base}${route.path === "/" ? "/" : route.path}`;
-    urls.push(`  <url>
-    <loc>${xmlEscape(loc)}</loc>
-    <xhtml:link rel="alternate" hreflang="vi-VN" href="${xmlEscape(loc)}"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="${xmlEscape(loc)}"/>
-    <lastmod>${today}</lastmod>
-    <changefreq>${route.changefreq}</changefreq>
-    <priority>${route.priority}</priority>
-  </url>`);
-  }
+  const urls = buildSitemapUrls({
+    today,
+    blogPosts: posts,
+    libraryLessons: lessons,
+  });
+  const xml = renderSitemapXml(base, urls);
 
-  for (const post of posts) {
-    const loc = `${base}/blog/${post.slug}`;
-    const lastmod = (post.published_at || post.updated_at || today).slice(0, 10);
-    urls.push(`  <url>
-    <loc>${xmlEscape(loc)}</loc>
-    <xhtml:link rel="alternate" hreflang="vi-VN" href="${xmlEscape(loc)}"/>
-    <lastmod>${xmlEscape(lastmod)}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>`);
-  }
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${urls.join("\n")}
-</urlset>
-`;
   return c.body(xml, 200, {
     "Content-Type": "application/xml; charset=utf-8",
     "Cache-Control": "public, max-age=1800",
