@@ -723,3 +723,9 @@ UPDATE library_lessons SET source_document_id = 'src_demo_fall', issuer = 'Tổ 
 UPDATE library_lessons SET source_document_id = 'src_official_byt', issuer = 'Bộ Y tế Việt Nam', updated_at = datetime('now') WHERE slug = 'danh-sach-thuoc';
 UPDATE library_lessons SET source_document_id = 'src_demo_checkup', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'giac-ngu';
 UPDATE library_lessons SET source_document_id = 'src_demo_checkup', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'van-dong-trung-nien';
+
+-- Link remaining library lessons to nearest official sources
+UPDATE library_lessons SET source_document_id = 'src_demo_fall', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'lien-he-khan-cap';
+UPDATE library_lessons SET source_document_id = 'src_demo_docs', issuer = 'Bảo hiểm xã hội Việt Nam', updated_at = datetime('now') WHERE slug = 'trao-doi-gia-dinh';
+UPDATE library_lessons SET source_document_id = 'src_demo_fund', issuer = 'Ngân hàng Nhà nước Việt Nam', updated_at = datetime('now') WHERE slug = 'nguon-thu';
+UPDATE library_lessons SET source_document_id = 'src_demo_fund', issuer = 'Ngân hàng Nhà nước Việt Nam', updated_at = datetime('now') WHERE slug = 'chi-phi-ve-huu';
