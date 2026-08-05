@@ -34,10 +34,10 @@ export function AppShell({
               mainMax,
             )}
           >
+            {/* One logo only: hide on desktop when SideNav already shows it. */}
             <div className={showNav ? "lg:hidden" : undefined}>
               <BrandLogo size="md" />
             </div>
-            {!showNav ? <BrandLogo size="md" /> : null}
             <p className="ml-auto max-w-[55%] text-right text-xs text-[var(--color-ink-muted)] lg:max-w-none lg:text-sm">
               <span className="lg:hidden">
                 Thông tin tham khảo, không thay bác sĩ
