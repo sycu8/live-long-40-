@@ -222,7 +222,7 @@ export function oauthAuthorizationServer(origin: string) {
     service_documentation: `${o}/auth.md`,
     code_challenge_methods_supported: ["S256"],
     agent_auth: {
-      skill: `${o}/.well-known/agent-skills/vivaage-auth/SKILL.md`,
+      skill: `${o}/auth.md`,
       register_uri: `${o}/api/v1/session`,
       identity_types_supported: ["anonymous"],
       anonymous: {

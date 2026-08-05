@@ -43,6 +43,7 @@ describe("agent discovery documents", () => {
 
     const as = oauthAuthorizationServer(ORIGIN);
     expect(as.issuer).toBe(`${ORIGIN}/`);
+    expect(as.agent_auth.skill).toContain("/auth.md");
     expect(as.agent_auth.identity_types_supported).toContain("anonymous");
     expect(as.agent_auth.register_uri).toContain("/api/v1/session");
   });
