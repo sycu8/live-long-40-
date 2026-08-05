@@ -11,6 +11,8 @@ VivaAge publishes machine-readable discovery surfaces so AI agents can find APIs
 | API catalog (RFC 9727) | `/.well-known/api-catalog` (`application/linkset+json`) |
 | OpenAPI | `/openapi.json` |
 | Auth.md | `/auth.md` |
+| llms.txt (llmstxt.org) | `/llms.txt` |
+| llms-full.txt | `/llms-full.txt` |
 | OAuth protected resource (RFC 9728) | `/.well-known/oauth-protected-resource` |
 | OAuth AS / OIDC discovery | `/.well-known/oauth-authorization-server`, `/.well-known/openid-configuration` |
 | MCP server card | `/.well-known/mcp/server-card.json` (+ minimal `/mcp`) |

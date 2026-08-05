@@ -1,26 +1,31 @@
 # VivaAge
 
-> Công cụ giáo dục tiếng Việt giúp người từ tuổi 40 chuẩn bị sức khỏe, tài chính và kỹ năng chăm sóc — chuẩn bị hôm nay, tự chủ về sau.
+> VivaAge is a Vietnamese educational PWA that helps adults aged 40+ prepare for healthy aging with a readiness assessment, a 30-day plan, a library, a motivational blog, and grounded Q&A with sources.
 
-- Trang chủ: https://song-an-40.sycu-lee.workers.dev/
-- Đánh giá sẵn sàng (~7 phút): https://song-an-40.sycu-lee.workers.dev/danh-gia
-- Kế hoạch 30 ngày: https://song-an-40.sycu-lee.workers.dev/ke-hoach
-- Hỏi đáp có nguồn: https://song-an-40.sycu-lee.workers.dev/hoi
-- Góc động viên (blog): https://song-an-40.sycu-lee.workers.dev/blog
-- Thư viện bài học: https://song-an-40.sycu-lee.workers.dev/thu-vien
+VivaAge provides education and planning tools only. It does not diagnose disease, prescribe medicine, or replace clinicians, financial advisors, or lawyers. Primary language: Vietnamese (vi-VN). Tagline: Chuẩn bị hôm nay, tự chủ về sau (“Prepare today, stay independent later”).
 
-## Tên thương hiệu
-- “Viva” gợi sức sống, tích cực, không nhấn mạnh sự già yếu.
-- “Age” thể hiện lĩnh vực tuổi tác và healthy aging.
-- Tagline: VivaAge - Chuẩn bị hôm nay, tự chủ về sau
+## Docs
 
-## Ngôn ngữ & khu vực
-- Ngôn ngữ chính: tiếng Việt (vi-VN)
-- Đối tượng: người Việt Nam khoảng 40 tuổi trở lên
-- Không phải ứng dụng chính thức của Nhà nước
+- [OpenAPI](https://song-an-40.sycu-lee.workers.dev/openapi.json): Machine-readable public HTTP API description
+- [API catalog](https://song-an-40.sycu-lee.workers.dev/.well-known/api-catalog): RFC 9727 linkset for automated API discovery
+- [auth.md](https://song-an-40.sycu-lee.workers.dev/auth.md): How agents authenticate with anonymous sessions
+- [Agent skills index](https://song-an-40.sycu-lee.workers.dev/.well-known/agent-skills/index.json): Discoverable skills with SHA-256 digests
+- [MCP server card](https://song-an-40.sycu-lee.workers.dev/.well-known/mcp/server-card.json): Model Context Protocol entrypoint
+- [Sitemap](https://song-an-40.sycu-lee.workers.dev/sitemap.xml): Crawlable product, library, and blog URLs
+- [llms-full.txt](https://song-an-40.sycu-lee.workers.dev/llms-full.txt): Expanded link list for larger context windows
 
-## Giới hạn
-VivaAge là công cụ giáo dục và lập kế hoạch — không chẩn đoán bệnh, không kê đơn, không thay bác sĩ / tư vấn tài chính / tư vấn pháp lý.
+## Product
 
-## Liên hệ nội dung
-Sitemap: https://song-an-40.sycu-lee.workers.dev/sitemap.xml
+- [Home](https://song-an-40.sycu-lee.workers.dev/): Brand story, pillars, FAQ, and primary CTAs
+- [Readiness assessment](https://song-an-40.sycu-lee.workers.dev/danh-gia): About 7 minutes; health, finance, and caregiving readiness
+- [30-day plan](https://song-an-40.sycu-lee.workers.dev/ke-hoach): Small weekly actions based on assessment gaps
+- [Ask VivaAge](https://song-an-40.sycu-lee.workers.dev/hoi): Educational Q&A with citations when sources exist
+- [Library](https://song-an-40.sycu-lee.workers.dev/thu-vien): Short lessons on midlife health, money, and caregiving
+- [Today](https://song-an-40.sycu-lee.workers.dev/hom-nay): Progress and next small actions after onboarding
+
+## Optional
+
+- [Motivational blog](https://song-an-40.sycu-lee.workers.dev/blog): Daily encouragement posts for adults 40+
+- [Profile & privacy](https://song-an-40.sycu-lee.workers.dev/ho-so): Session, privacy, and disclaimer notes
+- [robots.txt](https://song-an-40.sycu-lee.workers.dev/robots.txt): Crawl rules and Content Signals
+- [Atom feed](https://song-an-40.sycu-lee.workers.dev/feed.xml): Published blog posts for feed readers and agents

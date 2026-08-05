@@ -31,6 +31,11 @@ discoveryRoutes.get("/openapi.json", (c) =>
   jsonPublic(c, openApiDocument(publicOrigin(c))),
 );
 
+discoveryRoutes.get("/llms.txt", (c) => servePlainTextAsset(c, "/llms.txt"));
+discoveryRoutes.get("/llms-full.txt", (c) =>
+  servePlainTextAsset(c, "/llms-full.txt"),
+);
+
 discoveryRoutes.get("/auth.md", async (c) => {
   const origin = publicOrigin(c);
   if (c.env.ASSETS) {
@@ -121,6 +126,24 @@ discoveryRoutes.get("/.well-known/agent-skills/:skill/SKILL.md", async (c) => {
 
 discoveryRoutes.all("/mcp", (c) => handleMcpRequest(c));
 discoveryRoutes.all("/mcp/*", (c) => handleMcpRequest(c));
+
+async function servePlainTextAsset(
+  c: Parameters<typeof publicOrigin>[0],
+  path: string,
+) {
+  if (!c.env.ASSETS) {
+    return c.text("ASSETS binding missing", 500);
+  }
+  const res = await c.env.ASSETS.fetch(new URL(path, c.req.url));
+  if (!res.ok) {
+    return c.text("Not found", 404);
+  }
+  const body = await res.text();
+  return c.body(body, 200, {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Cache-Control": "public, max-age=3600",
+  });
+}
 
 function fallbackAuthMd(origin: string): string {
   return `# auth.md
