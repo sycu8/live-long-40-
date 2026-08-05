@@ -196,7 +196,7 @@ export function LandingPage() {
               Góc động viên
             </h2>
             <p className="mt-2 text-[var(--color-ink-muted)] lg:mt-4 lg:text-lg">
-              Bài viết dài, ấm áp — cập nhật khoảng hai ngày một lần — để bạn không bị
+              Bài viết dài, ấm áp — cập nhật mỗi ngày — để bạn không bị
               cuốn vào tiêu cực khi nghĩ về tuổi già, mà biết cách thích nghi từng bước.
             </p>
           </div>

@@ -13,7 +13,12 @@
     "directory": "./dist/client",
     "not_found_handling": "single-page-application",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": [
+      "/api/*",
+      "/sitemap.xml",
+      "/robots.txt",
+      "/feed.xml"
+    ]
   },
   "observability": {
     "enabled": true,
@@ -32,7 +37,12 @@
     "SCORING_RULESET_VERSION": "v1.0.1",
     "SAFETY_RULESET_VERSION": "v1.0.0",
     "PLAN_RULESET_VERSION": "v1.0.1",
-    "LOCAL_QA_ADMIN_TOKEN": ""
+    "LOCAL_QA_ADMIN_TOKEN": "",
+    "PUBLIC_SITE_URL": "https://song-an-40.sycu-lee.workers.dev"
+  },
+  // Preview: same daily blog schedule as production when triggers are supported.
+  "triggers": {
+    "crons": ["0 2 * * *"]
   },
   // Temporary preview accounts support D1/KV/Queues but not R2/Workflows/AI Search.
   // Use the full wrangler.jsonc once authenticated to a real Cloudflare account.

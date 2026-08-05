@@ -71,6 +71,7 @@ export function BlogPage() {
         <div>
           <h1 className="font-display text-3xl">Góc động viên</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
+<<<<<<< HEAD
             Bài viết dài hơi, ấm áp — giúp bạn bớt tiêu cực và quen dần với hành
             trình tuổi ngoài 40 đến tuổi già. Cập nhật khoảng hai ngày một lần.
           </p>
@@ -81,6 +82,10 @@ export function BlogPage() {
               Hỏi Sống An
             </Link>{" "}
             (có kèm nguồn tin cậy).
+=======
+            Bài viết dài hơi, ấm áp — giúp bạn bớt tiêu cực và thích nghi với hành
+            trình tuổi ngoài 40 đến tuổi già. Cập nhật mỗi ngày.
+>>>>>>> origin/cursor/blog-daily-schedule-4eeb
           </p>
         </div>
 
@@ -110,7 +115,7 @@ export function BlogPage() {
         {!loading && !error && items.length === 0 ? (
           <EmptyState
             title="Chưa có bài mới"
-            description="Bài viết tiếp theo sẽ lên lịch trong vài ngày. Bạn có thể đọc Thư viện hoặc hỏi Sống An trong lúc chờ."
+            description="Bài viết mới được lên lịch mỗi ngày. Bạn có thể đọc Thư viện hoặc hỏi Sống An trong lúc chờ."
             action={
               <Link to="/thu-vien">
                 <Button variant="secondary">Xem Thư viện</Button>

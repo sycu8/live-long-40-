@@ -1,7 +1,10 @@
 import { Hono } from "hono";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
-import { nowIso } from "@shared/utils/id";
+import { BLOG_CADENCE_DAYS } from "@shared/constants/blog";
+import { publishDueBlogPosts } from "../blog/schedule";
+
+export { publishDueBlogPosts } from "../blog/schedule";
 
 export const blogRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -15,21 +18,6 @@ const THEME_LABELS: Record<string, string> = {
 
 export function themeLabel(theme: string): string {
   return THEME_LABELS[theme] ?? theme;
-}
-
-/** Publish scheduled posts whose scheduled_for date has arrived. */
-export async function publishDueBlogPosts(db: D1Database): Promise<number> {
-  const today = new Date().toISOString().slice(0, 10);
-  const now = nowIso();
-  const result = await db
-    .prepare(
-      `UPDATE blog_posts
-       SET status = 'published', published_at = ?, updated_at = ?
-       WHERE status = 'scheduled' AND scheduled_for <= ?`,
-    )
-    .bind(now, now, today)
-    .run();
-  return result.meta?.changes ?? 0;
 }
 
 blogRoutes.get("/blog", async (c) => {
@@ -52,7 +40,7 @@ blogRoutes.get("/blog", async (c) => {
       ).all();
 
   return c.json({
-    cadenceDays: 2,
+    cadenceDays: BLOG_CADENCE_DAYS,
     themes: THEME_LABELS,
     items: (rows.results ?? []).map((row) => ({
       slug: row.slug,

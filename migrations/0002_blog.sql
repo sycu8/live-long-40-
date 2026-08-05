@@ -1,5 +1,5 @@
 -- Motivational blog for Sống An 40+
--- Posts can be scheduled; a cron publishes due items every day (content cadence: ~2 days).
+-- Posts can be scheduled; daily cron publishes due items and fills the schedule horizon (1 post/day).
 
 CREATE TABLE IF NOT EXISTS blog_posts (
   id TEXT PRIMARY KEY NOT NULL,
