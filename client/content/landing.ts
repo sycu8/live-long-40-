@@ -2,17 +2,17 @@ export const LANDING_PILLARS = [
   {
     id: "health",
     title: "Sức khỏe",
-    body: "Theo dõi huyết áp, khám định kỳ, vận động, giấc ngủ và danh sách thuốc — những thói quen nền tảng từ tuổi 40.",
+    body: "Hiểu huyết áp, khám định kỳ, vận động vừa sức và giấc ngủ — nền tảng dài hạn từ tuổi 40.",
   },
   {
     id: "finance",
-    title: "Tài chính",
-    body: "Quỹ dự phòng, ước lượng chi phí, bảo hiểm đang hiệu lực và giấy tờ quan trọng được lưu ngăn nắp.",
+    title: "Tiền bạc",
+    body: "Quỹ dự phòng, hình dung chi tiêu khi về hưu, và giấy tờ quan trọng được lưu ngăn nắp.",
   },
   {
     id: "caregiving",
-    title: "Kỹ năng chăm sóc",
-    body: "Phòng ngã, phản ứng khi có sự cố, liên hệ khẩn cấp và trao đổi mong muốn với gia đình.",
+    title: "Chăm sóc",
+    body: "Giảm rủi ro ngã tại nhà, mạng hỗ trợ khi khẩn cấp, và nói chuyện sớm với gia đình.",
   },
 ] as const;
 
@@ -30,7 +30,7 @@ export const LANDING_STEPS = [
   {
     step: "3",
     title: "Làm việc nhỏ mỗi tuần",
-    body: "Kế hoạch 30 ngày gợi ý 2 việc chính và 1 việc tùy chọn mỗi tuần, kèm bài học trong Thư viện khi cần.",
+    body: "Kế hoạch 30 ngày gợi ý 2 việc chính và 1 việc tùy chọn mỗi tuần, kèm bài viết giáo dục trong Thư viện khi cần.",
   },
 ] as const;
 

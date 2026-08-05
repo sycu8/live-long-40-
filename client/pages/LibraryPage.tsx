@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { EmptyState } from "../components/ui";
+import { MarkdownBody } from "../components/MarkdownBody";
 import { api } from "../lib/api";
 import { LIBRARY_CATEGORIES, PILLAR_LABELS } from "@shared/constants/product";
 import type { Pillar } from "@shared/constants/product";
@@ -49,7 +50,8 @@ export function LibraryPage() {
         <div>
           <h1 className="font-display text-3xl">Thư viện</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
-            Bài học ngắn, có tổ chức ban hành và ngày rà soát.
+            Bài viết giáo dục ngắn về sức khỏe, tiền bạc và chăm sóc — giải thích
+            khái niệm và giới hạn, không phải danh sách việc phải làm.
           </p>
         </div>
 
@@ -107,8 +109,10 @@ export function LibraryPage() {
                     {item.summary}
                   </p>
                   <p className="mt-2 text-xs text-[var(--color-ink-muted)]">
-                    {item.issuer} · XB {item.publicationDate} · Rà soát{" "}
-                    {item.lastReviewedAt} · {item.status}
+                    Nguồn biên tập: {item.issuer}
+                    {item.lastReviewedAt
+                      ? ` · Cập nhật ${item.lastReviewedAt}`
+                      : null}
                   </p>
                 </Link>
               </li>
@@ -164,12 +168,13 @@ export function LibraryDetailPage() {
         </Link>
         <h1 className="font-display text-3xl lg:text-4xl">{item.title}</h1>
         <p className="text-sm text-[var(--color-ink-muted)]">
-          {item.issuer} · Xuất bản {item.publicationDate} · Rà soát{" "}
-          {item.lastReviewedAt} · Trạng thái {item.status}
+          {item.issuer}
+          {item.publicationDate ? ` · Xuất bản ${item.publicationDate}` : null}
+          {item.lastReviewedAt ? ` · Rà soát ${item.lastReviewedAt}` : null}
         </p>
         <p className="text-[var(--color-ink-muted)] lg:text-lg">{item.summary}</p>
-        <div className="whitespace-pre-wrap rounded-2xl bg-white/70 p-4 leading-relaxed lg:p-8">
-          {item.bodyMarkdown}
+        <div className="rounded-2xl bg-white/70 p-4 leading-relaxed lg:p-8">
+          <MarkdownBody source={item.bodyMarkdown ?? ""} />
         </div>
       </article>
     </AppShell>

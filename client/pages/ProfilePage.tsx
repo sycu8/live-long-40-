@@ -92,7 +92,8 @@ export function ProfilePage() {
                 Thư viện
               </Link>
               {" — "}
-              bài học ngắn theo chủ đề.
+              bài viết giáo dục ngắn theo chủ đề — giải thích khái niệm, không phải
+              danh sách việc phải làm.
             </li>
           </ul>
         </section>
