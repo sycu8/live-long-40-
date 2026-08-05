@@ -180,7 +180,7 @@ export function LandingPage() {
           </ul>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-12">
             <Link to="/thu-vien">
-              <Button variant="secondary">Xem Thư viện bài học</Button>
+              <Button variant="secondary">Xem Thư viện</Button>
             </Link>
             <Link to="/blog">
               <Button variant="ghost">Đọc Góc động viên</Button>

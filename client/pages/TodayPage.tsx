@@ -128,7 +128,7 @@ export function TodayPage() {
                     Đọc Thư viện
                   </Link>
                   {" — "}
-                  bài học ngắn theo sức khỏe, tiền bạc và chăm sóc người thân.
+                  bài viết giáo dục ngắn về sức khỏe, tiền bạc và chăm sóc.
                 </li>
               </ul>
             </section>

@@ -71,9 +71,8 @@ export function BlogPage() {
         <div>
           <h1 className="font-display text-3xl">Góc động viên</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
-<<<<<<< HEAD
             Bài viết dài hơi, ấm áp — giúp bạn bớt tiêu cực và quen dần với hành
-            trình tuổi ngoài 40 đến tuổi già. Cập nhật khoảng hai ngày một lần.
+            trình tuổi ngoài 40 đến tuổi già. Cập nhật mỗi ngày.
           </p>
           <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
             Góc động viên để khích lệ tinh thần, không thay lời bác sĩ hay người tư
@@ -82,10 +81,6 @@ export function BlogPage() {
               Hỏi Sống An
             </Link>{" "}
             (có kèm nguồn tin cậy).
-=======
-            Bài viết dài hơi, ấm áp — giúp bạn bớt tiêu cực và thích nghi với hành
-            trình tuổi ngoài 40 đến tuổi già. Cập nhật mỗi ngày.
->>>>>>> origin/cursor/blog-daily-schedule-4eeb
           </p>
         </div>
 

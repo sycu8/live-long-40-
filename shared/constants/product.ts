@@ -5,7 +5,7 @@ export type Pillar = (typeof PILLARS)[number];
 export const PILLAR_LABELS: Record<Pillar, string> = {
   health: "Sức khỏe",
   finance: "Tiền bạc",
-  caregiving: "Chăm sóc người thân",
+  caregiving: "Chăm sóc",
 };
 
 export const LIBRARY_CATEGORIES = [
@@ -21,17 +21,17 @@ export const LIBRARY_CATEGORIES = [
   },
   {
     id: "chuan-bi-tai-chinh",
-    label: "Lo liệu tiền bạc",
+    label: "Tiền bạc & chuẩn bị",
     pillar: "finance" as const,
   },
   {
     id: "cham-soc-cha-me",
-    label: "Chăm sóc cha mẹ",
+    label: "Chăm sóc người thân",
     pillar: "caregiving" as const,
   },
   {
     id: "tri-nho-tinh-than",
-    label: "Trí nhớ và tinh thần",
+    label: "Tinh thần & giấc ngủ",
     pillar: "health" as const,
   },
   {

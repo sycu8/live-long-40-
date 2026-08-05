@@ -133,19 +133,25 @@ for (const [catId, pillar, catLabel] of CATEGORIES) {
     lessonCount += 1;
     const id = `lesson_scale_${catId}_${i + 1}`;
     const slug = `${slugify(topic)}-${catId}-${i + 1}`;
-    const title = `${topic}: hướng dẫn giáo dục ngắn`;
-    const summary = `Bài học giáo dục về «${topic}» trong nhóm ${catLabel}. Không thay lời bác sĩ hay người tư vấn tiền bạc.`;
+    const title = topic;
+    const summary = `Bài viết giáo dục về «${topic}» — giải thích khái niệm và giới hạn, không phải danh sách việc phải làm.`;
     const body = `# ${topic}
 
-Đây là nội dung giáo dục của Sống An 40+ Biên tập, phục vụ luyện tập cục bộ.
+Đây là nội dung giáo dục của Sống An 40+ Biên tập.
 
-## Việc có thể làm
-1. Chọn một bước nhỏ liên quan đến ${topic.toLowerCase()}.
-2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc bác sĩ hoặc trạm y tế khi cần.
+## Vì sao chủ đề này quan trọng
+
+Hiểu «${topic.toLowerCase()}» giúp bạn chuẩn bị bình tĩnh hơn cho tuổi ngoài 40 đến tuổi già — theo nhịp vừa sức của mình.
+
+## Điều cần nhớ
+
+- Đây là thông tin giáo dục, không chẩn đoán và không tư vấn đầu tư / pháp lý.
+- Chọn một thay đổi nhỏ phù hợp đời sống thực tế của bạn.
+- Khi có triệu chứng bất thường hoặc quyết định lớn về tiền bạc / giấy tờ, hãy hỏi bác sĩ, cơ quan có thẩm quyền hoặc người tư vấn phù hợp.
 
 ## Giới hạn
-Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
+
+Không kê đơn, không khuyến nghị sản phẩm tài chính, không thay thế dịch vụ Nhà nước.
 `;
     const pub = `2026-0${(i % 6) + 1}-${String((i % 27) + 1).padStart(2, "0")}`;
     const rev = "2026-07-15";

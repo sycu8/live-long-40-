@@ -64,7 +64,7 @@ test.describe("inventory — anonymous learner", () => {
     await page.goto("/thu-vien");
     await expect(page.locator("a[href^='/thu-vien/']").first()).toBeVisible({ timeout: 15_000 });
     const allCount = await page.locator("a[href^='/thu-vien/']").count();
-    await page.getByRole("button", { name: "Lo liệu tiền bạc" }).click();
+    await page.getByRole("button", { name: "Tiền bạc & chuẩn bị" }).click();
     await expect(page.locator("a[href^='/thu-vien/']").first()).toBeVisible();
     const filtered = await page.locator("a[href^='/thu-vien/']").count();
     expect(filtered).toBeGreaterThan(0);
