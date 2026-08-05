@@ -16,6 +16,7 @@ import { chatRoutes } from "./api/chat";
 import { blogRoutes } from "./api/blog";
 import { adminRoutes } from "./api/admin";
 import { crawlRoutes } from "./seo/crawl";
+import { discoveryRoutes } from "./discovery/routes";
 import { runBlogDailyJob } from "./blog/schedule";
 import { IngestionWorkflow } from "./workflows/ingestion";
 import { DISCLAIMER, EXAMPLE_QUESTIONS } from "@shared/constants/product";
@@ -63,6 +64,9 @@ api.route("/", chatRoutes);
 api.route("/", blogRoutes);
 
 app.route("/api/v1", api);
+
+/** Agent discovery + homepage Link headers (RFC 8288 / 9727). */
+app.route("/", discoveryRoutes);
 
 /** Crawlable SEO surfaces (sitemap / robots / Atom) — outside /api. */
 app.route("/", crawlRoutes);

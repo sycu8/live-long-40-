@@ -5,9 +5,13 @@ import "@fontsource/be-vietnam-pro/400.css";
 import "@fontsource/be-vietnam-pro/700.css";
 import { App } from "./App";
 import { applyStoredTextScale } from "./lib/textScale";
+import { registerWebMcpTools } from "./lib/webmcp";
 import "./styles/index.css";
 
 applyStoredTextScale();
+
+// WebMCP: register browser tools as early as possible for agent scanners.
+registerWebMcpTools();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

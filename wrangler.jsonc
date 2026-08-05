@@ -10,6 +10,12 @@
     // API + crawl surfaces must hit the Worker before static SPA assets.
     // /admin is an SPA route; protect it with Cloudflare Access in staging/production.
     "run_worker_first": [
+      "/",
+      "/auth.md",
+      "/openapi.json",
+      "/mcp",
+      "/mcp/*",
+      "/.well-known/*",
       "/api/*",
       "/sitemap.xml",
       "/robots.txt",
