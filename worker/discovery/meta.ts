@@ -22,6 +22,7 @@ export function homepageLinkHeaders(origin: string): string[] {
     `<${o}/.well-known/api-catalog>; rel="api-catalog"`,
     `<${o}/openapi.json>; rel="service-desc"; type="application/json"`,
     `<${o}/llms.txt>; rel="service-doc"; type="text/plain"`,
+    `<${o}/llms-full.txt>; rel="service-doc"; type="text/plain"`,
     `<${o}/auth.md>; rel="describedby"; type="text/markdown"`,
     `<${o}/.well-known/oauth-protected-resource>; rel="oauth-protected-resource"`,
     `<${o}/.well-known/mcp/server-card.json>; rel="mcp-server-card"; type="application/json"`,

@@ -13,6 +13,8 @@
       "/",
       "/auth.md",
       "/openapi.json",
+      "/llms.txt",
+      "/llms-full.txt",
       "/mcp",
       "/mcp/*",
       "/.well-known/*",

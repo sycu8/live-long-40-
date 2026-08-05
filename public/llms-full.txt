@@ -1,0 +1,53 @@
+# VivaAge (full)
+
+> Expanded LLM context for VivaAge: product surfaces, discovery documents, and public API notes for Vietnamese healthy-aging education.
+
+Use this file when a larger context window is available. Prefer `/llms.txt` for a shorter overview. Educational use only — not medical, financial, or legal advice.
+
+## Docs
+
+- [llms.txt](https://song-an-40.sycu-lee.workers.dev/llms.txt): Short curated overview
+- [OpenAPI](https://song-an-40.sycu-lee.workers.dev/openapi.json): Public API paths and operations
+- [API catalog](https://song-an-40.sycu-lee.workers.dev/.well-known/api-catalog): RFC 9727 linkset (`application/linkset+json`)
+- [auth.md](https://song-an-40.sycu-lee.workers.dev/auth.md): Anonymous session registration for agents
+- [OAuth protected resource](https://song-an-40.sycu-lee.workers.dev/.well-known/oauth-protected-resource): RFC 9728 resource metadata
+- [OAuth authorization server](https://song-an-40.sycu-lee.workers.dev/.well-known/oauth-authorization-server): AS metadata with `agent_auth`
+- [Agent skills index](https://song-an-40.sycu-lee.workers.dev/.well-known/agent-skills/index.json): Skills discovery index
+- [VivaAge overview skill](https://song-an-40.sycu-lee.workers.dev/.well-known/agent-skills/vivaage-overview/SKILL.md): Product overview skill markdown
+- [VivaAge auth skill](https://song-an-40.sycu-lee.workers.dev/.well-known/agent-skills/vivaage-auth/SKILL.md): Auth skill markdown
+- [MCP server card](https://song-an-40.sycu-lee.workers.dev/.well-known/mcp/server-card.json): MCP transport and tools summary
+- [MCP endpoint](https://song-an-40.sycu-lee.workers.dev/mcp): Minimal streamable HTTP / JSON-RPC tools
+- [Sitemap](https://song-an-40.sycu-lee.workers.dev/sitemap.xml): Indexable routes, library lessons, blog posts
+- [Agent discovery notes](https://song-an-40.sycu-lee.workers.dev/llms.txt): Start here if this file is too long
+
+## Product
+
+- [Home](https://song-an-40.sycu-lee.workers.dev/): Landing page with brand rationale and CTAs
+- [Readiness assessment](https://song-an-40.sycu-lee.workers.dev/danh-gia): Health, finance, caregiving questionnaire
+- [30-day plan](https://song-an-40.sycu-lee.workers.dev/ke-hoach): Weekly action plan after assessment
+- [Ask VivaAge](https://song-an-40.sycu-lee.workers.dev/hoi): Grounded educational chat
+- [Library](https://song-an-40.sycu-lee.workers.dev/thu-vien): Educational articles by category
+- [Today](https://song-an-40.sycu-lee.workers.dev/hom-nay): Momentum and today’s actions
+- [Motivational blog](https://song-an-40.sycu-lee.workers.dev/blog): Daily encouragement
+- [Profile & privacy](https://song-an-40.sycu-lee.workers.dev/ho-so): Privacy and disclaimer
+
+## Library examples
+
+- [Emergency contacts](https://song-an-40.sycu-lee.workers.dev/thu-vien/lien-he-khan-cap): Build a household emergency contact list
+- [Fall prevention](https://song-an-40.sycu-lee.workers.dev/thu-vien/phong-nga): Reduce fall risk at home
+- [Blood pressure at home](https://song-an-40.sycu-lee.workers.dev/thu-vien/theo-doi-huyet-ap): Track blood pressure for clinic visits
+- [Emergency fund](https://song-an-40.sycu-lee.workers.dev/thu-vien/quy-du-phong): Start a simple contingency fund
+- [Aging documents](https://song-an-40.sycu-lee.workers.dev/thu-vien/giay-to-tuoi-gia): Organize important papers
+
+## API notes
+
+- [Health](https://song-an-40.sycu-lee.workers.dev/api/health): Liveness JSON
+- [Meta](https://song-an-40.sycu-lee.workers.dev/api/v1/meta): Disclaimer, versions, example questions
+- [Session](https://song-an-40.sycu-lee.workers.dev/api/v1/session): POST to create anonymous session + CSRF
+- [Library API](https://song-an-40.sycu-lee.workers.dev/api/v1/library): List active lessons
+
+## Optional
+
+- [robots.txt](https://song-an-40.sycu-lee.workers.dev/robots.txt): Allow/Disallow and Content Signals
+- [Atom feed](https://song-an-40.sycu-lee.workers.dev/feed.xml): Full-text blog feed for crawlers
+- [Brand identity notes](https://song-an-40.sycu-lee.workers.dev/llms.txt): Brand meaning is summarized in the short llms.txt blockquote and intro

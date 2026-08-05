@@ -49,6 +49,7 @@ export const securityHeaders = createMiddleware(async (c, next) => {
     path === "/auth.md" ||
     path === "/openapi.json" ||
     path === "/llms.txt" ||
+    path === "/llms-full.txt" ||
     path === "/mcp" ||
     path.startsWith("/mcp/") ||
     path.startsWith("/.well-known/");
