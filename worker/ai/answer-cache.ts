@@ -1,6 +1,10 @@
 import { ANSWER_BANK, type AnswerBankEntry } from "@shared/content/answer-bank";
 import { foldVietnamese } from "@shared/utils/vietnamese";
 import type { QuestionClassification } from "@shared/constants/product";
+import {
+  answerHasCitations,
+  sourceLooksOfficial,
+} from "@shared/rules/sources";
 import type { Env } from "../env";
 
 export type CachedSource = {
@@ -14,6 +18,7 @@ export type CachedSource = {
   snippet: string;
   score: number;
   status?: string;
+  trustTier?: string;
 };
 
 export type CachedAnswer = {
@@ -25,7 +30,7 @@ export type CachedAnswer = {
   cachedAt: string;
 };
 
-const CACHE_PREFIX = "ans_cache:v1:";
+const CACHE_PREFIX = "ans_cache:v2:";
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 45; // ~45 days
 
 function djb2(input: string): string {
@@ -46,12 +51,10 @@ function aliasScore(foldedQuery: string, alias: string): number {
   if (!a) return 0;
   if (foldedQuery === a) return 1;
   if (foldedQuery.includes(a) || a.includes(foldedQuery)) {
-    // Longer overlap wins
     const shorter = Math.min(foldedQuery.length, a.length);
     const longer = Math.max(foldedQuery.length, a.length);
     return 0.72 + (shorter / longer) * 0.2;
   }
-  // Token overlap
   const qTokens = new Set(foldedQuery.split(/\s+/).filter((t) => t.length >= 2));
   const aTokens = a.split(/\s+/).filter((t) => t.length >= 2);
   if (aTokens.length === 0) return 0;
@@ -91,10 +94,14 @@ export function bankEntryToCached(entry: AnswerBankEntry): CachedAnswer {
     title: s.title,
     issuer: s.issuer,
     publicationDate: s.publicationDate,
+    url: s.url,
     snippet: s.snippet,
     score: 1,
     status: "active",
-    sourceId: `bank:${entry.id}:${i + 1}`,
+    trustTier: s.trustTier,
+    sourceId: s.officialSourceId
+      ? `official:${s.officialSourceId}`
+      : `bank:${entry.id}:${i + 1}`,
   }));
   return {
     entryId: entry.id,
@@ -104,6 +111,25 @@ export function bankEntryToCached(entry: AnswerBankEntry): CachedAnswer {
     mode: "answer_bank",
     cachedAt: new Date().toISOString(),
   };
+}
+
+/** Only cache / replay answers that cite official sources. */
+export function isGroundedOfficialAnswer(payload: {
+  answer: string;
+  sources: CachedSource[];
+}): boolean {
+  if (!answerHasCitations(payload.answer)) return false;
+  if (!payload.sources.length) return false;
+  const officialCount = payload.sources.filter((s) =>
+    sourceLooksOfficial({
+      issuer: s.issuer,
+      trustTier: s.trustTier,
+      url: s.url,
+    }),
+  ).length;
+  if (officialCount === 0) return false;
+  // Every cited source in the payload should look official
+  return officialCount === payload.sources.length;
 }
 
 export async function readAnswerCache(
@@ -116,6 +142,7 @@ export async function readAnswerCache(
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CachedAnswer;
     if (!parsed?.answer || !Array.isArray(parsed.sources)) return null;
+    if (!isGroundedOfficialAnswer(parsed)) return null;
     return { ...parsed, mode: "kv_cache" };
   } catch {
     return null;
@@ -132,6 +159,7 @@ export async function writeAnswerCache(
   if (!env.CONFIG) return;
   if (!payload.answer || payload.answer.length < 80) return;
   if (payload.answer.includes("chưa tìm thấy đủ nguồn")) return;
+  if (!isGroundedOfficialAnswer(payload)) return;
 
   const body: CachedAnswer = {
     entryId: payload.entryId,
@@ -159,7 +187,7 @@ export async function resolvePreparedAnswer(
   const bank = matchAnswerBank(question);
   if (bank) {
     const cached = bankEntryToCached(bank);
-    // Warm KV so paraphrases that hash nearby still benefit after first hit
+    if (!isGroundedOfficialAnswer(cached)) return null;
     void writeAnswerCache(env, question, cached);
     void writeAnswerCache(env, bank.question, cached);
     return cached;

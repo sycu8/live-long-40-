@@ -58,28 +58,45 @@ export const FeedbackSchema = z.object({
   comment: z.string().max(500).optional(),
 });
 
-export const AdminSourceCreateSchema = z.object({
-  title: z.string().min(3).max(300),
-  summary: z.string().max(2000).optional(),
-  issuer: z.string().min(2).max(200),
-  jurisdiction: z.string().min(2).max(10).default("VN"),
-  documentType: z.enum([
-    "guideline",
-    "education",
-    "policy",
-    "lesson",
-    "other",
-  ]),
-  language: z.string().min(2).max(10).default("vi"),
-  category: z.string().min(2).max(80),
-  pillar: z.enum(["health", "finance", "caregiving"]).optional(),
-  estimatedReadingMinutes: z.number().int().min(1).max(120).optional(),
-  originalUrl: z.string().url().optional(),
-  publicationDate: z.string().optional(),
-  effectiveFrom: z.string().optional(),
-  effectiveTo: z.string().optional(),
-  reviewedText: z.string().max(200_000).optional(),
-});
+export const AdminSourceCreateSchema = z
+  .object({
+    title: z.string().min(3).max(300),
+    summary: z.string().max(2000).optional(),
+    issuer: z.string().min(2).max(200),
+    jurisdiction: z.string().min(2).max(10).default("VN"),
+    documentType: z.enum([
+      "guideline",
+      "education",
+      "policy",
+      "lesson",
+      "other",
+    ]),
+    language: z.string().min(2).max(10).default("vi"),
+    category: z.string().min(2).max(80),
+    pillar: z.enum(["health", "finance", "caregiving"]).optional(),
+    estimatedReadingMinutes: z.number().int().min(1).max(120).optional(),
+    originalUrl: z.string().url().optional(),
+    publicationDate: z.string().optional(),
+    effectiveFrom: z.string().optional(),
+    effectiveTo: z.string().optional(),
+    reviewedText: z.string().max(200_000).optional(),
+    trustTier: z
+      .enum(["official_vn", "intl_guideline", "editorial"])
+      .default("editorial"),
+  })
+  .superRefine((val, ctx) => {
+    if (
+      (val.trustTier === "official_vn" || val.trustTier === "intl_guideline") &&
+      !val.originalUrl
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["originalUrl"],
+        message:
+          "Nguồn chính thống / hướng dẫn quốc tế bắt buộc có đường dẫn gốc (originalUrl).",
+      });
+    }
+  });
 
 export const AdminIngestSchema = z.object({
   reviewedText: z.string().max(200_000).optional(),

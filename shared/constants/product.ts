@@ -74,7 +74,7 @@ export const SCORE_DISCLAIMER =
   "Đây là điểm chuẩn bị, không phải chẩn đoán sức khỏe hoặc dự đoán tuổi thọ.";
 
 export const ABSTENTION_MESSAGE =
-  "Tôi chưa tìm thấy đủ nguồn đã được xác minh để trả lời chắc chắn.";
+  "Tôi chưa tìm thấy đủ nguồn chính thống đã được xác minh để trả lời chắc chắn.";
 
 export const EXAMPLE_QUESTIONS = [
   "Từ tuổi 40 tôi nên kiểm tra sức khỏe gì?",

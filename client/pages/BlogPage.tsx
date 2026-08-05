@@ -74,6 +74,14 @@ export function BlogPage() {
             Bài viết dài hơi, ấm áp — giúp bạn bớt tiêu cực và thích nghi với hành
             trình tuổi trung niên đến tuổi già. Cập nhật khoảng hai ngày một lần.
           </p>
+          <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
+            Góc động viên mang tính khích lệ tinh thần, không thay tư vấn y tế /
+            tài chính. Câu trả lời chuyên môn nằm ở{" "}
+            <Link className="text-[var(--color-green)] underline" to="/hoi">
+              Hỏi Sống An
+            </Link>{" "}
+            với nguồn chính thống kèm theo.
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">

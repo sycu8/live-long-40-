@@ -545,3 +545,181 @@ INSERT OR IGNORE INTO source_chunks (
   'indexed',
   datetime('now')
 );
+
+-- =============================================================================
+-- Official sources upgrade: trust_tier + URLs + library linkage
+-- Requires migration 0003_source_trust.sql
+-- =============================================================================
+
+UPDATE source_documents SET
+  title = 'WHO Fact sheet: Falls (Ngã)',
+  summary = 'Hướng dẫn quốc tế về dự phòng và xử trí ngã, đặc biệt ở người cao tuổi.',
+  issuer = 'Tổ chức Y tế Thế giới (WHO)',
+  jurisdiction = 'INTL',
+  document_type = 'guideline',
+  original_url = 'https://www.who.int/news-room/fact-sheets/detail/falls',
+  trust_tier = 'intl_guideline',
+  publication_date = '2021-04-26',
+  last_reviewed_at = '2026-07-01',
+  updated_at = datetime('now')
+WHERE id = 'src_demo_fall';
+
+UPDATE source_chunks SET
+  content = 'WHO: ngã là nguyên nhân chấn thương hàng đầu ở người cao tuổi. Dự phòng gồm môi trường an toàn, ánh sáng đủ, hỗ trợ đi lại. Khi ngã có chấn thương hoặc không đứng dậy được cần hỗ trợ y tế kịp thời. Nguồn: https://www.who.int/news-room/fact-sheets/detail/falls',
+  metadata_json = '{"source_id":"src_demo_fall","title":"WHO Fact sheet: Falls (Ngã)","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2021-04-26","category":"cham-soc-cha-me","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/falls"}'
+WHERE source_id = 'src_demo_fall';
+
+UPDATE source_documents SET
+  title = 'Cổng thông tin Ngân hàng Nhà nước Việt Nam',
+  summary = 'Thông tin chính thống về hệ thống ngân hàng; tham chiếu cho giáo dục tài chính và thói quen dự phòng.',
+  issuer = 'Ngân hàng Nhà nước Việt Nam',
+  document_type = 'education',
+  original_url = 'https://www.sbv.gov.vn/',
+  trust_tier = 'official_vn',
+  publication_date = '2024-01-01',
+  last_reviewed_at = '2026-07-01',
+  updated_at = datetime('now')
+WHERE id = 'src_demo_fund';
+
+UPDATE source_chunks SET
+  content = 'NHNN công bố thông tin chính sách ngân hàng chính thống. Giáo dục tài chính cá nhân (tiết kiệm, quỹ dự phòng cho chi đột xuất) nên dựa trên nguồn chính thống và không đồng nghĩa tư vấn đầu tư cá nhân hóa. Nguồn: https://www.sbv.gov.vn/',
+  metadata_json = '{"source_id":"src_demo_fund","title":"Cổng thông tin Ngân hàng Nhà nước Việt Nam","issuer":"Ngân hàng Nhà nước Việt Nam","status":"active","review_status":"approved","publication_date":"2024-01-01","category":"chuan-bi-tai-chinh","trust_tier":"official_vn","original_url":"https://www.sbv.gov.vn/"}'
+WHERE source_id = 'src_demo_fund';
+
+UPDATE source_documents SET
+  title = 'WHO Fact sheet: Ageing and health',
+  summary = 'Hướng dẫn quốc tế về già hóa khỏe mạnh và tiếp cận dịch vụ y tế từ trung niên.',
+  issuer = 'Tổ chức Y tế Thế giới (WHO)',
+  jurisdiction = 'INTL',
+  document_type = 'guideline',
+  original_url = 'https://www.who.int/news-room/fact-sheets/detail/ageing-and-health',
+  trust_tier = 'intl_guideline',
+  publication_date = '2024-10-01',
+  last_reviewed_at = '2026-07-01',
+  updated_at = datetime('now')
+WHERE id = 'src_demo_checkup';
+
+UPDATE source_chunks SET
+  content = 'WHO nhấn mạnh già hóa khỏe mạnh gắn với dự phòng bệnh mạn tính, hoạt động thể lực phù hợp và tiếp cận dịch vụ y tế. Chuẩn bị sớm từ trung niên giúp duy trì chức năng và tự chủ. Nguồn: https://www.who.int/news-room/fact-sheets/detail/ageing-and-health',
+  metadata_json = '{"source_id":"src_demo_checkup","title":"WHO Fact sheet: Ageing and health","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2024-10-01","category":"kham-phong-benh","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/ageing-and-health"}'
+WHERE source_id = 'src_demo_checkup';
+
+UPDATE source_documents SET
+  title = 'Cổng thông tin Bảo hiểm xã hội Việt Nam',
+  summary = 'Thông tin chính thức về BHYT/BHXH và thủ tục hồ sơ bảo hiểm.',
+  issuer = 'Bảo hiểm xã hội Việt Nam',
+  document_type = 'policy',
+  original_url = 'https://baohiemxahoi.gov.vn/',
+  trust_tier = 'official_vn',
+  publication_date = '2024-01-01',
+  last_reviewed_at = '2026-07-01',
+  updated_at = datetime('now')
+WHERE id = 'src_demo_docs';
+
+UPDATE source_chunks SET
+  content = 'BHXH Việt Nam công bố thông tin chính thức về bảo hiểm y tế, bảo hiểm xã hội và thủ tục liên quan. Nên kiểm tra quyền lợi và hồ sơ trên kênh chính thống khi chuẩn bị giấy tờ tuổi già. Nguồn: https://baohiemxahoi.gov.vn/',
+  metadata_json = '{"source_id":"src_demo_docs","title":"Cổng thông tin Bảo hiểm xã hội Việt Nam","issuer":"Bảo hiểm xã hội Việt Nam","status":"active","review_status":"approved","publication_date":"2024-01-01","category":"nha-o-giay-to","trust_tier":"official_vn","original_url":"https://baohiemxahoi.gov.vn/"}'
+WHERE source_id = 'src_demo_docs';
+
+INSERT OR IGNORE INTO source_documents (
+  id, public_id, slug, title, summary, issuer, jurisdiction, document_type, language, category, pillar,
+  estimated_reading_minutes, original_url, status, review_status, publication_date, effective_from,
+  last_reviewed_at, reviewer, trust_tier, created_at, updated_at
+) VALUES
+(
+  'src_official_byt',
+  'psrc_official_byt',
+  'cong-thong-tin-bo-y-te',
+  'Cổng thông tin điện tử Bộ Y tế',
+  'Thông tin y tế công cộng chính thống của Bộ Y tế Việt Nam.',
+  'Bộ Y tế Việt Nam',
+  'VN',
+  'guideline',
+  'vi',
+  'kham-phong-benh',
+  'health',
+  5,
+  'https://moh.gov.vn/',
+  'active',
+  'approved',
+  '2024-01-01',
+  '2024-01-01',
+  '2026-07-01',
+  'seed',
+  'official_vn',
+  datetime('now'),
+  datetime('now')
+),
+(
+  'src_official_who_bp',
+  'psrc_official_who_bp',
+  'who-hypertension-fact-sheet',
+  'WHO Fact sheet: Hypertension (Tăng huyết áp)',
+  'Hướng dẫn quốc tế về tăng huyết áp và theo dõi huyết áp.',
+  'Tổ chức Y tế Thế giới (WHO)',
+  'INTL',
+  'guideline',
+  'vi',
+  'kham-phong-benh',
+  'health',
+  6,
+  'https://www.who.int/news-room/fact-sheets/detail/hypertension',
+  'active',
+  'approved',
+  '2023-03-16',
+  '2023-03-16',
+  '2026-07-01',
+  'seed',
+  'intl_guideline',
+  datetime('now'),
+  datetime('now')
+);
+
+INSERT OR IGNORE INTO source_versions (id, source_id, version_number, content_hash, reviewed_text, created_at, created_by) VALUES
+(
+  'sver_official_byt', 'src_official_byt', 1, 'seedhash_byt',
+  '# Cổng thông tin Bộ Y tế
+
+Bộ Y tế công bố thông tin y tế công cộng và hướng dẫn chuyên môn trên cổng thông tin chính thức https://moh.gov.vn/.
+
+Người dân nên dùng thông tin chính thống khi chuẩn bị khám chữa bệnh và hỏi ý kiến cơ sở y tế khi có triệu chứng.',
+  datetime('now'), 'seed'
+),
+(
+  'sver_official_who_bp', 'src_official_who_bp', 1, 'seedhash_who_bp',
+  '# WHO Hypertension
+
+WHO nêu tăng huyết áp là yếu tố nguy cơ tim mạch quan trọng. Đo huyết áp, lối sống lành mạnh và điều trị theo chỉ định chuyên môn giúp kiểm soát.
+
+Không tự ý thay đổi thuốc khi chưa được nhân viên y tế hướng dẫn.
+https://www.who.int/news-room/fact-sheets/detail/hypertension',
+  datetime('now'), 'seed'
+);
+
+INSERT OR IGNORE INTO source_chunks (
+  id, source_id, version_id, chunk_index, heading, location_ref, content, content_hash, metadata_json, indexing_status, created_at
+) VALUES
+(
+  'chk_official_byt_1', 'src_official_byt', 'sver_official_byt', 0, 'Cổng Bộ Y tế', 'chunk-0',
+  'Bộ Y tế công bố thông tin y tế công cộng chính thống tại https://moh.gov.vn/. Dùng kênh chính thức khi chuẩn bị khám chữa bệnh; hỏi cơ sở y tế khi có triệu chứng.',
+  'seedchunk_byt',
+  '{"source_id":"src_official_byt","title":"Cổng thông tin điện tử Bộ Y tế","issuer":"Bộ Y tế Việt Nam","status":"active","review_status":"approved","publication_date":"2024-01-01","category":"kham-phong-benh","trust_tier":"official_vn","original_url":"https://moh.gov.vn/"}',
+  'indexed', datetime('now')
+),
+(
+  'chk_official_who_bp_1', 'src_official_who_bp', 'sver_official_who_bp', 0, 'WHO Hypertension', 'chunk-0',
+  'WHO: tăng huyết áp là yếu tố nguy cơ tim mạch quan trọng; đo và theo dõi huyết áp; không tự ý thay đổi thuốc. https://www.who.int/news-room/fact-sheets/detail/hypertension',
+  'seedchunk_who_bp',
+  '{"source_id":"src_official_who_bp","title":"WHO Fact sheet: Hypertension (Tăng huyết áp)","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2023-03-16","category":"kham-phong-benh","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/hypertension"}',
+  'indexed', datetime('now')
+);
+
+-- Link library lessons to official source documents + show official issuer attribution
+UPDATE library_lessons SET source_document_id = 'src_official_who_bp', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'theo-doi-huyet-ap';
+UPDATE library_lessons SET source_document_id = 'src_demo_checkup', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'kham-dinh-ky';
+UPDATE library_lessons SET source_document_id = 'src_demo_fund', issuer = 'Ngân hàng Nhà nước Việt Nam', updated_at = datetime('now') WHERE slug = 'quy-du-phong';
+UPDATE library_lessons SET source_document_id = 'src_demo_docs', issuer = 'Bảo hiểm xã hội Việt Nam', updated_at = datetime('now') WHERE slug = 'giay-to-tuoi-gia';
+UPDATE library_lessons SET source_document_id = 'src_demo_fall', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'phong-nga';
+UPDATE library_lessons SET source_document_id = 'src_official_byt', issuer = 'Bộ Y tế Việt Nam', updated_at = datetime('now') WHERE slug = 'danh-sach-thuoc';
+UPDATE library_lessons SET source_document_id = 'src_demo_checkup', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'giac-ngu';
+UPDATE library_lessons SET source_document_id = 'src_demo_checkup', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'van-dong-trung-nien';

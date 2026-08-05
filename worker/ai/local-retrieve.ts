@@ -112,6 +112,7 @@ export type LocalChunkRow = {
   publication_date?: string | null;
   original_url?: string | null;
   status?: string | null;
+  trust_tier?: string | null;
 };
 
 export type LocalLessonRow = {
@@ -135,6 +136,7 @@ export type RankedLocalSource = {
   snippet: string;
   score: number;
   status?: string;
+  trustTier?: string;
 };
 
 /** Rank approved D1 chunks / lessons for grounded chat when AI Search is empty. */
@@ -166,6 +168,7 @@ export function rankLocalKnowledge(
       snippet: row.content.slice(0, 500),
       score,
       status: row.status ?? "active",
+      trustTier: row.trust_tier ?? undefined,
     });
   }
 

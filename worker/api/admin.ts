@@ -14,7 +14,7 @@ export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>(
 adminRoutes.get("/sources", async (c) => {
   const rows = await c.env.DB.prepare(
     `SELECT public_id, title, issuer, jurisdiction, document_type, category, status, review_status,
-            publication_date, last_reviewed_at, updated_at
+            publication_date, last_reviewed_at, updated_at, trust_tier, original_url
      FROM source_documents ORDER BY updated_at DESC LIMIT 100`,
   ).all();
   return c.json({ sources: rows.results ?? [] });
@@ -37,8 +37,8 @@ adminRoutes.post("/sources", async (c) => {
     `INSERT INTO source_documents
      (id, public_id, slug, title, summary, issuer, jurisdiction, document_type, language, category, pillar,
       estimated_reading_minutes, original_url, status, review_status, publication_date, effective_from, effective_to,
-      created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'pending', ?, ?, ?, ?, ?)`,
+      trust_tier, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'pending', ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
@@ -57,6 +57,7 @@ adminRoutes.post("/sources", async (c) => {
       body.publicationDate ?? null,
       body.effectiveFrom ?? null,
       body.effectiveTo ?? null,
+      body.trustTier,
       now,
       now,
     )
