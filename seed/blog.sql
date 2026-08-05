@@ -2,6 +2,8 @@
 
 -- INSERT OR IGNORE: tái seed không ghi đè bài đã publish bởi cron
 
+-- Cadence: 1 bài / ngày; cron 02:00 UTC publish + fill horizon
+
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at
@@ -87,11 +89,11 @@ Hãy chọn một việc cho 48 giờ tới. Viết ra. Làm xong thì đánh d�
 
 Kế hoạch 30 ngày của Sống An cố ý không nhồi nhét. Hai việc chính và một việc tùy chọn mỗi tuần là để bạn **thắng cuộc chơi dài**, không phải cháy hết trong tuần đầu.',
   'published',
-  '2026-07-03',
-  '2026-07-03T02:00:00.000Z',
+  '2026-07-02',
+  '2026-07-02T02:00:00.000Z',
   'Biên tập Sống An',
-  '2026-07-03T01:00:00.000Z',
-  '2026-07-03T01:00:00.000Z'
+  '2026-07-02T01:00:00.000Z',
+  '2026-07-02T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -136,11 +138,11 @@ Chuẩn bị tuổi già không có nghĩa lúc nào cũng nghiêm trang. Đư�
 
 Bạn không cần “yêu” mọi thay đổi. Bạn chỉ cần **không để nỗi sợ quyết định hộ mình**. Mỗi lần bạn hỏi một câu, đọc một bài, hoặc hoàn thành một việc nhỏ trong kế hoạch — bạn đang chọn thích nghi.',
   'published',
-  '2026-07-05',
-  '2026-07-05T02:00:00.000Z',
+  '2026-07-03',
+  '2026-07-03T02:00:00.000Z',
   'Biên tập Sống An',
-  '2026-07-05T01:00:00.000Z',
-  '2026-07-05T01:00:00.000Z'
+  '2026-07-03T01:00:00.000Z',
+  '2026-07-03T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -182,11 +184,11 @@ Biết xử lý khi người thân bị ngã, có danh sách liên hệ khẩn c
 
 Bạn xứng đáng được khỏe. Chăm sóc tốt nhất thường đến từ người còn đủ sức để dịu dàng — kể cả với chính mình.',
   'published',
-  '2026-07-07',
-  '2026-07-07T02:00:00.000Z',
+  '2026-07-04',
+  '2026-07-04T02:00:00.000Z',
   'Biên tập Sống An',
-  '2026-07-07T01:00:00.000Z',
-  '2026-07-07T01:00:00.000Z'
+  '2026-07-04T01:00:00.000Z',
+  '2026-07-04T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -229,11 +231,11 @@ Xong ba việc này, bạn đã hơn “mình chẳng biết gì” rất nhiề
 
 Sống An không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng tài chính quan trọng nhất ở tuổi trung niên.',
   'published',
-  '2026-07-09',
-  '2026-07-09T02:00:00.000Z',
+  '2026-07-05',
+  '2026-07-05T02:00:00.000Z',
   'Biên tập Sống An',
-  '2026-07-09T01:00:00.000Z',
-  '2026-07-09T01:00:00.000Z'
+  '2026-07-05T01:00:00.000Z',
+  '2026-07-05T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -270,11 +272,11 @@ Các việc nhỏ trong kế hoạch 30 ngày — đi bộ, ghi huyết áp, ng�
 
 Bạn không cần phạt bản thân. Bạn cần đồng hành với cơ thể dài hơi hơn.',
   'published',
-  '2026-07-11',
-  '2026-07-11T02:00:00.000Z',
+  '2026-07-06',
+  '2026-07-06T02:00:00.000Z',
   'Biên tập Sống An',
-  '2026-07-11T01:00:00.000Z',
-  '2026-07-11T01:00:00.000Z'
+  '2026-07-06T01:00:00.000Z',
+  '2026-07-06T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -307,11 +309,11 @@ Bạn không phải kể hết nỗi lòng. Chỉ cần nói: “Dạo này mìn
 
 Chuẩn bị tuổi già không chỉ là tiền và thuốc. Đó còn là **có người để gọi**, và bạn cũng là người có thể gọi cho ai đó. Kết nối là quỹ dự phòng của tâm hồn.',
   'published',
-  '2026-07-13',
-  '2026-07-13T02:00:00.000Z',
+  '2026-07-07',
+  '2026-07-07T02:00:00.000Z',
   'Biên tập Sống An',
-  '2026-07-13T01:00:00.000Z',
-  '2026-07-13T01:00:00.000Z'
+  '2026-07-07T01:00:00.000Z',
+  '2026-07-07T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -344,11 +346,11 @@ Nếu kế hoạch gợi ý “giờ ngủ cố định trong vài đêm”, hã
 
 Ngủ tốt không giải quyết hết mọi việc. Nhưng nó làm mọi việc **dễ thở hơn**.',
   'published',
-  '2026-07-15',
-  '2026-07-15T02:00:00.000Z',
+  '2026-07-08',
+  '2026-07-08T02:00:00.000Z',
   'Biên tập Sống An',
-  '2026-07-15T01:00:00.000Z',
-  '2026-07-15T01:00:00.000Z'
+  '2026-07-08T01:00:00.000Z',
+  '2026-07-08T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -423,11 +425,11 @@ Bạn không cần giảm 5kg mới được vui. Bạn được vui vì **đã 
 
 Trong kế hoạch, mỗi việc hoàn thành là một tín hiệu: bạn đang điều hướng đời sống thay vì bị đời sống cuốn. Hãy để những tín hiệu đó tích lại thành sự tự tin.',
   'scheduled',
-  '2026-08-07',
+  '2026-08-06',
   NULL,
   'Biên tập Sống An',
-  '2026-08-07T01:00:00.000Z',
-  '2026-08-07T01:00:00.000Z'
+  '2026-08-06T01:00:00.000Z',
+  '2026-08-06T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -459,11 +461,11 @@ Chỉnh nhà không có nghĩa “già rồi nên yếu”. Nghĩa là bạn **t
 
 Mỗi chỉnh sửa nhỏ là một món quà cho tương lai: bạn giảm khả năng một sự cố làm đảo lộn cả gia đình. Đó là động lực rất thực tế — và rất nhân văn.',
   'scheduled',
-  '2026-08-09',
+  '2026-08-07',
   NULL,
   'Biên tập Sống An',
-  '2026-08-09T01:00:00.000Z',
-  '2026-08-09T01:00:00.000Z'
+  '2026-08-07T01:00:00.000Z',
+  '2026-08-07T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -502,13 +504,13 @@ Chúng tôi không hứa bạn sẽ không gặp khó khăn. Chúng tôi muốn 
 
 Cứ bước. Chậm cũng được. Miễn là về phía chăm sóc, rõ ràng và kết nối.
 
-Hẹn bạn ở bài viết tiếp theo — đều đặn khoảng hai ngày một lần, như một người bạn nhắc khẽ: bạn vẫn đang đi đúng hướng.',
+Hẹn bạn ở bài viết tiếp theo — đều đặn mỗi ngày, như một người bạn nhắc khẽ: bạn vẫn đang đi đúng hướng.',
   'scheduled',
-  '2026-08-11',
+  '2026-08-08',
   NULL,
   'Biên tập Sống An',
-  '2026-08-11T01:00:00.000Z',
-  '2026-08-11T01:00:00.000Z'
+  '2026-08-08T01:00:00.000Z',
+  '2026-08-08T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -517,13 +519,13 @@ INSERT OR IGNORE INTO blog_posts (
 ) VALUES (
   'blog_013',
   'on-dinh-cam-xuc-tuoi-trung-nien',
-  'Ổn định cảm xúc tuổi trung niên: khi mọi thứ đổi mà bạn vẫn muốn đứng vững',
+  'Ổn định cảm xúc tuổi ngoài 40: khi mọi thứ đổi mà bạn vẫn muốn đứng vững',
   'Công việc, gia đình, sức khỏe cùng lúc thay đổi. Học cách giữ nhịp cảm xúc mà không phủ nhận khó khăn.',
   'tinh-than',
   7,
   '## Sóng chồng sóng
 
-Tuổi trung niên ít khi chỉ có một việc. Thường là nhiều việc cùng lúc. Cảm xúc vì thế cũng chồng lớp: lo, mệt, đôi khi trống rỗng.
+Tuổi ngoài 40 ít khi chỉ có một việc. Thường là nhiều việc cùng lúc. Cảm xúc vì thế cũng chồng lớp: lo, mệt, đôi khi trống rỗng.
 
 Bạn không “yếu”. Bạn đang chịu tải.
 
@@ -543,11 +545,11 @@ Khóc được. Giận được. Nhưng sau đó hãy chọn **một hành độ
 
 Ổn định không phải là không sóng. Là biết bám vào đâu khi sóng tới — và Sống An muốn là một trong những chỗ bám thông tin dịu dàng đó.',
   'scheduled',
-  '2026-08-13',
+  '2026-08-09',
   NULL,
   'Biên tập Sống An',
-  '2026-08-13T01:00:00.000Z',
-  '2026-08-13T01:00:00.000Z'
+  '2026-08-09T01:00:00.000Z',
+  '2026-08-09T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -583,11 +585,11 @@ Ba buổi nhẹ mỗi tuần thắng một buổi “gồng” rồi bỏ hai tu
 
 Mỗi bước chân là lời khẳng định: mình vẫn đầu tư cho thập niên tới. Không ồn ào. Nhưng rất đáng.',
   'scheduled',
-  '2026-08-15',
+  '2026-08-10',
   NULL,
   'Biên tập Sống An',
-  '2026-08-15T01:00:00.000Z',
-  '2026-08-15T01:00:00.000Z'
+  '2026-08-10T01:00:00.000Z',
+  '2026-08-10T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -622,11 +624,11 @@ Không cần giải quyết hết trong một lần.
 
 Cuộc nói chuyện sớm là món quà. Nó biến tình yêu thành kế hoạch — và kế hoạch giúp tình yêu bền hơn khi ngày khó đến.',
   'scheduled',
-  '2026-08-17',
+  '2026-08-11',
   NULL,
   'Biên tập Sống An',
-  '2026-08-17T01:00:00.000Z',
-  '2026-08-17T01:00:00.000Z'
+  '2026-08-11T01:00:00.000Z',
+  '2026-08-11T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -656,11 +658,11 @@ Cả hai đều làm bạn mắc kẹt.
 
 Sống An không dạy bạn giả vờ vui. Chúng tôi muốn bạn **vừa dịu dàng với hiện tại, vừa quyền năng với tương lai**. Đó mới là động lực bền.',
   'scheduled',
-  '2026-08-19',
+  '2026-08-12',
   NULL,
   'Biên tập Sống An',
-  '2026-08-19T01:00:00.000Z',
-  '2026-08-19T01:00:00.000Z'
+  '2026-08-12T01:00:00.000Z',
+  '2026-08-12T01:00:00.000Z'
 );
 
 INSERT OR IGNORE INTO blog_posts (
@@ -694,6 +696,276 @@ Làm được 2/5 bước đã là thắng. Mục tiêu là **ngắt đà đi xu
 ## Kết
 
 Ngày xấu không xóa giá trị bạn. Protocol nhỏ giúp bạn nhớ: mình vẫn có quyền lái lại hướng đi — kể cả khi trời trong lòng đang âm u.',
+  'scheduled',
+  '2026-08-13',
+  NULL,
+  'Biên tập Sống An',
+  '2026-08-13T01:00:00.000Z',
+  '2026-08-13T01:00:00.000Z'
+);
+
+INSERT OR IGNORE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_018',
+  'mot-trang-so-sach',
+  'Một trang sổ sách: làm rõ tiền bạc mà không cần trở thành kế toán',
+  'Bạn không cần bảng Excel phức tạp. Một trang giấy trung thực đã đủ để bớt mơ hồ và bớt sợ.',
+  'tai-chinh',
+  6,
+  '## Mơ hồ nuôi nỗi sợ
+
+Khi không biết tiền vào đâu, ra đâu, não dễ tưởng tượng kịch bản xấu nhất.
+
+## Bài tập 20 phút
+
+Viết bốn cột:
+
+1. Thu nhập đều đặn
+2. Chi tiêu cần thiết (nhà, ăn, thuốc, đi lại)
+3. Khoản để dành / quỹ dự phòng
+4. Khoản có thể giảm nếu cần
+
+Không cần số đẹp. Cần số **thật**.
+
+## Không so với hàng xóm
+
+Sổ của bạn là của bạn. Mục tiêu là thấy rõ, không phải thắng cuộc đua ngầm.
+
+## Kết
+
+Một trang sổ sách là bước đầu của sự bình tĩnh. Sống An không tư vấn đầu tư — chỉ muốn bạn **bớt sợ vì bớt mơ hồ**.',
+  'scheduled',
+  '2026-08-14',
+  NULL,
+  'Biên tập Sống An',
+  '2026-08-14T01:00:00.000Z',
+  '2026-08-14T01:00:00.000Z'
+);
+
+INSERT OR IGNORE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_019',
+  'kham-dinh-ky-khong-hoang',
+  'Khám định kỳ không hoảng: coi như bảo dưỡng, không phải phán xét',
+  'Nhiều người tránh khám vì sợ nghe tin xấu. Đổi góc nhìn giúp bạn đi khám sớm hơn và nhẹ lòng hơn.',
+  'suc-khoe',
+  6,
+  '## Sợ kết quả là bình thường
+
+Sợ không có nghĩa bạn yếu. Nhưng tránh khám lâu dài thường làm rủi ro lớn hơn.
+
+## Khung chuẩn bị 3 việc
+
+1. Mang danh sách thuốc đang dùng
+2. Ghi 3 câu hỏi muốn hỏi bác sĩ
+3. Nhờ người đi cùng nếu bạn dễ quên hoặc dễ lo
+
+## Sau khám
+
+Ghi lại lời dặn vào sổ. Đặt lịch việc nhỏ tiếp theo (uống thuốc đúng giờ, đo huyết áp, tái khám).
+
+## Kết
+
+Khám định kỳ là cách bạn **chăm sóc tương lai**, không phải chờ đến lúc sự cố. Nếu có triệu chứng bất thường, hãy gặp bác sĩ — đừng chỉ hỏi công cụ online.',
+  'scheduled',
+  '2026-08-15',
+  NULL,
+  'Biên tập Sống An',
+  '2026-08-15T01:00:00.000Z',
+  '2026-08-15T01:00:00.000Z'
+);
+
+INSERT OR IGNORE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_020',
+  'ranh-gioi-nhe-nhang',
+  'Ranh giới nhẹ nhàng: biết nói ‘không’ để còn sức nói ‘có’ với điều quan trọng',
+  'Tuổi ngoài 40 thường gánh nhiều vai. Học cách giữ năng lượng mà vẫn tử tế với người khác.',
+  'tinh-than',
+  5,
+  '## Không phải ích kỷ
+
+Ranh giới giúp bạn bền. Người kiệt sức khó chăm ai lâu dài.
+
+## Câu nói mẫu
+
+- “Tuần này mình chưa nhận thêm được việc đó.”
+- “Mình cần nghỉ nửa ngày rồi mình hỗ trợ tiếp.”
+- “Việc này quan trọng, mình muốn làm tốt — nên mình xin làm vào cuối tuần.”
+
+## Kết
+
+Bạn được phép quý trọng sức mình. Đó cũng là cách chuẩn bị tuổi già: **giữ vốn năng lượng**.',
+  'scheduled',
+  '2026-08-16',
+  NULL,
+  'Biên tập Sống An',
+  '2026-08-16T01:00:00.000Z',
+  '2026-08-16T01:00:00.000Z'
+);
+
+INSERT OR IGNORE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_021',
+  'di-bo-nhu-lieu-phap',
+  'Đi bộ như liệu pháp: chậm, đều, đủ gần nhà',
+  'Không cần thành tích. Hai mươi phút quanh khu phố có thể đổi cả ngày của bạn.',
+  'suc-khoe',
+  5,
+  '## Vì sao đi bộ hợp tuổi ngoài 40
+
+Ít dụng cụ. Ít rủi ro nếu đi đúng khả năng. Dễ duy trì. Có thể nói chuyện với người thân khi đi.
+
+## Cách bắt đầu
+
+- Chọn khung giờ cố định (sáng hoặc chiều)
+- Đi mức nói chuyện được bình thường
+- Có đau ngực, chóng mặt, khó thở bất thường → dừng và gặp bác sĩ
+
+## Kết
+
+Mỗi vòng đi bộ là một viên gạch nhỏ cho sức khỏe dài hạn. Đều đặn thắng “gắng một lần”.',
+  'scheduled',
+  '2026-08-17',
+  NULL,
+  'Biên tập Sống An',
+  '2026-08-17T01:00:00.000Z',
+  '2026-08-17T01:00:00.000Z'
+);
+
+INSERT OR IGNORE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_022',
+  'thuoc-co-nhan',
+  'Thuốc có nhãn: một thói quen nhỏ giảm rối loạn lớn',
+  'Quên thuốc, nhầm thuốc, hết thuốc đột ngột — thường đến từ chỗ cất và cách ghi chú chưa rõ.',
+  'suc-khoe',
+  5,
+  '## Checklist nhanh
+
+- Mỗi hộp có tên thuốc + liều + giờ uống
+- Một chỗ cố định, khô, tránh trẻ nhỏ với phải
+- Danh sách thuốc cập nhật trong ví hoặc điện thoại
+- Biết thuốc nào sắp hết trước 7 ngày
+
+## Khi đi khám
+
+Mang theo danh sách. Đừng dựa vào trí nhớ lúc hồi hộp.
+
+## Kết
+
+Đây không phải “làm quá”. Đây là **tôn trọng sự an toàn** của chính mình và người thân.',
+  'scheduled',
+  '2026-08-18',
+  NULL,
+  'Biên tập Sống An',
+  '2026-08-18T01:00:00.000Z',
+  '2026-08-18T01:00:00.000Z'
+);
+
+INSERT OR IGNORE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_023',
+  'goi-mot-cuoc',
+  'Gọi một cuộc: kết nối 10 phút còn hơn mạng lưới lớn nhưng lạnh',
+  'Cảm giác cô đơn không luôn ồn ào. Một cuộc gọi ngắn có thể neo bạn lại với đời sống.',
+  'tinh-than',
+  5,
+  '## Chọn người “dễ gọi”
+
+Không cần người hoàn hảo. Cần người bạn có thể nói: “Dạo này mình hơi mệt.”
+
+## Kịch bản 10 phút
+
+1. Hỏi thăm thật
+2. Kể một việc nhỏ bạn đang làm cho sức khỏe / nhà cửa / tiền bạc
+3. Hẹn lần gọi hoặc đi bộ sau
+
+## Kết
+
+Chuẩn bị tuổi già cũng là nuôi vài mối liên hệ ổn định. Bạn không cần đám đông — cần **vài người thật**.',
+  'scheduled',
+  '2026-08-19',
+  NULL,
+  'Biên tập Sống An',
+  '2026-08-19T01:00:00.000Z',
+  '2026-08-19T01:00:00.000Z'
+);
+
+INSERT OR IGNORE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_024',
+  'mot-hop-giay-to',
+  'Một hộp giấy tờ: biết chỗ cất là đã bớt một nửa hoảng loạn',
+  'Khi có việc đột xuất, tìm giấy tờ thường làm cả nhà loạn. Sắp xếp sớm là yêu thương rất cụ thể.',
+  'cham-soc',
+  6,
+  '## Những gì nên để cùng chỗ
+
+- Căn cước / CCCD
+- Sổ bảo hiểm xã hội / thẻ bảo hiểm y tế
+- Giấy tờ nhà (nếu có)
+- Danh sách thuốc và dị ứng
+- Số điện thoại người liên hệ khẩn
+
+## Cách làm vừa sức
+
+Không cần hệ thống đẹp. Một hộp hoặc một ngăn tủ có nhãn “Giấy tờ quan trọng” đã đủ bắt đầu.
+
+Cho một người thân tin cậy biết chỗ cất.
+
+## Kết
+
+Bạn không đang “nghĩ chuyện xấu”. Bạn đang **giảm tải cho ngày khó** — nếu ngày đó đến.',
+  'scheduled',
+  '2026-08-20',
+  NULL,
+  'Biên tập Sống An',
+  '2026-08-20T01:00:00.000Z',
+  '2026-08-20T01:00:00.000Z'
+);
+
+INSERT OR IGNORE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_025',
+  'tuan-nay-mot-viec',
+  'Tuần này một việc: chống lại ảo tưởng phải sửa hết cuộc đời trong bảy ngày',
+  'Kế hoạch đẹp thường chết vì quá tham. Chọn một việc vừa sức giúp bạn thắng cuộc chơi dài.',
+  'thoi-quen',
+  5,
+  '## Luật một việc
+
+Mỗi tuần, chọn **một** việc chính:
+
+- Đo huyết áp vài buổi
+- Đi bộ 3 lần
+- Gọi bố mẹ
+- Ghi một trang chi tiêu
+- Chỉnh một góc nhà dễ ngã
+
+## Vì sao ít lại mạnh
+
+Não bộ cần bằng chứng tiến bộ. Một việc xong tạo đà cho tuần sau.
+
+## Kết
+
+Sống An cố ý thiết kế kế hoạch 30 ngày với ít việc. Không phải bạn chậm — là bạn đang đi **bền**.',
   'scheduled',
   '2026-08-21',
   NULL,

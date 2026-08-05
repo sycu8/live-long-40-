@@ -7,9 +7,14 @@
   "assets": {
     "not_found_handling": "single-page-application",
     "binding": "ASSETS",
-    // Only API must hit the Worker first. /admin is an SPA route; protect it with
-    // Cloudflare Access path policies in staging/production (not run_worker_first).
-    "run_worker_first": ["/api/*"]
+    // API + crawl surfaces must hit the Worker before static SPA assets.
+    // /admin is an SPA route; protect it with Cloudflare Access in staging/production.
+    "run_worker_first": [
+      "/api/*",
+      "/sitemap.xml",
+      "/robots.txt",
+      "/feed.xml"
+    ]
   },
   "observability": {
     "enabled": true,
@@ -29,7 +34,8 @@
     "SAFETY_RULESET_VERSION": "v1.0.0",
     "PLAN_RULESET_VERSION": "v1.0.1",
     // Local/staging QA only. Leave empty in production — use Cloudflare Access.
-    "LOCAL_QA_ADMIN_TOKEN": ""
+    "LOCAL_QA_ADMIN_TOKEN": "",
+    "PUBLIC_SITE_URL": "https://song-an-40.sycu-lee.workers.dev"
   },
   "d1_databases": [
     {
@@ -96,7 +102,7 @@
       "class_name": "IngestionWorkflow"
     }
   ],
-  // Publish scheduled blog posts daily; content cadence is every ~2 days via scheduled_for.
+  // Daily: publish due posts + fill schedule horizon (1 bài/ngày) for crawlable blog.
   "triggers": {
     "crons": ["0 2 * * *"]
   },
@@ -114,7 +120,8 @@
         "PROMPT_VERSION": "v1.0.0",
         "SCORING_RULESET_VERSION": "v1.0.1",
         "SAFETY_RULESET_VERSION": "v1.0.0",
-        "PLAN_RULESET_VERSION": "v1.0.1"
+        "PLAN_RULESET_VERSION": "v1.0.1",
+        "PUBLIC_SITE_URL": "https://song-an-40.sycu-lee.workers.dev"
       }
     }
   }

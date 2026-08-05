@@ -49,7 +49,7 @@ export const LANDING_OUTCOMES = [
   },
   {
     title: "Góc động viên",
-    body: "Bài viết dài, cập nhật khoảng hai ngày một lần — nâng tinh thần và gợi ý cách thích nghi với tuổi trung niên đến tuổi già.",
+    body: "Bài viết dài, cập nhật mỗi ngày — nâng tinh thần và gợi ý cách thích nghi với tuổi ngoài 40 đến tuổi già.",
   },
 ] as const;
 
