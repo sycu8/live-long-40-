@@ -224,6 +224,9 @@ export function oauthAuthorizationServer(origin: string) {
     agent_auth: {
       skill: `${o}/auth.md`,
       register_uri: `${o}/api/v1/session`,
+      identity_endpoint: `${o}/api/v1/session`,
+      claim_endpoint: `${o}/api/v1/session`,
+      claim_uri: `${o}/api/v1/session`,
       identity_types_supported: ["anonymous"],
       anonymous: {
         credential_types_supported: ["session_cookie", "csrf_token"],
