@@ -1,6 +1,5 @@
-/* Safe PWA service worker: cache static assets + public library metadata only. */
-const CACHE = "song-an-40-v1";
-const PRECACHE = ["/", "/manifest.webmanifest", "/favicon.svg"];
+const CACHE = "vivaage-v2";
+const PRECACHE = ["/manifest.webmanifest", "/og-image.jpg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
@@ -17,35 +16,66 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
+  const { request } = event;
+  if (request.method !== "GET") return;
 
-  const url = new URL(req.url);
-  if (url.pathname.startsWith("/api/")) {
-    // Never cache API — personalized/sensitive responses
-    return;
-  }
-  if (url.pathname.startsWith("/admin")) {
-    return;
-  }
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
 
-  // Public library metadata may be cached briefly offline
-  if (url.pathname === "/api/v1/library" || url.pathname.startsWith("/api/v1/library/")) {
-    return;
-  }
+  // Never cache API — always network.
+  if (url.pathname.startsWith("/api/")) return;
 
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      const fetched = fetch(req)
-        .then((res) => {
-          if (res.ok && (url.pathname.startsWith("/assets") || PRECACHE.includes(url.pathname))) {
-            const clone = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, clone));
+  // HTML navigations: network-first so deploy updates are not stuck behind SW.
+  // Falling back to cache only when offline.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            void caches.open(CACHE).then((cache) => cache.put(request, copy));
           }
-          return res;
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          return cached || Response.error();
+        }),
+    );
+    return;
+  }
+
+  // Hashed Vite assets: cache-first (immutable filenames).
+  if (url.pathname.startsWith("/assets/")) {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) =>
+          cached ||
+          fetch(request).then((response) => {
+            if (response.ok) {
+              const copy = response.clone();
+              void caches.open(CACHE).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          }),
+      ),
+    );
+    return;
+  }
+
+  // Other same-origin GETs: stale-while-revalidate.
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const network = fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            void caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
         })
         .catch(() => cached);
-      return cached || fetched;
+      return cached || network;
     }),
   );
 });

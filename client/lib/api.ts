@@ -27,11 +27,18 @@ export function getAdminBearer(): string | null {
   return adminBearer;
 }
 
+/**
+ * Ensure we have a CSRF token for mutating API calls.
+ * `sa_session` is HttpOnly, so JS only sees `sa_csrf`. When that cookie is
+ * already present (return visit), skip POST /api/v1/session — that request was
+ * the longest Lighthouse critical-path edge (~1s+).
+ */
 export async function ensureSession(): Promise<{ csrfToken: string }> {
   if (csrfToken) return { csrfToken };
   const fromCookie = readCookie("sa_csrf");
-  if (fromCookie && readCookie("sa_session") === null) {
-    // CSRF cookie without session is incomplete — continue bootstrap
+  if (fromCookie) {
+    csrfToken = fromCookie;
+    return { csrfToken: fromCookie };
   }
   if (!sessionBootstrap) {
     sessionBootstrap = (async () => {

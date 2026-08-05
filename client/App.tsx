@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { BRAND } from "@shared/brand";
 import { ensureSession } from "./lib/api";
 import { DocumentHead } from "./components/DocumentHead";
 import { LandingPage } from "./pages/LandingPage";
@@ -14,42 +13,57 @@ import { BlogPage, BlogDetailPage } from "./pages/BlogPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminPage } from "./pages/AdminPage";
 
+/**
+ * Warm anonymous session after first paint — do not block the SPA shell on
+ * `/api/v1/session` (that request was on the Lighthouse critical path).
+ */
+function warmSessionInBackground() {
+  const run = () => {
+    void ensureSession().catch(() => {
+      /* API calls will retry via ensureSession() */
+    });
+  };
+  const ric = (
+    window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }
+  ).requestIdleCallback;
+  if (typeof ric === "function") {
+    ric(() => run(), { timeout: 2500 });
+  } else {
+    window.setTimeout(run, 1);
+  }
+}
+
 export function App() {
-  const [ready, setReady] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
 
   useEffect(() => {
-    ensureSession()
-      .then(() => setReady(true))
-      .catch((e) =>
-        setBootError(e instanceof Error ? e.message : "Không khởi tạo được phiên."),
+    warmSessionInBackground();
+    // Surface hard bootstrap failures only if cookies cannot be established
+    // after a short delay (offline / API down). Landing still renders.
+    const t = window.setTimeout(() => {
+      void ensureSession().catch((e) =>
+        setBootError(
+          e instanceof Error ? e.message : "Không khởi tạo được phiên.",
+        ),
       );
+    }, 8000);
+    return () => window.clearTimeout(t);
   }, []);
-
-  if (bootError) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16 lg:max-w-2xl">
-        <h1 className="font-display text-2xl lg:text-3xl">Không kết nối được dịch vụ</h1>
-        <p className="mt-3 text-[var(--color-ink-muted)]">{bootError}</p>
-        <p className="mt-3 text-sm">
-          Hãy chạy <code>pnpm db:migrate:local</code> và <code>pnpm db:seed:local</code>{" "}
-          rồi khởi động lại <code>pnpm dev</code>.
-        </p>
-      </div>
-    );
-  }
-
-  if (!ready) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-[var(--color-ink-muted)] lg:max-w-2xl">
-        Đang khởi tạo {BRAND.name}…
-      </div>
-    );
-  }
 
   return (
     <BrowserRouter>
       <DocumentHead />
+      {bootError ? (
+        <div
+          className="border-b border-amber-200/80 bg-amber-50 px-4 py-2 text-center text-sm text-amber-950"
+          role="status"
+        >
+          {bootError} — bạn vẫn xem được trang; thử tải lại nếu cần dùng đánh giá
+          hoặc hỏi đáp.
+        </div>
+      ) : null}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/hom-nay" element={<TodayPage />} />

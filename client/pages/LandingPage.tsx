@@ -54,6 +54,7 @@ export function LandingPage() {
           alt=""
           className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover object-[center_30%] hero-drift lg:object-[center_40%]"
           decoding="async"
+          fetchPriority="high"
         />
         <div
           className="absolute inset-0 -z-10 bg-gradient-to-b from-[var(--color-cream)]/55 via-[var(--color-cream)]/75 to-[var(--color-cream)] lg:bg-gradient-to-r lg:from-[var(--color-cream)]/92 lg:via-[var(--color-cream)]/70 lg:to-transparent"

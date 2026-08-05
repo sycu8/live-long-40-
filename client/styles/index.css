@@ -159,8 +159,13 @@
   }
 
   .hero-drift {
+    /* Transform-only motion (no layout reads) to avoid forced reflow. */
     animation: hero-drift 18s ease-in-out infinite alternate;
+    transform: translate3d(0, 0, 0);
     transform-origin: center 40%;
+    will-change: transform;
+    backface-visibility: hidden;
+    contain: paint;
   }
 }
 
@@ -185,10 +190,11 @@
 }
 
 @keyframes hero-drift {
+  /* Translate only — scale on a full-bleed image forces expensive paints. */
   from {
-    transform: scale(1.02) translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
   }
   to {
-    transform: scale(1.08) translate3d(-1.5%, 1%, 0);
+    transform: translate3d(-2%, 1.25%, 0);
   }
 }
