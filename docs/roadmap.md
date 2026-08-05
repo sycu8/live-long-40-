@@ -1,4 +1,4 @@
-# Roadmap — Sống An 40+
+# Roadmap — VivaAge
 
 Mục tiêu sản phẩm: giúp người Việt **40+** bớt tiêu cực, thích nghi, và chủ động cải thiện đời sống / chuẩn bị tuổi già qua các **việc nhỏ đều đặn**, nội dung động viên, và câu trả lời có nguồn.
 
@@ -12,9 +12,9 @@ Nguyên tắc: giáo dục + kế hoạch — **không** thay bác sĩ, tư vấ
 | --- | --- |
 | Đánh giá sẵn sàng (~20 câu) → hồ sơ 3 trụ cột | Có |
 | Kế hoạch 30 ngày (2 + 1 việc / tuần) | Có |
-| Hỏi Sống An (an toàn + nguồn) | Có |
+| Hỏi VivaAge (an toàn + nguồn) | Có |
 | Thư viện bài học | Có |
-| Góc động viên (blog ~2 ngày/lần) | Có |
+| Góc động viên (blog 1 bài/ngày + crawl sitemap/feed) | Có |
 | Admin nạp nguồn / duyệt | Có (MVP) |
 | PWA + phiên ẩn danh | Có |
 
@@ -47,7 +47,7 @@ Giữ người dùng quay lại bằng **tiến độ rõ ràng + phản ánh nh
 
 1. Mở rộng nguồn đã duyệt để chat ít “từ chối vì thiếu bằng chứng”.
 2. Dashboard admin: tỷ lệ abstain / high-risk / hoàn thành kế hoạch (analytics queue → D1, không lưu nội dung câu hỏi).
-3. Admin soạn / lên lịch bài blog (cron publish đã có).
+3. Admin soạn / lên lịch bài blog (cron publish + fill horizon đã có; `POST /api/v1/admin/blog/run-schedule`).
 4. Siết Turnstile phía client khi đã cấu hình; xác minh Access JWT đúng chuẩn edge.
 
 ---

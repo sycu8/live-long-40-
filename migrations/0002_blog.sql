@@ -1,5 +1,5 @@
--- Motivational blog for Sống An 40+
--- Posts can be scheduled; a cron publishes due items every day (content cadence: ~2 days).
+-- Motivational blog for VivaAge
+-- Posts can be scheduled; daily cron publishes due items and fills the schedule horizon (1 post/day).
 
 CREATE TABLE IF NOT EXISTS blog_posts (
   id TEXT PRIMARY KEY NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   status TEXT NOT NULL CHECK (status IN ('draft', 'scheduled', 'published', 'archived')),
   scheduled_for TEXT NOT NULL,
   published_at TEXT,
-  author_name TEXT NOT NULL DEFAULT 'Biên tập Sống An',
+  author_name TEXT NOT NULL DEFAULT 'Biên tập VivaAge',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );

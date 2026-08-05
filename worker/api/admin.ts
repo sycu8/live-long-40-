@@ -5,16 +5,18 @@ import {
   AdminApproveSchema,
 } from "@shared/schemas/api";
 import { createId, nowIso, sha256Hex } from "@shared/utils/id";
+import { BLOG_CADENCE_DAYS } from "@shared/constants/blog";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
 import { createSourceVersionWithChunks } from "../knowledge/ingest";
+import { runBlogDailyJob, editorialBankSize } from "../blog/schedule";
 
 export const adminRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 adminRoutes.get("/sources", async (c) => {
   const rows = await c.env.DB.prepare(
     `SELECT public_id, title, issuer, jurisdiction, document_type, category, status, review_status,
-            publication_date, last_reviewed_at, updated_at
+            publication_date, last_reviewed_at, updated_at, trust_tier, original_url
      FROM source_documents ORDER BY updated_at DESC LIMIT 100`,
   ).all();
   return c.json({ sources: rows.results ?? [] });
@@ -37,8 +39,8 @@ adminRoutes.post("/sources", async (c) => {
     `INSERT INTO source_documents
      (id, public_id, slug, title, summary, issuer, jurisdiction, document_type, language, category, pillar,
       estimated_reading_minutes, original_url, status, review_status, publication_date, effective_from, effective_to,
-      created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'pending', ?, ?, ?, ?, ?)`,
+      trust_tier, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', 'pending', ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
       id,
@@ -57,6 +59,7 @@ adminRoutes.post("/sources", async (c) => {
       body.publicationDate ?? null,
       body.effectiveFrom ?? null,
       body.effectiveTo ?? null,
+      body.trustTier,
       now,
       now,
     )
@@ -381,4 +384,31 @@ adminRoutes.get("/sources/:id/usage", async (c) => {
     .first<{ citation_count: number }>();
 
   return c.json({ citationCount: usage?.citation_count ?? 0 });
+});
+
+/** Manually run the daily blog publish + schedule fill (same as cron). */
+adminRoutes.post("/blog/run-schedule", async (c) => {
+  const result = await runBlogDailyJob(c.env);
+  const now = nowIso();
+  await c.env.DB.prepare(
+    `INSERT INTO audit_events (id, actor, action, entity_type, entity_id, detail_json, created_at)
+     VALUES (?, 'admin', 'blog_run_schedule', 'blog_posts', 'schedule', ?, ?)`,
+  )
+    .bind(createId("audit"), JSON.stringify(result), now)
+    .run();
+  return c.json({ ok: true, bankSize: editorialBankSize(), ...result });
+});
+
+adminRoutes.get("/blog/schedule", async (c) => {
+  const rows = await c.env.DB.prepare(
+    `SELECT slug, title, status, scheduled_for, published_at, theme
+     FROM blog_posts
+     WHERE status IN ('scheduled', 'published')
+     ORDER BY scheduled_for DESC
+     LIMIT 60`,
+  ).all();
+  return c.json({
+    cadenceDays: BLOG_CADENCE_DAYS,
+    items: rows.results ?? [],
+  });
 });

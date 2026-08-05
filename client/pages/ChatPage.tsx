@@ -246,9 +246,11 @@ export function ChatPage() {
       <div className="flex min-h-[70dvh] flex-col gap-4 lg:min-h-[calc(100dvh-12rem)] lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
         <div className="flex min-h-0 flex-1 flex-col gap-4">
           <div>
-            <h1 className="font-display text-3xl lg:text-4xl">Hỏi Sống An</h1>
+            <h1 className="font-display text-3xl lg:text-4xl">Hỏi VivaAge</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
-              Câu trả lời dựa trên nguồn đã duyệt. Có thể gõ tiếng Việt không dấu.
+              Câu trả lời dựa trên nguồn từ Bộ Y tế, Bảo hiểm xã hội Việt Nam, Ngân
+              hàng Nhà nước Việt Nam hoặc Tổ chức Y tế Thế giới. Bạn có thể gõ tiếng
+              Việt không dấu.
             </p>
             <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
               {historyOptIn
@@ -391,10 +393,18 @@ export function ChatPage() {
               {drawerSource.issuer}
               {drawerSource.date ? ` · ${drawerSource.date}` : ""}
             </p>
+            <p className="mt-2 text-xs font-medium text-[var(--color-green)]">
+              Nguồn từ cơ quan tin cậy
+            </p>
             {drawerSource.url ? (
-              <p className="mt-2 break-all text-sm text-[var(--color-blue)]">
-                {drawerSource.url}
-              </p>
+              <a
+                href={drawerSource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 block break-all text-sm text-[var(--color-blue)] underline"
+              >
+                Xem trang nguồn: {drawerSource.url}
+              </a>
             ) : null}
             <p className="mt-4 whitespace-pre-wrap text-[var(--color-ink)]">
               {drawerSource.snippet}

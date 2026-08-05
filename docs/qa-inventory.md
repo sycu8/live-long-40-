@@ -1,4 +1,4 @@
-# QA Inventory — Sống An 40+
+# QA Inventory — VivaAge
 
 Sanitized, production-scale local validation checklist.
 Last updated: 2026-08-04. Environment under test: local Wrangler/Vite with `remoteBindings: false`, D1 seed `seed/production-scale.sql`, `.dev.vars` production-like flags.
@@ -14,7 +14,7 @@ Last updated: 2026-08-04. Environment under test: local Wrangler/Vite with `remo
 
 | Route | Primary action | Acceptance criteria | Edge cases (finite) |
 | --- | --- | --- | --- |
-| `/` | Start assessment / ask question | Brand “Sống An 40+” hero-level; CTAs work; 4 example questions link to `/hoi?q=` | Deep-link with unknown path redirects home |
+| `/` | Start assessment / ask question | Brand “VivaAge” hero-level; CTAs work; 4 example questions link to `/hoi?q=` | Deep-link with unknown path redirects home |
 | `/hom-nay` | See readiness + week actions | Empty CTA if no result; scores if result; link to plan | No plan but has result; completed all week actions |
 | `/danh-gia` | Answer one question at a time | Progress updates; back works; save persists; completes to results | Mid-run refresh; invalid option; rate-limit create |
 | `/ket-qua/:id?` | Create 30-day plan | Shows 3 pillars, gaps, strengths, disclaimer; plan CTA | No readiness; create plan twice |
@@ -23,7 +23,9 @@ Last updated: 2026-08-04. Environment under test: local Wrangler/Vite with `remo
 | `/thu-vien` | Browse by category | 6 categories + all; cards show issuer/dates/status | Empty category; API error visible |
 | `/thu-vien/:slug` | Read lesson | Body + metadata | Unknown slug 404 |
 | `/ho-so` | Understand privacy limits + chat history toggle | Disclaimer; CTAs; opt-in checkbox | Toggle persists on device |
-| `/blog` | Read motivational posts | List + detail; theme filter | Empty / unknown slug |
+| `/blog` | Read motivational posts | List + detail; theme filter; daily cadence | Empty / unknown slug |
+| `/sitemap.xml` `/robots.txt` `/feed.xml` | Crawl / GEO | Dynamic blog URLs + Atom full text | Stale cache |
+
 | `/admin` | Manage knowledge | Create+ingest+approve; list; withdraw | Missing auth (staging secret); empty form validation; withdraw active source |
 
 ## Shared chrome

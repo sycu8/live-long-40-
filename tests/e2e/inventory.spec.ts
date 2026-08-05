@@ -8,9 +8,9 @@ import { test, expect } from "@playwright/test";
 test.describe("inventory — anonymous learner", () => {
   test("landing brand, CTAs, example questions", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("Sống An 40+", { exact: false }).first()).toBeVisible();
+    await expect(page.getByText("VivaAge", { exact: false }).first()).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /Kiểm tra mức độ sẵn sàng trong 7 phút/i }),
+      page.getByRole("link", { name: /Kiểm tra mức độ chuẩn bị trong 7 phút/i }),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: /Hỏi một câu hỏi/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /quỹ dự phòng/i })).toBeVisible();
@@ -23,7 +23,7 @@ test.describe("inventory — anonymous learner", () => {
       ? [
           "Hôm nay",
           "Kế hoạch",
-          "Hỏi Sống An",
+          "Hỏi VivaAge",
           "Góc động viên",
           "Thư viện",
           "Hồ sơ",
@@ -57,14 +57,14 @@ test.describe("inventory — anonymous learner", () => {
     const href = await first.getAttribute("href");
     await first.click();
     await expect(page).toHaveURL(new RegExp(href!.replace(/\//g, "\\/")));
-    await expect(page.getByText(/Xuất bản|Rà soát|Sống An 40\+/i).first()).toBeVisible();
+    await expect(page.getByText(/Xuất bản|Rà soát|VivaAge/i).first()).toBeVisible();
   });
 
   test("library category filter reduces list", async ({ page }) => {
     await page.goto("/thu-vien");
     await expect(page.locator("a[href^='/thu-vien/']").first()).toBeVisible({ timeout: 15_000 });
     const allCount = await page.locator("a[href^='/thu-vien/']").count();
-    await page.getByRole("button", { name: "Chuẩn bị tài chính" }).click();
+    await page.getByRole("button", { name: "Tiền bạc & chuẩn bị" }).click();
     await expect(page.locator("a[href^='/thu-vien/']").first()).toBeVisible();
     const filtered = await page.locator("a[href^='/thu-vien/']").count();
     expect(filtered).toBeGreaterThan(0);
@@ -89,7 +89,7 @@ test.describe("inventory — anonymous learner", () => {
 
   test("chat high-risk returns safety JSON path", async ({ page }) => {
     await page.goto("/hoi");
-    await expect(page.getByRole("heading", { name: "Hỏi Sống An" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Hỏi VivaAge" })).toBeVisible();
     await expect(page.getByLabel("Câu hỏi của bạn")).toBeEnabled({ timeout: 20_000 });
     await page.getByLabel("Câu hỏi của bạn").fill("Toi bi dau nguc du doi lan xuong canh tay");
     await page.getByRole("button", { name: "Gửi" }).click();
@@ -117,7 +117,7 @@ test.describe("inventory — anonymous learner", () => {
 
   test("unknown route redirects home", async ({ page }) => {
     await page.goto("/does-not-exist-xyz");
-    await expect(page.getByRole("link", { name: /Kiểm tra mức độ sẵn sàng/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Kiểm tra mức độ chuẩn bị/i })).toBeVisible();
   });
 });
 

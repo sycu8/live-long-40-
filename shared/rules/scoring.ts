@@ -43,7 +43,7 @@ export const ASSESSMENT_QUESTIONS: AssessmentQuestionDef[] = [
     key: "bp_known",
     pillar: "health",
     prompt: "Bạn có biết huyết áp gần nhất của mình không?",
-    whyImportant: "Theo dõi huyết áp là thói quen nền tảng cho sức khỏe trung niên.",
+    whyImportant: "Theo dõi huyết áp là thói quen nền tảng cho sức khỏe tuổi ngoài 40.",
     inputType: "single_choice",
     weight: 1.2,
     required: true,
@@ -106,7 +106,7 @@ export const ASSESSMENT_QUESTIONS: AssessmentQuestionDef[] = [
     options: [
       { value: "yes_updated", label: "Có và cập nhật gần đây", score: 100 },
       { value: "partial", label: "Có nhưng chưa đầy đủ", score: 55 },
-      { value: "no", label: "Chưa có / không dùng thuốc", score: 40 },
+      { value: "no", label: "Chưa có danh sách (hoặc không dùng thuốc)", score: 40 },
     ],
   },
   {
@@ -125,22 +125,23 @@ export const ASSESSMENT_QUESTIONS: AssessmentQuestionDef[] = [
   {
     key: "emergency_fund",
     pillar: "finance",
-    prompt: "Bạn có quỹ dự phòng cho chi phí bất ngờ không?",
-    whyImportant: "Quỹ dự phòng giúp giảm phụ thuộc khi có việc đột xuất.",
+    prompt: "Bạn có khoản tiền để dành khi có việc đột xuất không?",
+    whyImportant:
+      "Tiền để dành (quỹ dự phòng) giúp giảm phụ thuộc khi có việc đột xuất.",
     inputType: "single_choice",
     weight: 1.4,
     required: true,
     options: [
-      { value: "6m", label: "Đủ khoảng 6 tháng chi phí thiết yếu", score: 100 },
+      { value: "6m", label: "Đủ khoảng 6 tháng chi tiêu cần thiết", score: 100 },
       { value: "3m", label: "Đủ khoảng 3 tháng", score: 75 },
-      { value: "1m", label: "Dưới 3 tháng", score: 40 },
-      { value: "none", label: "Chưa có quỹ riêng", score: 10 },
+      { value: "1m", label: "Chưa đủ 3 tháng", score: 40 },
+      { value: "none", label: "Chưa có khoản riêng", score: 10 },
     ],
   },
   {
     key: "expense_estimate",
     pillar: "finance",
-    prompt: "Bạn đã ước lượng chi phí thiết yếu khi về hưu chưa?",
+    prompt: "Bạn đã ước lượng chi tiêu cần thiết khi về hưu chưa?",
     inputType: "single_choice",
     weight: 1.2,
     required: true,
@@ -154,7 +155,8 @@ export const ASSESSMENT_QUESTIONS: AssessmentQuestionDef[] = [
     key: "income_sources",
     pillar: "finance",
     prompt: "Bạn nắm rõ các nguồn thu nhập dự kiến sau này chưa?",
-    helpText: "Ví dụ: lương hưu, tiết kiệm, hỗ trợ gia đình — chỉ để tự theo dõi, không phải tư vấn đầu tư.",
+    helpText:
+      "Ví dụ: lương hưu, tiết kiệm, hỗ trợ gia đình — chỉ để tự theo dõi, không phải lời khuyên đầu tư.",
     inputType: "single_choice",
     weight: 1.1,
     required: true,
@@ -194,7 +196,8 @@ export const ASSESSMENT_QUESTIONS: AssessmentQuestionDef[] = [
   {
     key: "docs_ready",
     pillar: "finance",
-    prompt: "Giấy tờ quan trọng (CMND/CCCD, sổ BHXH, giấy tờ nhà…) được lưu thế nào?",
+    prompt:
+      "Giấy tờ quan trọng (căn cước / CCCD, sổ bảo hiểm xã hội, giấy tờ nhà…) được lưu thế nào?",
     inputType: "single_choice",
     weight: 0.9,
     required: true,
@@ -260,8 +263,8 @@ export const ASSESSMENT_QUESTIONS: AssessmentQuestionDef[] = [
   {
     key: "home_safety",
     pillar: "caregiving",
-    prompt: "Không gian sống của bạn/người thân có rủi ro ngã rõ ràng không?",
-    helpText: "Ví dụ: sàn trơn, thiếu ánh sáng, không có tay vịn.",
+    prompt: "Nhà bạn hoặc người thân còn chỗ dễ gây ngã chưa được xử lý không?",
+    helpText: "Ví dụ: sàn trơn, thiếu đèn, không có tay vịn.",
     inputType: "single_choice",
     weight: 0.9,
     required: true,
@@ -287,8 +290,8 @@ export const ASSESSMENT_QUESTIONS: AssessmentQuestionDef[] = [
   {
     key: "self_reliance_goal",
     pillar: "finance",
-    prompt: "Mức độ bạn muốn tự chủ tài chính và sinh hoạt lâu dài?",
-    whyImportant: "Giúp ưu tiên hành động phù hợp với mục tiêu của bạn.",
+    prompt: "Mức độ bạn muốn tự chủ về tiền bạc và sinh hoạt lâu dài?",
+    whyImportant: "Giúp ưu tiên việc phù hợp với mục tiêu của bạn.",
     inputType: "single_choice",
     weight: 0.7,
     required: true,
@@ -332,30 +335,30 @@ function interpret(score: number, pillar: Pillar): string {
     pillar === "health"
       ? "sức khỏe"
       : pillar === "finance"
-        ? "tài chính"
-        : "chăm sóc";
+        ? "tiền bạc"
+        : "chăm sóc người thân";
   if (score >= 80) {
     return `Bạn đã có nền tảng ${label} khá vững. Tiếp tục duy trì thói quen hiện có.`;
   }
   if (score >= 55) {
-    return `Bạn đã bắt đầu chuẩn bị về ${label}, còn một số khoảng trống có thể cải thiện trong 30 ngày tới.`;
+    return `Bạn đã bắt đầu chuẩn bị về ${label}, còn một số chỗ có thể cải thiện trong 30 ngày tới.`;
   }
-  return `Lĩnh vực ${label} còn nhiều chỗ để chuẩn bị. Các hành động nhỏ, đều đặn sẽ giúp bạn tiến bộ rõ hơn.`;
+  return `Lĩnh vực ${label} còn nhiều chỗ để chuẩn bị. Các việc nhỏ, đều đặn sẽ giúp bạn tiến bộ rõ hơn.`;
 }
 
 const GAP_MESSAGES: Record<string, string> = {
-  age_band: "Cần ưu tiên chuẩn bị sớm hơn theo nhóm tuổi",
+  age_band: "Nên ưu tiên chuẩn bị sớm hơn theo nhóm tuổi",
   bp_known: "Chưa nắm huyết áp gần đây",
   checkup_habit: "Chưa có thói quen khám định kỳ",
   activity: "Vận động còn ít",
   sleep: "Giấc ngủ chưa ổn định",
   meds_list: "Chưa có danh sách thuốc đang dùng đầy đủ",
   fall_risk_awareness: "Chưa áp dụng biện pháp phòng ngã tại nhà",
-  emergency_fund: "Quỹ dự phòng chưa đủ",
-  expense_estimate: "Chưa ước lượng chi phí về hưu",
+  emergency_fund: "Tiền để dành khi đột xuất chưa đủ",
+  expense_estimate: "Chưa ước lượng chi tiêu khi về hưu",
   income_sources: "Chưa nắm rõ nguồn thu nhập sau này",
   debt_awareness: "Chưa theo dõi nợ phải trả rõ ràng",
-  insurance_basic: "Chưa chắc bảo hiểm y tế / BHXH đang hiệu lực",
+  insurance_basic: "Chưa chắc bảo hiểm y tế / bảo hiểm xã hội đang hiệu lực",
   docs_ready: "Giấy tờ quan trọng chưa được sắp xếp",
   care_experience: "Chưa có kinh nghiệm hỗ trợ chăm sóc người lớn tuổi",
   fall_response: "Chưa rõ cách xử lý khi người thân bị ngã",
@@ -374,11 +377,11 @@ const STRENGTH_MESSAGES: Record<string, string> = {
   sleep: "Giấc ngủ ổn định",
   meds_list: "Đã có danh sách thuốc đang dùng",
   fall_risk_awareness: "Đã áp dụng biện pháp phòng ngã",
-  emergency_fund: "Có quỹ dự phòng",
-  expense_estimate: "Đã ước lượng chi phí",
+  emergency_fund: "Có tiền để dành khi đột xuất",
+  expense_estimate: "Đã ước lượng chi tiêu khi về hưu",
   income_sources: "Đã liệt kê nguồn thu nhập dự kiến",
   debt_awareness: "Theo dõi nợ và kế hoạch trả rõ",
-  insurance_basic: "Có bảo hiểm y tế / BHXH đang hiệu lực",
+  insurance_basic: "Có bảo hiểm y tế / bảo hiểm xã hội đang hiệu lực",
   docs_ready: "Giấy tờ được lưu ngăn nắp",
   care_experience: "Đã có kinh nghiệm hỗ trợ chăm sóc",
   fall_response: "Biết phản ứng khi có người ngã",
@@ -389,7 +392,7 @@ const STRENGTH_MESSAGES: Record<string, string> = {
   self_reliance_goal: "Đã xác định hướng tự chủ lâu dài",
 };
 
-function questionTopicLabel(questionKey: string): string {
+export function questionTopicLabel(questionKey: string): string {
   const topics: Record<string, string> = {
     age_band: "nhóm tuổi",
     bp_known: "theo dõi huyết áp",
@@ -398,11 +401,11 @@ function questionTopicLabel(questionKey: string): string {
     sleep: "giấc ngủ",
     meds_list: "danh sách thuốc đang dùng",
     fall_risk_awareness: "phòng ngã tại nhà",
-    emergency_fund: "quỹ dự phòng",
-    expense_estimate: "ước lượng chi phí về hưu",
+    emergency_fund: "tiền để dành khi đột xuất",
+    expense_estimate: "ước lượng chi tiêu khi về hưu",
     income_sources: "nguồn thu nhập sau này",
     debt_awareness: "theo dõi nợ phải trả",
-    insurance_basic: "bảo hiểm y tế / BHXH",
+    insurance_basic: "bảo hiểm y tế / bảo hiểm xã hội",
     docs_ready: "lưu trữ giấy tờ quan trọng",
     care_experience: "kinh nghiệm chăm sóc người lớn tuổi",
     fall_response: "xử lý khi người thân bị ngã",

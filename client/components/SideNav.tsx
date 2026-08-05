@@ -2,6 +2,7 @@ import { NavLink, Link } from "react-router-dom";
 import { clsx } from "clsx";
 import { BrandLogo } from "./BrandLogo";
 import { APP_NAV_ITEMS } from "../lib/nav";
+import { BRAND } from "@shared/brand";
 
 /** Desktop-only primary navigation (sidebar). Hidden below `lg`. */
 export function SideNav() {
@@ -12,7 +13,7 @@ export function SideNav() {
     >
       <BrandLogo size="md" to="/" />
       <p className="mt-3 text-xs leading-relaxed text-[var(--color-ink-muted)]">
-        Công cụ giáo dục cho tuổi 40+ — không thay thế bác sĩ.
+        {BRAND.tagline} — không thay bác sĩ.
       </p>
       <nav className="mt-8 flex-1" aria-label="Điều hướng chính">
         <ul className="space-y-1">

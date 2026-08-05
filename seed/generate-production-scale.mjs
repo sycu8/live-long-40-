@@ -12,9 +12,9 @@ import path from "node:path";
 const root = path.dirname(fileURLToPath(import.meta.url));
 
 const CATEGORIES = [
-  ["suc-khoe-trung-nien", "health", "Sức khỏe tuổi trung niên"],
+  ["suc-khoe-trung-nien", "health", "Sức khỏe tuổi ngoài 40"],
   ["kham-phong-benh", "health", "Khám và phòng bệnh"],
-  ["chuan-bi-tai-chinh", "finance", "Chuẩn bị tài chính"],
+  ["chuan-bi-tai-chinh", "finance", "Lo liệu tiền bạc"],
   ["cham-soc-cha-me", "caregiving", "Chăm sóc cha mẹ"],
   ["tri-nho-tinh-than", "health", "Trí nhớ và sức khỏe tinh thần"],
   ["nha-o-giay-to", "finance", "Nhà ở, gia đình và giấy tờ"],
@@ -101,7 +101,7 @@ function slugify(s) {
 
 const lines = [];
 lines.push("-- AUTO-GENERATED sanitized production-scale seed. Do not edit by hand.");
-lines.push("-- Issuer is always editorial education content for Sống An 40+.");
+lines.push("-- Issuer is always editorial education content for VivaAge.");
 lines.push("PRAGMA foreign_keys = ON;");
 lines.push("");
 
@@ -133,19 +133,25 @@ for (const [catId, pillar, catLabel] of CATEGORIES) {
     lessonCount += 1;
     const id = `lesson_scale_${catId}_${i + 1}`;
     const slug = `${slugify(topic)}-${catId}-${i + 1}`;
-    const title = `${topic}: hướng dẫn giáo dục ngắn`;
-    const summary = `Bài học giáo dục về «${topic}» trong nhóm ${catLabel}. Không thay thế tư vấn chuyên môn.`;
+    const title = topic;
+    const summary = `Bài viết giáo dục về «${topic}» — giải thích khái niệm và giới hạn, không phải danh sách việc phải làm.`;
     const body = `# ${topic}
 
-Đây là nội dung giáo dục của Sống An 40+ Biên tập, phục vụ luyện tập cục bộ.
+Đây là nội dung giáo dục của VivaAge Biên tập.
 
-## Việc có thể làm
-1. Chọn một bước nhỏ liên quan đến ${topic.toLowerCase()}.
-2. Ghi nhận ngày thực hiện.
-3. Trao đổi với người thân hoặc nhân viên y tế khi cần.
+## Vì sao chủ đề này quan trọng
+
+Hiểu «${topic.toLowerCase()}» giúp bạn chuẩn bị bình tĩnh hơn cho tuổi ngoài 40 đến tuổi già — theo nhịp vừa sức của mình.
+
+## Điều cần nhớ
+
+- Đây là thông tin giáo dục, không chẩn đoán và không tư vấn đầu tư / pháp lý.
+- Chọn một thay đổi nhỏ phù hợp đời sống thực tế của bạn.
+- Khi có triệu chứng bất thường hoặc quyết định lớn về tiền bạc / giấy tờ, hãy hỏi bác sĩ, cơ quan có thẩm quyền hoặc người tư vấn phù hợp.
 
 ## Giới hạn
-Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp lý cá nhân hóa.
+
+Không kê đơn, không khuyến nghị sản phẩm tài chính, không thay thế dịch vụ Nhà nước.
 `;
     const pub = `2026-0${(i % 6) + 1}-${String((i % 27) + 1).padStart(2, "0")}`;
     const rev = "2026-07-15";
@@ -155,7 +161,7 @@ Không chẩn đoán, không kê đơn, không tư vấn đầu tư hay pháp l�
   status, estimated_reading_minutes, body_markdown, created_at, updated_at
 ) VALUES (
   '${id}', '${slug}', '${esc(title)}', '${esc(summary)}', '${catId}', '${pillar}',
-  'Sống An 40+ Biên tập giáo dục', '${pub}', '${rev}', 'active', ${minutes},
+  'VivaAge Biên tập giáo dục', '${pub}', '${rev}', 'active', ${minutes},
   '${esc(body)}', datetime('now'), datetime('now')
 );`);
   });
@@ -168,7 +174,7 @@ lines.push(`INSERT INTO library_lessons (
 ) VALUES (
   'lesson_draft_1', 'bai-nhap-khong-cong-khai', 'Bài nháp không công khai',
   'Không được liệt kê API public.', 'suc-khoe-trung-nien', 'health',
-  'Sống An 40+ Biên tập giáo dục', '2026-06-01', '2026-06-01', 'draft', 2,
+  'VivaAge Biên tập giáo dục', '2026-06-01', '2026-06-01', 'draft', 2,
   '# Nháp', datetime('now'), datetime('now')
 );`);
 
@@ -202,7 +208,7 @@ Kiểm tra tỉnh táo. Không đỡ dậy mạnh nếu nghi chấn thương n�
 Quỹ dự phòng giúp chi trả việc đột xuất.
 
 ## Cách bắt đầu
-Ước lượng chi phí thiết yếu mỗi tháng, đặt mục tiêu nhỏ và đều đặn. Không phải tư vấn đầu tư.`,
+Ước lượng chi tiêu cần thiết mỗi tháng, đặt mục tiêu nhỏ và đều đặn. Không phải tư vấn đầu tư.`,
   },
   {
     key: "bp",
@@ -262,7 +268,7 @@ for (const s of sourceSpecs) {
   created_at, updated_at
 ) VALUES (
   '${sid}', '${pid}', '${slugify(s.title)}', '${esc(s.title)}', '${esc(s.title)}',
-  'Sống An 40+ Biên tập giáo dục', 'VN', 'education', 'vi', '${s.category}', '${s.pillar}',
+  'VivaAge Biên tập giáo dục', 'VN', 'education', 'vi', '${s.category}', '${s.pillar}',
   4, '${s.status}', '${s.review}', '2026-03-01', '2026-03-01', '2026-07-15', 'seed-scale',
   datetime('now'), datetime('now')
 );`);
@@ -277,7 +283,7 @@ for (const s of sourceSpecs) {
     const meta = JSON.stringify({
       source_id: sid,
       title: s.title,
-      issuer: "Sống An 40+ Biên tập giáo dục",
+      issuer: "VivaAge Biên tập giáo dục",
       status: s.status,
       review_status: s.review,
       publication_date: "2026-03-01",
@@ -299,16 +305,16 @@ lines.push(`INSERT INTO source_documents (
   status, review_status, publication_date, created_at, updated_at
 ) VALUES
 ('src_scale_draft', 'psrc_scale_draft', 'nguon-nhap', 'Nguồn nháp', 'Chưa duyệt',
- 'Sống An 40+ Biên tập giáo dục', 'VN', 'education', 'vi', 'suc-khoe-trung-nien',
+ 'VivaAge Biên tập giáo dục', 'VN', 'education', 'vi', 'suc-khoe-trung-nien',
  'draft', 'pending', '2026-05-01', datetime('now'), datetime('now')),
 ('src_scale_super', 'psrc_scale_super', 'nguon-cu', 'Nguồn đã thay thế', 'Superseded',
- 'Sống An 40+ Biên tập giáo dục', 'VN', 'education', 'vi', 'suc-khoe-trung-nien',
+ 'VivaAge Biên tập giáo dục', 'VN', 'education', 'vi', 'suc-khoe-trung-nien',
  'superseded', 'approved', '2020-01-01', datetime('now'), datetime('now')),
 ('src_scale_with', 'psrc_scale_with', 'nguon-rut', 'Nguồn đã rút', 'Withdrawn',
- 'Sống An 40+ Biên tập giáo dục', 'VN', 'education', 'vi', 'kham-phong-benh',
+ 'VivaAge Biên tập giáo dục', 'VN', 'education', 'vi', 'kham-phong-benh',
  'withdrawn', 'approved', '2024-01-01', datetime('now'), datetime('now')),
 ('src_scale_expired', 'psrc_scale_expired', 'nguon-het-han', 'Nguồn hết hiệu lực', 'Expired effective_to',
- 'Sống An 40+ Biên tập giáo dục', 'VN', 'education', 'vi', 'chuan-bi-tai-chinh',
+ 'VivaAge Biên tập giáo dục', 'VN', 'education', 'vi', 'chuan-bi-tai-chinh',
  'active', 'approved', '2021-01-01', datetime('now'), datetime('now'));`);
 
 lines.push(`UPDATE source_documents SET effective_from = '2021-01-01', effective_to = '2022-01-01' WHERE id = 'src_scale_expired';`);
@@ -321,7 +327,7 @@ lines.push(`INSERT INTO source_chunks (
 ) VALUES (
   'chk_scale_super_0', 'src_scale_super', 'sver_scale_super', 0, NULL, 'chunk-0',
   'Nội dung cũ không còn dùng về sức khỏe và quỹ dự phòng giả.', 'chash_super',
-  '{"source_id":"src_scale_super","title":"Nguồn đã thay thế","issuer":"Sống An 40+ Biên tập giáo dục","status":"superseded","review_status":"approved","publication_date":"2020-01-01"}',
+  '{"source_id":"src_scale_super","title":"Nguồn đã thay thế","issuer":"VivaAge Biên tập giáo dục","status":"superseded","review_status":"approved","publication_date":"2020-01-01"}',
   'indexed', datetime('now')
 );`);
 

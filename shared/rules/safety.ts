@@ -87,7 +87,7 @@ const RULES: Rule[] = [
 ];
 
 const SAFETY_MESSAGE =
-  "Tình huống bạn mô tả có thể cần hỗ trợ y tế khẩn cấp. Hãy gọi cấp cứu địa phương hoặc đến cơ sở y tế gần nhất ngay. Sống An 40+ không thể đánh giá tình trạng của bạn và không đưa hướng dẫn điều trị trong trường hợp khẩn cấp.";
+  "Tình huống bạn mô tả có thể cần cấp cứu. Hãy gọi cấp cứu địa phương hoặc đến bệnh viện / trạm y tế gần nhất ngay. VivaAge không thể đánh giá tình trạng của bạn và không hướng dẫn điều trị khi khẩn cấp.";
 
 export function evaluateHighRisk(question: string): SafetyMatch {
   const text = question.normalize("NFC").trim();

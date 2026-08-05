@@ -13,8 +13,10 @@ import { assessmentRoutes } from "./api/assessment";
 import { planRoutes } from "./api/plans";
 import { libraryRoutes } from "./api/library";
 import { chatRoutes } from "./api/chat";
-import { blogRoutes, publishDueBlogPosts } from "./api/blog";
+import { blogRoutes } from "./api/blog";
 import { adminRoutes } from "./api/admin";
+import { crawlRoutes } from "./seo/crawl";
+import { runBlogDailyJob } from "./blog/schedule";
 import { IngestionWorkflow } from "./workflows/ingestion";
 import { DISCLAIMER, EXAMPLE_QUESTIONS } from "@shared/constants/product";
 
@@ -26,7 +28,7 @@ app.use("*", securityHeaders);
 app.get("/api/health", (c) =>
   c.json({
     ok: true,
-    app: c.env.APP_NAME ?? "Sống An 40+",
+    app: c.env.APP_NAME ?? "VivaAge",
     environment: c.env.ENVIRONMENT ?? "unknown",
     // booleans only — never expose secret values
     adminSecretConfigured: Boolean(
@@ -38,7 +40,7 @@ app.get("/api/health", (c) =>
 
 app.get("/api/v1/meta", (c) =>
   c.json({
-    name: "Sống An 40+",
+    name: "VivaAge",
     disclaimer: DISCLAIMER,
     exampleQuestions: EXAMPLE_QUESTIONS,
     chatHistoryDefault: c.env.FEATURE_CHAT_HISTORY_DEFAULT === "true",
@@ -61,6 +63,9 @@ api.route("/", chatRoutes);
 api.route("/", blogRoutes);
 
 app.route("/api/v1", api);
+
+/** Crawlable SEO surfaces (sitemap / robots / Atom) — outside /api. */
+app.route("/", crawlRoutes);
 
 const admin = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 admin.use("*", anonymousSession);
@@ -142,12 +147,12 @@ export default {
   },
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(
-      publishDueBlogPosts(env.DB).then((n) => {
+      runBlogDailyJob(env).then((result) => {
         console.log(
           JSON.stringify({
             level: "info",
-            message: "blog_publish_due",
-            published: n,
+            message: "blog_daily_job",
+            ...result,
           }),
         );
       }),

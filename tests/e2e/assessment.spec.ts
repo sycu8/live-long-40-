@@ -3,10 +3,10 @@ import { test, expect } from "@playwright/test";
 test.describe("mobile assessment smoke", () => {
   test("landing shows brand and primary CTA", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("Sống An 40+", { exact: false }).first()).toBeVisible();
+    await expect(page.getByText("VivaAge", { exact: false }).first()).toBeVisible();
     await expect(
       page.getByRole("link", {
-        name: /Kiểm tra mức độ sẵn sàng trong 7 phút/i,
+        name: /Kiểm tra mức độ chuẩn bị trong 7 phút/i,
       }),
     ).toBeVisible();
   });

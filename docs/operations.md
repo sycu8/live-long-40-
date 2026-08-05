@@ -1,4 +1,4 @@
-# Vận hành Sống An 40+
+# Vận hành VivaAge
 
 ## Cloudflare Access cho `/admin`
 
@@ -16,3 +16,11 @@ Tạo instance tên khớp `AI_SEARCH_INSTANCE` (`song-an-40-knowledge`). Khi ad
 ## AI Gateway
 
 Đặt `AI_GATEWAY_ID`. Pipeline ưu tiên `env.AI.gateway(id).run(...)` để có rate/cost controls; tắt full prompt logging cho chat cá nhân hóa trên dashboard Gateway.
+
+## Blog — lịch hàng ngày & crawl
+
+Xem `docs/blog-schedule.md`. Tóm tắt:
+
+- Cron `0 2 * * *` publish bài đến hạn + lấp lịch 21 ngày
+- `/sitemap.xml`, `/robots.txt`, `/feed.xml` do Worker phục vụ (không phải file tĩnh SPA)
+- Admin: `POST /api/v1/admin/blog/run-schedule`

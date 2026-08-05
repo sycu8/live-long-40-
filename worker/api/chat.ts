@@ -21,7 +21,7 @@ chatRoutes.post("/chat/sessions", async (c) => {
       id,
       publicId,
       c.get("sessionId"),
-      body.title ?? "Hỏi Sống An",
+      body.title ?? "Hỏi VivaAge",
       body.historyOptIn ? 1 : 0,
       now,
       now,
@@ -100,7 +100,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
   // Turnstile check when secret configured
   if (c.env.TURNSTILE_SECRET_KEY) {
     if (!body.turnstileToken) {
-      return jsonError(c, 403, "TURNSTILE_FAILED", "Thiếu xác minh Turnstile.");
+      return jsonError(c, 403, "TURNSTILE_FAILED", "Thiếu xác minh chống bot.");
     }
     const form = new FormData();
     form.set("secret", c.env.TURNSTILE_SECRET_KEY);
@@ -111,7 +111,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
     );
     const verifyJson = (await verify.json()) as { success?: boolean };
     if (!verifyJson.success) {
-      return jsonError(c, 403, "TURNSTILE_FAILED", "Xác minh Turnstile thất bại.");
+      return jsonError(c, 403, "TURNSTILE_FAILED", "Xác minh chống bot thất bại.");
     }
   }
 
@@ -269,6 +269,20 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           .run();
 
         for (const s of sources) {
+          const realSourceId =
+            s.sourceId &&
+            !s.sourceId.startsWith("bank:") &&
+            !s.sourceId.startsWith("lesson:") &&
+            !s.sourceId.startsWith("official:")
+              ? s.sourceId
+              : null;
+          const realChunkId =
+            s.chunkId &&
+            !s.chunkId.startsWith("bank:") &&
+            !s.chunkId.startsWith("lesson:") &&
+            !s.chunkId.startsWith("official:")
+              ? s.chunkId
+              : null;
           await c.env.DB.prepare(
             `INSERT INTO chat_citations
              (id, message_id, source_id, chunk_id, citation_key, title, issuer, publication_date, url, snippet, score)
@@ -277,8 +291,8 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             .bind(
               createId("cite"),
               assistantMsgId,
-              s.sourceId ?? null,
-              s.chunkId ?? null,
+              realSourceId,
+              realChunkId,
               s.key,
               s.title,
               s.issuer,

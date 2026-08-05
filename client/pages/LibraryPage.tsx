@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { EmptyState } from "../components/ui";
+import { MarkdownBody } from "../components/MarkdownBody";
 import { api } from "../lib/api";
 import { LIBRARY_CATEGORIES, PILLAR_LABELS } from "@shared/constants/product";
 import type { Pillar } from "@shared/constants/product";
@@ -18,13 +19,28 @@ type Item = {
   status: string;
   estimatedReadingMinutes: number;
   bodyMarkdown?: string;
+  source?: {
+    title: string;
+    issuer: string;
+    url?: string | null;
+    trustTier?: string | null;
+    publicationDate?: string | null;
+    summary?: string | null;
+  } | null;
 };
 
 export function LibraryPage() {
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get("category") ?? "";
   const [items, setItems] = useState<Item[]>([]);
-  const [category, setCategory] = useState<string>("");
+  const [category, setCategory] = useState<string>(initialCategory);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const next = searchParams.get("category") ?? "";
+    setCategory(next);
+  }, [searchParams]);
 
   useEffect(() => {
     (async () => {
@@ -49,7 +65,8 @@ export function LibraryPage() {
         <div>
           <h1 className="font-display text-3xl">Thư viện</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
-            Bài học ngắn, có tổ chức ban hành và ngày rà soát.
+            Bài viết giáo dục ngắn về sức khỏe, tiền bạc và chăm sóc — giải thích
+            khái niệm và giới hạn, không phải danh sách việc phải làm.
           </p>
         </div>
 
@@ -107,9 +124,16 @@ export function LibraryPage() {
                     {item.summary}
                   </p>
                   <p className="mt-2 text-xs text-[var(--color-ink-muted)]">
-                    {item.issuer} · XB {item.publicationDate} · Rà soát{" "}
-                    {item.lastReviewedAt} · {item.status}
+                    Nguồn biên tập: {item.issuer}
+                    {item.lastReviewedAt
+                      ? ` · Cập nhật ${item.lastReviewedAt}`
+                      : null}
                   </p>
+                  {item.source?.url ? (
+                    <p className="mt-1 text-xs text-[var(--color-green)]">
+                      Nguồn: {item.source.issuer}
+                    </p>
+                  ) : null}
                 </Link>
               </li>
             ))}
@@ -164,12 +188,44 @@ export function LibraryDetailPage() {
         </Link>
         <h1 className="font-display text-3xl lg:text-4xl">{item.title}</h1>
         <p className="text-sm text-[var(--color-ink-muted)]">
-          {item.issuer} · Xuất bản {item.publicationDate} · Rà soát{" "}
-          {item.lastReviewedAt} · Trạng thái {item.status}
+          {item.issuer}
+          {item.publicationDate ? ` · Xuất bản ${item.publicationDate}` : null}
+          {item.lastReviewedAt ? ` · Rà soát ${item.lastReviewedAt}` : null}
         </p>
+        {item.source ? (
+          <aside className="rounded-2xl border border-[var(--color-green-soft)] bg-[var(--color-green-soft)]/40 p-4">
+            <p className="text-xs font-semibold text-[var(--color-green)]">
+              Nguồn tham khảo
+            </p>
+            <p className="mt-1 font-medium text-[var(--color-ink)]">{item.source.title}</p>
+            <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+              {item.source.issuer}
+              {item.source.publicationDate ? ` · ${item.source.publicationDate}` : ""}
+            </p>
+            {item.source.summary ? (
+              <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-muted)]">
+                {item.source.summary}
+              </p>
+            ) : null}
+            {item.source.url ? (
+              <a
+                href={item.source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-block break-all text-sm text-[var(--color-blue)] underline"
+              >
+                Xem trang nguồn
+              </a>
+            ) : null}
+          </aside>
+        ) : (
+          <p className="text-sm text-[var(--color-danger)]">
+            Bài này chưa gắn nguồn từ cơ quan tin cậy — chỉ mang tính tham khảo chung.
+          </p>
+        )}
         <p className="text-[var(--color-ink-muted)] lg:text-lg">{item.summary}</p>
-        <div className="whitespace-pre-wrap rounded-2xl bg-white/70 p-4 leading-relaxed lg:p-8">
-          {item.bodyMarkdown}
+        <div className="rounded-2xl bg-white/70 p-4 leading-relaxed lg:p-8">
+          <MarkdownBody source={item.bodyMarkdown ?? ""} />
         </div>
       </article>
     </AppShell>

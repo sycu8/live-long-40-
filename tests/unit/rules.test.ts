@@ -74,7 +74,7 @@ describe("assessment scoring", () => {
       ]),
     ).toEqual([
       "Chưa có danh sách thuốc đang dùng đầy đủ",
-      "Có bảo hiểm y tế / BHXH đang hiệu lực",
+      "Có bảo hiểm y tế / bảo hiểm xã hội đang hiệu lực",
       "Chưa trả lời về phòng ngã tại nhà",
     ]);
   });

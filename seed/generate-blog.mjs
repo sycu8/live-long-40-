@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Generate seed/blog.sql — motivational posts every 2 days.
+ * Generate seed/blog.sql + shared/content/blog-editorial-bank.json
+ * Motivational posts: 1 bài / ngày.
  * First posts are already published so the blog is useful immediately;
- * later posts stay scheduled for the cron publisher.
+ * later posts stay scheduled for the daily cron publisher + horizon filler.
  */
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -48,7 +49,7 @@ Hãy nghĩ tuổi già như một ngôi nhà bạn sẽ sống lâu dài. Bạn 
 
 Mỗi việc nhỏ là một viên gạch. Viên gạch hôm nay vẫn tính.
 
-## Lời nhắn từ Sống An
+## Lời nhắn từ VivaAge
 
 Bạn không cần trở thành phiên bản hoàn hảo lúc 40. Bạn chỉ cần **không đứng yên trong lo âu**. Bắt đầu bằng bài đánh giá ngắn, hoặc đọc một bài học, hoặc hỏi một câu. Bước nhỏ vẫn là bước đi.`,
   },
@@ -67,7 +68,7 @@ Không phải bạn yếu. Là kế hoạch **không khớp với năng lượng
 
 ## Nguyên tắc “vừa đủ khó”
 
-Một việc tốt cho tuổi trung niên thường có ba đặc điểm:
+Một việc tốt cho tuổi ngoài 40 thường có ba đặc điểm:
 
 - Làm được trong **15–30 phút**
 - Không cần dụng cụ đắt tiền
@@ -83,7 +84,7 @@ Hãy chọn một việc cho 48 giờ tới. Viết ra. Làm xong thì đánh d�
 
 ## Kết
 
-Kế hoạch 30 ngày của Sống An cố ý không nhồi nhét. Hai việc chính và một việc tùy chọn mỗi tuần là để bạn **thắng cuộc chơi dài**, không phải cháy hết trong tuần đầu.`,
+Kế hoạch 30 ngày của VivaAge cố ý không nhồi nhét. Hai việc chính và một việc tùy chọn mỗi tuần là để bạn **thắng cuộc chơi dài**, không phải cháy hết trong tuần đầu.`,
   },
   {
     slug: "noi-ve-tuoi-gia-khong-so",
@@ -162,12 +163,12 @@ Bạn xứng đáng được khỏe. Chăm sóc tốt nhất thường đến t�
   },
   {
     slug: "tien-bac-binh-tinh",
-    title: "Tiền bạc bình tĩnh: chuẩn bị tài chính tuổi già mà không tự làm mình hoảng",
+    title: "Tiền bạc bình tĩnh: lo liệu tiền bạc cho tuổi già mà không tự làm mình hoảng",
     excerpt:
       "Lo về tiền là hợp lý. Hoảng về tiền thì làm bạn đóng băng. Bài này giúp bạn có khung tư duy bình tĩnh và các bước vừa sức.",
     theme: "tai-chinh",
     minutes: 7,
-    body: `## Lo ≠ Hoảng
+    body: `## Lo khác với Hoảng
 
 Lo giúp bạn hành động. Hoảng khiến bạn tránh né sổ sách, tránh né cuộc nói chuyện, rồi càng lo hơn.
 
@@ -195,7 +196,7 @@ Xong ba việc này, bạn đã hơn “mình chẳng biết gì” rất nhiề
 
 ## Lời nhắn
 
-Sống An không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng tài chính quan trọng nhất ở tuổi trung niên.`,
+VivaAge không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ vì bớt mơ hồ**. Bình tĩnh là kỹ năng lo liệu tiền bạc quan trọng nhất ở tuổi ngoài 40.`,
   },
   {
     slug: "co-the-thay-doi-khong-phai-that-bai",
@@ -210,7 +211,7 @@ Cơ thể tuổi 40+ thường nói nhỏ hơn lúc 20, nhưng nói thật hơn.
 
 Đó là **dữ liệu**, không phải bằng chứng bạn “hỏng”.
 
-## Chăm sóc khôn ngoan hơn là “cố bằng ngày xưa”
+## Chăm sóc khôn ngoan hơn là không “cố bằng ngày xưa”
 
 Ngày xưa có thể thức khuya rồi vẫn đi làm. Bây giờ, một đêm thiếu ngủ có thể ảnh hưởng cả tuần. Vì vậy:
 
@@ -230,9 +231,9 @@ Bạn không cần phạt bản thân. Bạn cần đồng hành với cơ thể
   },
   {
     slug: "co-don-va-ket-noi",
-    title: "Khi cảm thấy cô đơn giữa đám đông: nuôi các mối nối nhỏ nhưng thật",
+    title: "Khi cảm thấy cô đơn giữa đám đông: nuôi vài mối liên hệ nhỏ nhưng thật",
     excerpt:
-      "Cô đơn ở tuổi trung niên thường kín đáo. Bài viết gợi ý cách xây kết nối vừa sức — không cần trở thành người hướng ngoại.",
+      "Cô đơn ở tuổi ngoài 40 thường kín đáo. Bài viết gợi ý cách xây kết nối vừa sức — không cần trở thành người hướng ngoại.",
     theme: "tinh-than",
     minutes: 6,
     body: `## Cô đơn không luôn ồn ào
@@ -245,7 +246,7 @@ Bạn có thể có gia đình, đồng nghiệp, nhóm chat… mà vẫn thấy
 2. **Một cuộc đi bộ chung** 20 phút
 3. **Một thói quen cộng đồng nhẹ**: lớp học, nhóm tình nguyện, hoặc chỉ là hàng xóm chào hỏi
 
-Không cần mạng lưới lớn. Cần vài mối nối **ổn định**.
+Không cần mạng lưới lớn. Cần vài mối liên hệ **ổn định**.
 
 ## Nói ra một phần
 
@@ -337,7 +338,7 @@ Hoặc đánh dấu vào sổ. Đơn giản, nhưng hiệu quả.
 
 Bạn không cần giảm 5kg mới được vui. Bạn được vui vì **đã giữ lời với chính mình**.
 
-## Liên hệ Sống An
+## Liên hệ VivaAge
 
 Trong kế hoạch, mỗi việc hoàn thành là một tín hiệu: bạn đang điều hướng đời sống thay vì bị đời sống cuốn. Hãy để những tín hiệu đó tích lại thành sự tự tin.`,
   },
@@ -394,24 +395,24 @@ Hy vọng không phải ngồi chờ cảm xúc đẹp. Hy vọng là:
 
 Bỏ dở không xóa giá trị những gì đã làm. Quay lại kế hoạch. Đọc lại một bài. Hỏi một câu mới. **Mỗi lần quay lại là một lần chọn sống có hướng.**
 
-## Lời kết từ Sống An
+## Lời kết từ VivaAge
 
 Chúng tôi không hứa bạn sẽ không gặp khó khăn. Chúng tôi muốn bạn **không phải đối mặt một mình trong bóng tối thông tin**.
 
 Cứ bước. Chậm cũng được. Miễn là về phía chăm sóc, rõ ràng và kết nối.
 
-Hẹn bạn ở bài viết tiếp theo — đều đặn khoảng hai ngày một lần, như một người bạn nhắc khẽ: bạn vẫn đang đi đúng hướng.`,
+Hẹn bạn ở bài viết tiếp theo — đều đặn mỗi ngày, như một người bạn nhắc khẽ: bạn vẫn đang đi đúng hướng.`,
   },
   {
     slug: "on-dinh-cam-xuc-tuoi-trung-nien",
-    title: "Ổn định cảm xúc tuổi trung niên: khi mọi thứ đổi mà bạn vẫn muốn đứng vững",
+    title: "Ổn định cảm xúc tuổi ngoài 40: khi mọi thứ đổi mà bạn vẫn muốn đứng vững",
     excerpt:
       "Công việc, gia đình, sức khỏe cùng lúc thay đổi. Học cách giữ nhịp cảm xúc mà không phủ nhận khó khăn.",
     theme: "tinh-than",
     minutes: 7,
     body: `## Sóng chồng sóng
 
-Tuổi trung niên ít khi chỉ có một việc. Thường là nhiều việc cùng lúc. Cảm xúc vì thế cũng chồng lớp: lo, mệt, đôi khi trống rỗng.
+Tuổi ngoài 40 ít khi chỉ có một việc. Thường là nhiều việc cùng lúc. Cảm xúc vì thế cũng chồng lớp: lo, mệt, đôi khi trống rỗng.
 
 Bạn không “yếu”. Bạn đang chịu tải.
 
@@ -429,7 +430,7 @@ Khóc được. Giận được. Nhưng sau đó hãy chọn **một hành độ
 
 ## Kết
 
-Ổn định không phải là không sóng. Là biết bám vào đâu khi sóng tới — và Sống An muốn là một trong những chỗ bám thông tin dịu dàng đó.`,
+Ổn định không phải là không sóng. Là biết bám vào đâu khi sóng tới — và VivaAge muốn là một trong những chỗ bám thông tin dịu dàng đó.`,
   },
   {
     slug: "tap-the-duc-khong-xau-ho",
@@ -512,7 +513,7 @@ Cả hai đều làm bạn mắc kẹt.
 
 ## Kết
 
-Sống An không dạy bạn giả vờ vui. Chúng tôi muốn bạn **vừa dịu dàng với hiện tại, vừa quyền năng với tương lai**. Đó mới là động lực bền.`,
+VivaAge không dạy bạn giả vờ vui. Chúng tôi muốn bạn **vừa dịu dàng với hiện tại, vừa quyền năng với tương lai**. Đó mới là động lực bền.`,
   },
   {
     slug: "ngay-xau-van-cuu-duoc",
@@ -543,25 +544,219 @@ Làm được 2/5 bước đã là thắng. Mục tiêu là **ngắt đà đi xu
 
 Ngày xấu không xóa giá trị bạn. Protocol nhỏ giúp bạn nhớ: mình vẫn có quyền lái lại hướng đi — kể cả khi trời trong lòng đang âm u.`,
   },
+  {
+    slug: "mot-trang-so-sach",
+    title: "Một trang sổ sách: làm rõ tiền bạc mà không cần trở thành kế toán",
+    excerpt:
+      "Bạn không cần bảng Excel phức tạp. Một trang giấy trung thực đã đủ để bớt mơ hồ và bớt sợ.",
+    theme: "tai-chinh",
+    minutes: 6,
+    body: `## Mơ hồ nuôi nỗi sợ
+
+Khi không biết tiền vào đâu, ra đâu, não dễ tưởng tượng kịch bản xấu nhất.
+
+## Bài tập 20 phút
+
+Viết bốn cột:
+
+1. Thu nhập đều đặn
+2. Chi tiêu cần thiết (nhà, ăn, thuốc, đi lại)
+3. Khoản để dành / quỹ dự phòng
+4. Khoản có thể giảm nếu cần
+
+Không cần số đẹp. Cần số **thật**.
+
+## Không so với hàng xóm
+
+Sổ của bạn là của bạn. Mục tiêu là thấy rõ, không phải thắng cuộc đua ngầm.
+
+## Kết
+
+Một trang sổ sách là bước đầu của sự bình tĩnh. VivaAge không tư vấn đầu tư — chỉ muốn bạn **bớt sợ vì bớt mơ hồ**.`,
+  },
+  {
+    slug: "kham-dinh-ky-khong-hoang",
+    title: "Khám định kỳ không hoảng: coi như bảo dưỡng, không phải phán xét",
+    excerpt:
+      "Nhiều người tránh khám vì sợ nghe tin xấu. Đổi góc nhìn giúp bạn đi khám sớm hơn và nhẹ lòng hơn.",
+    theme: "suc-khoe",
+    minutes: 6,
+    body: `## Sợ kết quả là bình thường
+
+Sợ không có nghĩa bạn yếu. Nhưng tránh khám lâu dài thường làm rủi ro lớn hơn.
+
+## Khung chuẩn bị 3 việc
+
+1. Mang danh sách thuốc đang dùng
+2. Ghi 3 câu hỏi muốn hỏi bác sĩ
+3. Nhờ người đi cùng nếu bạn dễ quên hoặc dễ lo
+
+## Sau khám
+
+Ghi lại lời dặn vào sổ. Đặt lịch việc nhỏ tiếp theo (uống thuốc đúng giờ, đo huyết áp, tái khám).
+
+## Kết
+
+Khám định kỳ là cách bạn **chăm sóc tương lai**, không phải chờ đến lúc sự cố. Nếu có triệu chứng bất thường, hãy gặp bác sĩ — đừng chỉ hỏi công cụ online.`,
+  },
+  {
+    slug: "ranh-gioi-nhe-nhang",
+    title: "Ranh giới nhẹ nhàng: biết nói ‘không’ để còn sức nói ‘có’ với điều quan trọng",
+    excerpt:
+      "Tuổi ngoài 40 thường gánh nhiều vai. Học cách giữ năng lượng mà vẫn tử tế với người khác.",
+    theme: "tinh-than",
+    minutes: 5,
+    body: `## Không phải ích kỷ
+
+Ranh giới giúp bạn bền. Người kiệt sức khó chăm ai lâu dài.
+
+## Câu nói mẫu
+
+- “Tuần này mình chưa nhận thêm được việc đó.”
+- “Mình cần nghỉ nửa ngày rồi mình hỗ trợ tiếp.”
+- “Việc này quan trọng, mình muốn làm tốt — nên mình xin làm vào cuối tuần.”
+
+## Kết
+
+Bạn được phép quý trọng sức mình. Đó cũng là cách chuẩn bị tuổi già: **giữ vốn năng lượng**.`,
+  },
+  {
+    slug: "di-bo-nhu-lieu-phap",
+    title: "Đi bộ như liệu pháp: chậm, đều, đủ gần nhà",
+    excerpt:
+      "Không cần thành tích. Hai mươi phút quanh khu phố có thể đổi cả ngày của bạn.",
+    theme: "suc-khoe",
+    minutes: 5,
+    body: `## Vì sao đi bộ hợp tuổi ngoài 40
+
+Ít dụng cụ. Ít rủi ro nếu đi đúng khả năng. Dễ duy trì. Có thể nói chuyện với người thân khi đi.
+
+## Cách bắt đầu
+
+- Chọn khung giờ cố định (sáng hoặc chiều)
+- Đi mức nói chuyện được bình thường
+- Có đau ngực, chóng mặt, khó thở bất thường → dừng và gặp bác sĩ
+
+## Kết
+
+Mỗi vòng đi bộ là một viên gạch nhỏ cho sức khỏe dài hạn. Đều đặn thắng “gắng một lần”.`,
+  },
+  {
+    slug: "thuoc-co-nhan",
+    title: "Thuốc có nhãn: một thói quen nhỏ giảm rối loạn lớn",
+    excerpt:
+      "Quên thuốc, nhầm thuốc, hết thuốc đột ngột — thường đến từ chỗ cất và cách ghi chú chưa rõ.",
+    theme: "suc-khoe",
+    minutes: 5,
+    body: `## Checklist nhanh
+
+- Mỗi hộp có tên thuốc + liều + giờ uống
+- Một chỗ cố định, khô, tránh trẻ nhỏ với phải
+- Danh sách thuốc cập nhật trong ví hoặc điện thoại
+- Biết thuốc nào sắp hết trước 7 ngày
+
+## Khi đi khám
+
+Mang theo danh sách. Đừng dựa vào trí nhớ lúc hồi hộp.
+
+## Kết
+
+Đây không phải “làm quá”. Đây là **tôn trọng sự an toàn** của chính mình và người thân.`,
+  },
+  {
+    slug: "goi-mot-cuoc",
+    title: "Gọi một cuộc: kết nối 10 phút còn hơn mạng lưới lớn nhưng lạnh",
+    excerpt:
+      "Cảm giác cô đơn không luôn ồn ào. Một cuộc gọi ngắn có thể neo bạn lại với đời sống.",
+    theme: "tinh-than",
+    minutes: 5,
+    body: `## Chọn người “dễ gọi”
+
+Không cần người hoàn hảo. Cần người bạn có thể nói: “Dạo này mình hơi mệt.”
+
+## Kịch bản 10 phút
+
+1. Hỏi thăm thật
+2. Kể một việc nhỏ bạn đang làm cho sức khỏe / nhà cửa / tiền bạc
+3. Hẹn lần gọi hoặc đi bộ sau
+
+## Kết
+
+Chuẩn bị tuổi già cũng là nuôi vài mối liên hệ ổn định. Bạn không cần đám đông — cần **vài người thật**.`,
+  },
+  {
+    slug: "mot-hop-giay-to",
+    title: "Một hộp giấy tờ: biết chỗ cất là đã bớt một nửa hoảng loạn",
+    excerpt:
+      "Khi có việc đột xuất, tìm giấy tờ thường làm cả nhà loạn. Sắp xếp sớm là yêu thương rất cụ thể.",
+    theme: "cham-soc",
+    minutes: 6,
+    body: `## Những gì nên để cùng chỗ
+
+- Căn cước / CCCD
+- Sổ bảo hiểm xã hội / thẻ bảo hiểm y tế
+- Giấy tờ nhà (nếu có)
+- Danh sách thuốc và dị ứng
+- Số điện thoại người liên hệ khẩn
+
+## Cách làm vừa sức
+
+Không cần hệ thống đẹp. Một hộp hoặc một ngăn tủ có nhãn “Giấy tờ quan trọng” đã đủ bắt đầu.
+
+Cho một người thân tin cậy biết chỗ cất.
+
+## Kết
+
+Bạn không đang “nghĩ chuyện xấu”. Bạn đang **giảm tải cho ngày khó** — nếu ngày đó đến.`,
+  },
+  {
+    slug: "tuan-nay-mot-viec",
+    title: "Tuần này một việc: chống lại ảo tưởng phải sửa hết cuộc đời trong bảy ngày",
+    excerpt:
+      "Kế hoạch đẹp thường chết vì quá tham. Chọn một việc vừa sức giúp bạn thắng cuộc chơi dài.",
+    theme: "thoi-quen",
+    minutes: 5,
+    body: `## Luật một việc
+
+Mỗi tuần, chọn **một** việc chính:
+
+- Đo huyết áp vài buổi
+- Đi bộ 3 lần
+- Gọi bố mẹ
+- Ghi một trang chi tiêu
+- Chỉnh một góc nhà dễ ngã
+
+## Vì sao ít lại mạnh
+
+Não bộ cần bằng chứng tiến bộ. Một việc xong tạo đà cho tuần sau.
+
+## Kết
+
+VivaAge cố ý thiết kế kế hoạch 30 ngày với ít việc. Không phải bạn chậm — là bạn đang đi **bền**.`,
+  },
 ];
 
-/** First N posts published historically; remaining go live every 2 days from NEXT_START. */
+/** First N posts published historically; remaining go live daily from NEXT_START. */
 const INITIAL_PUBLISHED = 8;
 const HISTORIC_START = new Date(Date.UTC(2026, 6, 1)); // 2026-07-01
 const NEXT_START = new Date(Date.UTC(2026, 7, 5)); // 2026-08-05
+const CADENCE_DAYS = 1;
 
 const lines = [
   "-- Generated by seed/generate-blog.mjs — do not edit by hand",
   "-- INSERT OR IGNORE: tái seed không ghi đè bài đã publish bởi cron",
+  "-- Cadence: 1 bài / ngày; cron 02:00 UTC publish + fill horizon",
 ];
 
 POSTS.forEach((post, index) => {
   const scheduled =
     index < INITIAL_PUBLISHED
-      ? new Date(HISTORIC_START.getTime() + index * 2 * 24 * 60 * 60 * 1000)
+      ? new Date(
+          HISTORIC_START.getTime() + index * CADENCE_DAYS * 24 * 60 * 60 * 1000,
+        )
       : new Date(
           NEXT_START.getTime() +
-            (index - INITIAL_PUBLISHED) * 2 * 24 * 60 * 60 * 1000,
+            (index - INITIAL_PUBLISHED) * CADENCE_DAYS * 24 * 60 * 60 * 1000,
         );
   const scheduledFor = scheduled.toISOString().slice(0, 10);
   const isPublished = index < INITIAL_PUBLISHED;
@@ -584,7 +779,7 @@ POSTS.forEach((post, index) => {
   ${sqlString(status)},
   ${sqlString(scheduledFor)},
   ${publishedAt ? sqlString(publishedAt) : "NULL"},
-  ${sqlString("Biên tập Sống An")},
+  ${sqlString("Biên tập VivaAge")},
   ${sqlString(created)},
   ${sqlString(created)}
 );`);
@@ -592,8 +787,15 @@ POSTS.forEach((post, index) => {
 
 const out = resolve(import.meta.dirname, "blog.sql");
 writeFileSync(out, `${lines.join("\n\n")}\n`);
+
+const bankOut = resolve(
+  import.meta.dirname,
+  "../shared/content/blog-editorial-bank.json",
+);
+writeFileSync(bankOut, `${JSON.stringify(POSTS, null, 2)}\n`);
+
 console.log(
-  `Wrote ${out} (${POSTS.length} posts: ${INITIAL_PUBLISHED} published, ${
+  `Wrote ${out} and ${bankOut} (${POSTS.length} posts: ${INITIAL_PUBLISHED} published, ${
     POSTS.length - INITIAL_PUBLISHED
-  } scheduled from ${NEXT_START.toISOString().slice(0, 10)} every 2 days).`,
+  } scheduled from ${NEXT_START.toISOString().slice(0, 10)} every ${CADENCE_DAYS} day(s)).`,
 );

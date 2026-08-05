@@ -52,6 +52,8 @@ export type Env = {
   SCORING_RULESET_VERSION: string;
   SAFETY_RULESET_VERSION: string;
   PLAN_RULESET_VERSION: string;
+  /** Public canonical origin for sitemap/robots/feed (no trailing slash). */
+  PUBLIC_SITE_URL?: string;
   /** Secrets via `wrangler secret put` — never commit values */
   SESSION_SIGNING_SECRET?: string;
   TURNSTILE_SECRET_KEY?: string;

@@ -81,7 +81,7 @@ export async function createSourceVersionWithChunks(
   const sourceMeta = await db
     .prepare(
       `SELECT title, issuer, jurisdiction, document_type, language, category, pillar, status, review_status,
-              publication_date, effective_from, effective_to, original_url
+              publication_date, effective_from, effective_to, original_url, trust_tier
        FROM source_documents WHERE id = ?`,
     )
     .bind(sourceId)
@@ -120,6 +120,7 @@ export async function createSourceVersionWithChunks(
           effective_from: sourceMeta?.effective_from,
           effective_to: sourceMeta?.effective_to,
           original_url: sourceMeta?.original_url,
+          trust_tier: sourceMeta?.trust_tier ?? "editorial",
         }),
         nowIso(),
       )

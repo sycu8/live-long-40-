@@ -91,10 +91,10 @@ export function TodayPage() {
           <div className="space-y-8">
             <EmptyState
               title="Bắt đầu từ việc hiểu mình đang ở đâu"
-              description="Hoàn thành bài đánh giá ngắn để nhận hồ sơ sẵn sàng và kế hoạch 30 ngày."
+              description="Hoàn thành bài đánh giá ngắn để xem mức độ chuẩn bị và nhận kế hoạch 30 ngày."
               action={
                 <Link to="/danh-gia">
-                  <Button>Kiểm tra mức độ sẵn sàng</Button>
+                  <Button>Kiểm tra mức độ chuẩn bị</Button>
                 </Link>
               }
             />
@@ -105,10 +105,10 @@ export function TodayPage() {
               <ul className="mt-4 space-y-4 text-[var(--color-ink-muted)]">
                 <li>
                   <Link className="font-medium text-[var(--color-green)]" to="/hoi">
-                    Hỏi Sống An
+                    Hỏi VivaAge
                   </Link>
                   {" — "}
-                  đặt câu hỏi về khám định kỳ, quỹ dự phòng, phòng ngã hoặc giấy tờ.
+                  đặt câu hỏi về khám định kỳ, tiền để dành khi đột xuất, phòng ngã hoặc giấy tờ.
                 </li>
                 <li>
                   <Link
@@ -128,7 +128,7 @@ export function TodayPage() {
                     Đọc Thư viện
                   </Link>
                   {" — "}
-                  bài học ngắn theo sức khỏe, tài chính và kỹ năng chăm sóc.
+                  bài viết giáo dục ngắn về sức khỏe, tiền bạc và chăm sóc.
                 </li>
               </ul>
             </section>
@@ -154,7 +154,7 @@ export function TodayPage() {
               <p className="mt-2 leading-relaxed text-[var(--color-ink-muted)]">
                 Khoảng 20 câu, làm trong khoảng 7 phút. Bạn sẽ nhận điểm chuẩn bị
                 theo ba trụ cột, khoảng trống ưu tiên và gợi ý việc nhỏ cho 30 ngày
-                tới — không phải chẩn đoán sức khỏe.
+                tới — không phải kết luận bệnh.
               </p>
             </section>
           </div>
@@ -178,7 +178,7 @@ export function TodayPage() {
             <h1 className="font-display text-3xl text-[var(--color-ink)] lg:text-4xl">Hôm nay</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
               Điểm tổng quan: {readiness.overallScore}/100 — đây là điểm chuẩn bị,
-              không phải chẩn đoán.
+              không phải kết luận bệnh.
             </p>
           </div>
 

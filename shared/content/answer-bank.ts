@@ -1,11 +1,16 @@
 import type { QuestionClassification } from "../constants/product";
+import { officialSourceById } from "./official-sources";
 
-/** Curated educational answer with attached citation snippets. */
+/** Curated educational answer with attached official citation snippets. */
 export type AnswerBankSource = {
   title: string;
   issuer: string;
   publicationDate: string;
+  url: string;
+  trustTier: "official_vn" | "intl_guideline";
   snippet: string;
+  /** Registry id when mapped from OFFICIAL_SOURCES */
+  officialSourceId?: string;
 };
 
 export type AnswerBankEntry = {
@@ -20,9 +25,28 @@ export type AnswerBankEntry = {
   answer: string;
 };
 
+function cite(
+  officialId: string,
+  snippetOverride?: string,
+): AnswerBankSource {
+  const ref = officialSourceById(officialId);
+  if (!ref) {
+    throw new Error(`Missing official source registry id: ${officialId}`);
+  }
+  return {
+    title: ref.title,
+    issuer: ref.issuer,
+    publicationDate: ref.publicationDate,
+    url: ref.url,
+    trustTier: ref.trustTier,
+    snippet: snippetOverride ?? ref.snippet,
+    officialSourceId: ref.id,
+  };
+}
+
 /**
- * Prepared detailed answers for common Sống An 40+ questions.
- * These are served first (and written into KV cache) so replies stay stable.
+ * Prepared answers in plain, culturally natural Vietnamese.
+ * Every citation maps to an official source with URL.
  */
 export const ANSWER_BANK: AnswerBankEntry[] = [
   {
@@ -31,46 +55,45 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     classification: "health_education",
     aliases: [
       "tu tuoi 40 toi nen kiem tra suc khoe gi",
+      "tu tuoi 40 nen kiem tra suc khoe gi",
       "tuoi 40 kiem tra suc khoe",
       "kham suc khoe dinh ky tuoi 40",
       "kham dinh ky tu tuoi 40",
       "nen kiem tra suc khoe gi o tuoi 40",
       "tuoi 40 nen kham gi",
+      "tu 40 tuoi nen kham nhung gi moi nam",
     ],
     sources: [
-      {
-        title: "Khám sức khỏe định kỳ từ tuổi 40 (giáo dục)",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-04-01",
-        snippet:
-          "Từ tuổi 40, nên chủ động khám định kỳ và trao đổi với nhân viên y tế về huyết áp, đường huyết, cholesterol, cân nặng và lối sống.",
-      },
-      {
-        title: "Theo dõi huyết áp tại nhà",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-01-15",
-        snippet:
-          "Đo khi đang nghỉ ngơi, ngồi thẳng; ghi ngày, chỉ số và cảm giác; mang sổ khi đi khám.",
-      },
+      cite(
+        "who-ageing",
+        "Tổ chức Y tế Thế giới khuyến khích chuẩn bị sớm từ tuổi ngoài 40: khám đều, vận động vừa sức và đi khám khi cần để giữ sức lâu hơn.",
+      ),
+      cite(
+        "who-hypertension",
+        "Tổ chức Y tế Thế giới khuyến cáo đo huyết áp đều vì huyết áp cao làm tăng nguy cơ bệnh tim mạch; đổi thuốc chỉ theo lời bác sĩ.",
+      ),
+      cite(
+        "byt-portal",
+        "Bộ Y tế đăng thông tin sức khỏe chính thức; nên hỏi bác sĩ hoặc trạm y tế gần nhà về lịch khám phù hợp với mình.",
+      ),
     ],
-    answer: `Từ tuổi 40, bước hữu ích nhất là **chủ động khám định kỳ** và chuẩn bị sẵn câu hỏi để trao đổi với nhân viên y tế — không phải tự chẩn đoán ở nhà. [S1]
+    answer: `Từ tuổi 40, việc hữu ích nhất là **đi khám sức khỏe định kỳ** và chuẩn bị sẵn câu hỏi để hỏi bác sĩ — đừng tự đoán bệnh ở nhà. [S1][S3]
 
-**Thường được nhắc đến khi đi khám**
-- Huyết áp, cân nặng, vòng eo
-- Đường huyết / rối loạn chuyển hóa (theo chỉ định chuyên môn)
-- Cholesterol và các yếu tố nguy cơ tim mạch (theo chỉ định)
-- Thị lực, thính lực, sức khỏe răng miệng nếu có thay đổi
-- Thói quen ngủ, vận động, thuốc đang dùng, tiền sử gia đình
+**Thường được nhắc khi đi khám**
+- Huyết áp và các dấu hiệu liên quan bệnh tim mạch (theo lời bác sĩ) [S2]
+- Đường huyết (lượng đường trong máu), mỡ máu nếu bác sĩ thấy cần
+- Cân nặng, cách ăn uống – vận động, thuốc đang uống, bệnh trong gia đình
+- Mắt, tai, răng miệng nếu gần đây thấy thay đổi
 
-**Việc bạn có thể làm tuần này**
-1. Đặt lịch khám định kỳ hoặc hỏi nhân viên y tế gần nhất về lịch phù hợp với bạn. [S1]
-2. Chuẩn bị sổ nhỏ: thuốc đang uống, triệu chứng gần đây, câu hỏi muốn hỏi.
-3. Nếu đã có máy đo huyết áp, tập đo đúng cách và ghi lại vài ngày trước khi đi khám. [S2]
+**Việc nhỏ tuần này**
+1. Đặt lịch khám hoặc hỏi trạm y tế / phòng khám gần nhà. [S3]
+2. Ghi sổ nhỏ: thuốc đang uống, triệu chứng gần đây, câu hỏi muốn hỏi.
+3. Nếu đã có máy đo huyết áp, đo đúng cách và ghi vài ngày trước khi đi khám. [S2]
 
-**Khi nào nên đi khám sớm hơn**
-Đau ngực dữ dội, khó thở nặng, yếu nửa người, nói khó, hoặc các dấu hiệu bất thường kéo dài — hãy tìm hỗ trợ y tế, không chờ đến lịch định kỳ.
+**Nên đi khám sớm hơn nếu**
+Đau ngực dữ dội, khó thở nặng, yếu nửa người, nói khó — hãy đến cơ sở y tế ngay, đừng chờ đến lịch khám thường.
 
-Đây là hướng dẫn giáo dục để bạn chuẩn bị cuộc nói chuyện với chuyên gia, **không phải** danh sách xét nghiệm bắt buộc hay chẩn đoán.`,
+Thông tin này để bạn chuẩn bị cuộc nói chuyện với bác sĩ, **không phải** danh sách xét nghiệm bắt buộc hay kết luận bệnh.`,
   },
   {
     id: "emergency-fund",
@@ -78,46 +101,40 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     classification: "financial_education",
     aliases: [
       "toi nen chuan bi quy du phong the nao",
+      "toi can chuan bi bao nhieu thang chi phi du phong",
+      "bao nhieu thang chi phi du phong",
       "quy du phong la gi",
       "quy du phong",
       "chuan bi quy du phong",
       "lam quy du phong the nao",
+      "quy du phong y te nen tinh the nao",
       "quy khan cap",
       "tien du phong",
     ],
     sources: [
-      {
-        title: "Giáo dục về quỹ dự phòng",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-02-10",
-        snippet:
-          "Quỹ dự phòng giúp chi trả các việc đột xuất. Ước lượng chi phí thiết yếu mỗi tháng, rồi đặt mục tiêu nhỏ và đều đặn. Đây không phải tư vấn đầu tư.",
-      },
-      {
-        title: "Quỹ dự phòng cơ bản",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-01-15",
-        snippet:
-          "Ước lượng chi phí thiết yếu mỗi tháng. Đặt mục tiêu nhỏ và đều đặn. Tách khoản này khỏi chi tiêu hàng ngày nếu có thể.",
-      },
+      cite(
+        "sbv-portal",
+        "Ngân hàng Nhà nước là nguồn tin chính thức về hệ thống ngân hàng; việc để dành tiền trong gia đình không đồng nghĩa với lời khuyên đầu tư cho từng người.",
+      ),
+      cite(
+        "bhxh-portal",
+        "Bảo hiểm xã hội Việt Nam công bố quyền lợi bảo hiểm chính thức; tiền để dành khi có việc đột xuất bổ sung cho phần bảo hiểm chưa chi trả.",
+      ),
     ],
-    answer: `Quỹ dự phòng là khoản tiền để chi khi có việc đột xuất, giúp bạn **ít phải vay nóng**. Đây là thói quen chuẩn bị, không phải sản phẩm đầu tư. [S1]
+    answer: `**Quỹ dự phòng** là khoản tiền để dành khi có việc đột xuất (ốm đau, sửa nhà, mất việc tạm thời…), giúp gia đình **bớt phải vay nóng**. Đây là thói quen lo liệu tiền bạc, không phải cách “làm giàu”. [S1]
 
 **Cách bắt đầu vừa sức**
-1. Ước lượng chi phí thiết yếu mỗi tháng (ăn ở, điện nước, đi lại, thuốc men cơ bản). [S1][S2]
-2. Chọn mục tiêu nhỏ trước — ví dụ 1 tháng chi phí thiết yếu — rồi tăng dần khi ổn định.
-3. Để riêng một chỗ (tài khoản/ví tách) và chuyển đều đặn số vừa với thu nhập. [S2]
-4. Ghi lại mỗi lần dùng quỹ: việc gì, bao nhiêu, kế hoạch hoàn trả.
+1. Ước lượng chi tiêu cần thiết mỗi tháng: ăn ở, điện nước, đi lại, thuốc men cơ bản. [S1]
+2. Đặt mục tiêu nhỏ trước — ví dụ bằng khoảng 1 tháng chi tiêu cần thiết — rồi tăng dần khi ổn.
+3. Để riêng một chỗ (ví hoặc tài khoản tách) và chuyển đều đặn số tiền vừa với thu nhập.
+4. Xem thêm quyền lợi bảo hiểm y tế / bảo hiểm xã hội trên trang Bảo hiểm xã hội Việt Nam để biết phần nào đã được hỗ trợ. [S2]
 
-**Nguyên tắc giữ bình tĩnh**
-- Đều đặn thắng số lớn một lần rồi bỏ dở.
-- Không lấy quỹ dự phòng để “lướt” đầu tư hay chi tiêu không cần thiết.
-- Khi thu nhập thay đổi, chỉ cần chỉnh mức đóng — không cần đổ hết kế hoạch.
+**Giữ vững**
+- Để đều mỗi tuần/tháng còn hơn để một lần lớn rồi bỏ.
+- Không lấy tiền dự phòng để chơi chứng khoán hay chi tiêu không cần thiết.
 
 **Giới hạn rõ**
-Sống An 40+ **không** khuyến nghị bạn mua sản phẩm tài chính cụ thể, không tư vấn đầu tư hay bảo hiểm cá nhân hóa. Nếu cần chọn sản phẩm, hãy hỏi chuyên gia tài chính có giấy phép.
-
-Bước tiếp theo hôm nay: viết ra chi phí thiết yếu 1 tháng và mức bạn có thể để dành mỗi tuần mà không làm căng ngân sách.`,
+VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm cụ thể. Nếu cần tư vấn riêng, hãy hỏi người có chuyên môn hoặc xem thông tin trên cổng Ngân hàng Nhà nước Việt Nam / Bảo hiểm xã hội Việt Nam. [S1][S2]`,
   },
   {
     id: "parent-fall",
@@ -130,42 +147,32 @@ Bước tiếp theo hôm nay: viết ra chi phí thiết yếu 1 tháng và mứ
       "xu ly khi bi nga",
       "phong nga tai nha",
       "nguoi cao tuoi bi nga",
+      "nha co nguoi lon tuoi thi can thay doi nhung gi",
+      "nha co nguoi lon tuoi nen thay doi gi",
     ],
     sources: [
-      {
-        title: "Hướng dẫn giáo dục về phòng ngã tại nhà",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-03-05",
-        snippet:
-          "Nếu có người bị ngã: kiểm tra tỉnh táo; không đỡ dậy mạnh nếu nghi chấn thương nặng; gọi hỗ trợ y tế khi không đứng dậy được hoặc đau nhiều.",
-      },
-      {
-        title: "Phòng ngã tại nhà",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-03-05",
-        snippet:
-          "Khi người cao tuổi đi lại trong nhà, hãy giữ lối đi thông thoáng và đủ ánh sáng.",
-      },
+      cite(
+        "who-falls",
+        "Tổ chức Y tế Thế giới cho biết ngã dễ gây chấn thương ở người lớn tuổi; cần nhà cửa an toàn và đưa đi cấp cứu khi không đứng dậy được hoặc đau nhiều.",
+      ),
+      cite(
+        "byt-portal",
+        "Bộ Y tế khuyến cáo dùng thông tin y tế chính thức; việc cấp cứu cần gọi cơ sở y tế hoặc số cấp cứu địa phương.",
+      ),
     ],
-    answer: `Khi cha mẹ (hoặc người thân lớn tuổi) bị ngã, ưu tiên **an toàn và đánh giá nhanh**, không vội đỡ dậy bằng mọi giá. [S1]
+    answer: `Khi cha mẹ hoặc người thân lớn tuổi bị ngã, hãy **giữ bình tĩnh và xem tình trạng trước**, đừng vội đỡ dậy bằng mọi giá. [S1]
 
-**Ngay tại chỗ**
-1. Giữ bình tĩnh, nói chuyện nhẹ để xem họ có tỉnh táo, trả lời được không. [S1]
-2. Quan sát đau nhiều ở đâu, có biến dạng xương/khớp, chảy máu, khó thở không.
-3. **Không kéo hoặc đỡ dậy mạnh** nếu nghi ngờ chấn thương nặng. [S1]
-4. Gọi hỗ trợ y tế khi họ không đứng dậy được, đau nhiều, đầu va đập, lẫn lộn, hoặc bạn không chắc. [S1]
+**Ngay lúc đó**
+1. Nói chuyện nhẹ: họ còn tỉnh, trả lời được không? [S1]
+2. Xem chỗ nào đau nhiều, xương/khớp có lệch không, có chảy máu hay khó thở không.
+3. **Đừng kéo hoặc đỡ mạnh** nếu nghi bị thương nặng. [S1]
+4. Gọi cấp cứu hoặc đưa đi bệnh viện nếu họ không đứng dậy được, đau nhiều, đập đầu, nói lắp/lẫn, hoặc bạn không chắc. [S1][S2]
 
-**Nếu họ ổn hơn và đứng dậy được với hỗ trợ an toàn**
-- Cho ngồi nghỉ, theo dõi vài giờ.
-- Ghi lại hoàn cảnh ngã (trơn, tối, chóng mặt, thuốc mới…).
-- Hẹn nhân viên y tế để kiểm tra nếu người cao tuổi hoặc có bệnh nền.
+**Để giảm ngã lần sau**
+- Lối đi thông thoáng, đủ đèn; gọn dây điện, thảm trơn. [S1]
+- Đi dép chống trượt; đồ hay dùng để trong tầm với.
 
-**Phòng ngã về sau (việc nhỏ tuần này)**
-- Lối đi thông thoáng, đủ ánh sáng; gọn dây điện, thảm trơn. [S2]
-- Giày dép chống trượt; để đồ hay dùng trong tầm với.
-- Thảo luận với gia đình về người gọi khi khẩn cấp.
-
-Đây là hướng dẫn giáo dục, **không thay** cấp cứu hay chỉ định điều trị. Nếu tình huống nghiêm trọng, hãy gọi dịch vụ cấp cứu địa phương ngay.`,
+Đây là hướng dẫn tham khảo theo Tổ chức Y tế Thế giới và Bộ Y tế, **không thay** cấp cứu. Khi tình trạng nặng: gọi cấp cứu địa phương ngay. [S2]`,
   },
   {
     id: "aging-documents",
@@ -180,40 +187,32 @@ Bước tiếp theo hôm nay: viết ra chi phí thiết yếu 1 tháng và mứ
       "ho so tuoi gia",
     ],
     sources: [
-      {
-        title: "Chuẩn bị giấy tờ quan trọng cho tuổi già (giáo dục)",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-04-01",
-        snippet:
-          "Chuẩn bị giấy tờ cho tuổi già: giấy tùy thân, bảo hiểm, giấy tờ nhà đất và liên hệ khẩn cấp. Gom bản gốc và bản sao; cho người thân tin cậy biết vị trí lưu.",
-      },
-      {
-        title: "Sắp xếp giấy tờ quan trọng",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-03-01",
-        snippet:
-          "Gom giấy tùy thân, bảo hiểm và giấy tờ nhà. Cho người thân tin cậy biết vị trí lưu.",
-      },
+      cite(
+        "bhxh-portal",
+        "Bảo hiểm xã hội Việt Nam là nơi xem thông tin bảo hiểm y tế, bảo hiểm xã hội và thủ tục hồ sơ chính thức.",
+      ),
+      cite(
+        "byt-portal",
+        "Thông tin khám chữa bệnh đăng trên cổng Bộ Y tế; nên mang theo giấy tờ sức khỏe cá nhân khi đi khám.",
+      ),
     ],
-    answer: `Chuẩn bị giấy tờ cho tuổi già là việc **gom – tách bản sao – cho người tin cậy biết chỗ lưu**, để khi cần không phải tìm cuống cuồng. [S1]
+    answer: `Chuẩn bị giấy tờ cho tuổi già nghĩa là **gom lại – làm bản sao – cho người nhà tin cậy biết để ở đâu**, để lúc cần không phải tìm cuống cuồng. [S1]
 
-**Nhóm giấy thường cần rà soát**
-- Giấy tùy thân (CCCD/CMND còn hạn, hộ chiếu nếu có)
-- Bảo hiểm y tế / các giấy tờ bảo hiểm đang tham gia [S1][S2]
-- Giấy tờ nhà ở, đất đai, hợp đồng thuê (nếu có) [S1]
-- Sổ/ghi chú thuốc đang dùng, tiền sử bệnh, dị ứng
-- Danh bạ liên hệ khẩn cấp (con cái, hàng xóm, phòng khám)
+**Nhóm giấy nên rà soát**
+- Giấy tùy thân (căn cước còn hạn, hộ chiếu nếu có)
+- Bảo hiểm y tế / hồ sơ bảo hiểm xã hội — xem trên trang Bảo hiểm xã hội Việt Nam [S1]
+- Giấy tờ nhà đất, hợp đồng thuê (nếu có)
+- Sổ thuốc đang uống, bệnh đã mắc, dị ứng thuốc [S2]
+- Số điện thoại người thân, hàng xóm, phòng khám khi khẩn cấp
 
-**Cách làm gọn trong 1–2 buổi**
-1. Gom bản gốc vào một hộp/file; bản sao để riêng. [S1]
-2. Dán nhãn ngoài: “Tùy thân”, “Bảo hiểm”, “Nhà cửa”, “Y tế”.
-3. Viết một tờ hướng dẫn ngắn: hộp để đâu, ai được mở khi khẩn cấp. [S2]
-4. Rà soát lại mỗi 6–12 tháng hoặc khi có thay đổi lớn.
+**Làm gọn trong 1–2 buổi**
+1. Gom bản gốc một hộp; bản sao để riêng.
+2. Dán nhãn ngoài: “Tùy thân”, “Bảo hiểm”, “Nhà cửa”, “Sức khỏe”.
+3. Viết một tờ giấy ngắn: hộp để đâu, ai được mở khi cần.
+4. Xem lại mỗi 6–12 tháng hoặc khi có thay đổi lớn.
 
 **Giới hạn**
-Sống An 40+ **không** soạn thảo di chúc, ủy quyền hay tư vấn pháp lý cá nhân hóa. Nếu cần giấy tờ có giá trị pháp lý, hãy gặp đơn vị có thẩm quyền hoặc luật sư.
-
-Bước tiếp theo hôm nay: chọn một ngăn kéo/hộp và bỏ vào ít nhất giấy tùy thân + thẻ BHYT + một số liên hệ khẩn cấp.`,
+VivaAge **không** soạn di chúc hay tư vấn luật cho từng người. Thủ tục bảo hiểm: dùng cổng Bảo hiểm xã hội Việt Nam. [S1]`,
   },
   {
     id: "blood-pressure-home",
@@ -227,56 +226,60 @@ Bước tiếp theo hôm nay: chọn một ngăn kéo/hộp và bỏ vào ít nh
       "theo doi huyet ap",
     ],
     sources: [
-      {
-        title: "Theo dõi huyết áp tại nhà",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-01-15",
-        snippet:
-          "Đo khi đang nghỉ ngơi, ngồi thẳng; ghi ngày, chỉ số và cảm giác; mang sổ khi đi khám. Không tự ý thay đổi thuốc.",
-      },
+      cite(
+        "who-hypertension",
+        "Tổ chức Y tế Thế giới khuyến cáo đo và theo dõi huyết áp; đổi thuốc chỉ theo lời bác sĩ.",
+      ),
+      cite(
+        "byt-portal",
+        "Thông tin sức khỏe chính thức của Bộ Y tế; nên mang sổ huyết áp khi đi khám.",
+      ),
     ],
-    answer: `Theo dõi huyết áp tại nhà giúp bạn có **sổ số liệu thật** để mang đi khám — không phải để tự kê đơn. [S1]
+    answer: `Đo huyết áp tại nhà giúp bạn có **sổ ghi chép mang đi khám** — không phải để tự kê đơn. [S1]
 
-**Cách đo gọn**
-- Nghỉ 5 phút, ngồi thẳng, chân chạm sàn, tay đặt trên bàn.
+**Cách đo đơn giản**
+- Nghỉ khoảng 5 phút, ngồi thẳng, chân chạm sàn, tay đặt trên bàn.
 - Đo cùng khung giờ vài ngày; ghi ngày, chỉ số, cảm giác lúc đo. [S1]
-- Mang sổ này khi gặp nhân viên y tế.
+- Mang sổ này khi gặp bác sĩ. [S2]
 
-**Không làm**
-- Không tự ý tăng/giảm hoặc ngưng thuốc huyết áp dựa trên một lần đo. [S1]
-- Không bỏ qua triệu chứng nặng (đau ngực dữ dội, khó thở nặng, yếu nửa người).
+**Không nên**
+- Tự tăng, giảm hoặc ngưng thuốc huyết áp chỉ vì một lần đo. [S1]
+- Bỏ qua dấu hiệu nặng: đau ngực dữ dội, khó thở nặng, yếu nửa người.
 
-Nếu số đo thường xuyên cao hoặc bạn lo lắng, hãy hẹn trao đổi với nhân viên y tế thay vì tự kết luận.`,
+Nếu số đo thường xuyên cao hoặc bạn lo lắng, hãy hẹn bác sĩ thay vì tự kết luận. [S1][S2]`,
   },
   {
     id: "sleep-habit",
-    question: "Làm sao để ngủ ngon hơn ở tuổi trung niên?",
+    question: "Làm sao để ngủ ngon hơn ở tuổi ngoài 40?",
     classification: "health_education",
     aliases: [
       "lam sao de ngu ngon",
       "ngu ngon tuoi trung nien",
+      "ngu ngon tuoi ngoai 40",
       "giu gio ngu",
       "mat ngu",
       "thieu ngu",
       "ngu la suc manh",
+      "lam sao de ngu ngon hon o tuoi ngoai 40",
     ],
     sources: [
-      {
-        title: "Giữ giờ ngủ ổn định",
-        issuer: "Sống An 40+ Biên tập giáo dục",
-        publicationDate: "2026-03-01",
-        snippet:
-          "Chọn giờ đi ngủ và thức dậy tương đối cố định. Giảm ánh sáng mạnh trước khi ngủ nếu có thể.",
-      },
+      cite(
+        "who-mental-sleep",
+        "Tổ chức Y tế Thế giới cho biết giấc ngủ ảnh hưởng tinh thần người lớn tuổi; mất ngủ kéo dài nên đi khám.",
+      ),
+      cite(
+        "who-ageing",
+        "Tổ chức Y tế Thế giới khuyến khích thói quen lành mạnh, trong đó có nghỉ ngơi đều đặn, để già hóa khỏe mạnh.",
+      ),
     ],
-    answer: `Ở tuổi trung niên, ngủ đều thường giúp tinh thần và sức bền ổn định hơn là “ngủ bù” thất thường. [S1]
+    answer: `Ở tuổi ngoài 40, **ngủ đều** thường giúp tinh thần và sức khỏe ổn định hơn là “ngủ bù” lúc được lúc không. [S1][S2]
 
-**Việc nhỏ có thể thử 7 ngày**
-1. Chọn giờ đi ngủ và giờ thức dậy gần cố định, kể cả cuối tuần. [S1]
-2. Giảm ánh sáng mạnh / màn hình sáng 30–60 phút trước ngủ nếu hoàn cảnh cho phép. [S1]
-3. Tránh biến giường thành chỗ làm việc hoặc xem nội dung kích thích.
-4. Ghi lại 3 đêm: ngủ lúc mấy giờ, tỉnh mấy lần, tỉnh táo ban ngày ra sao — mang theo nếu đi khám.
+**Thử trong 7 ngày**
+1. Giờ đi ngủ và giờ thức gần cố định, kể cả cuối tuần. [S2]
+2. Trước khi ngủ 30–60 phút, bớt xem điện thoại / tivi sáng chói nếu hoàn cảnh cho phép.
+3. Đừng biến giường thành chỗ làm việc hay xem nội dung làm kích thích.
+4. Ghi 3 đêm: ngủ lúc mấy giờ, tỉnh mấy lần, ban ngày có tỉnh táo không — mang theo nếu đi khám. [S1]
 
-Nếu mất ngủ kéo dài, ngủ ngày vẫn mệt, hoặc có ngáy nặng/nghỉ thở khi ngủ, hãy hỏi nhân viên y tế. Đây là gợi ý lối sống giáo dục, không phải điều trị rối loạn giấc ngủ.`,
+Nếu mất ngủ lâu, ngủ ngày vẫn mệt, hoặc ngáy nặng / thỉnh thoảng ngừng thở khi ngủ, hãy hỏi bác sĩ. Đây là gợi ý thói quen theo Tổ chức Y tế Thế giới, không phải cách chữa bệnh mất ngủ. [S1]`,
   },
 ];

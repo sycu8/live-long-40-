@@ -1,7 +1,7 @@
 {
-  "name": "Sống An 40+",
-  "short_name": "Sống An",
-  "description": "Chuẩn bị sức khỏe, tài chính và chăm sóc từ tuổi 40.",
+  "name": "VivaAge",
+  "short_name": "VivaAge",
+  "description": "VivaAge - Chuẩn bị hôm nay, tự chủ về sau.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f7f4ef",

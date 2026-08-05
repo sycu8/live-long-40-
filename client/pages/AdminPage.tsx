@@ -11,6 +11,8 @@ type SourceRow = {
   status: string;
   review_status: string;
   category: string;
+  trust_tier?: string;
+  original_url?: string;
 };
 
 export function AdminPage() {
@@ -22,14 +24,18 @@ export function AdminPage() {
     title: string;
     issuer: string;
     category: string;
-    documentType: "education";
+    documentType: "guideline" | "education" | "policy";
+    trustTier: "official_vn" | "intl_guideline" | "editorial";
+    originalUrl: string;
     reviewedText: string;
     summary: string;
   }>({
     title: "",
-    issuer: "Sống An 40+ Biên tập",
+    issuer: "Bộ Y tế Việt Nam",
     category: LIBRARY_CATEGORIES[0]!.id,
-    documentType: "education",
+    documentType: "guideline",
+    trustTier: "official_vn",
+    originalUrl: "https://moh.gov.vn/",
     reviewedText: "",
     summary: "",
   });
@@ -68,10 +74,12 @@ export function AdminPage() {
           issuer: form.issuer,
           category: form.category,
           documentType: form.documentType,
+          trustTier: form.trustTier,
+          originalUrl: form.originalUrl || undefined,
           summary: form.summary,
           reviewedText: form.reviewedText,
           language: "vi",
-          jurisdiction: "VN",
+          jurisdiction: form.trustTier === "intl_guideline" ? "INTL" : "VN",
         },
       });
       await api(`/admin/sources/${created.publicId}/ingest`, {
@@ -82,7 +90,7 @@ export function AdminPage() {
         method: "POST",
         body: { approve: true, reviewer: "local-admin" },
       });
-      setMessage("Đã tạo, nạp và duyệt nguồn.");
+      setMessage("Đã tạo, nạp và duyệt nguồn chính thống.");
       setForm((f) => ({ ...f, title: "", reviewedText: "", summary: "" }));
       await refresh({ preserveMessage: true });
     } catch (err) {
@@ -159,6 +167,57 @@ export function AdminPage() {
             />
           </label>
           <label className="block text-sm">
+            Mức tin cậy
+            <select
+              className="mt-1 min-h-12 w-full rounded-lg border px-3"
+              value={form.trustTier}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  trustTier: e.target.value as
+                    | "official_vn"
+                    | "intl_guideline"
+                    | "editorial",
+                })
+              }
+            >
+              <option value="official_vn">Cơ quan nhà nước Việt Nam</option>
+              <option value="intl_guideline">Tổ chức Y tế Thế giới / hướng dẫn quốc tế</option>
+              <option value="editorial">Biên tập nội bộ (không dùng làm bằng chứng khi trả lời)</option>
+            </select>
+          </label>
+          <label className="block text-sm">
+            URL nguồn gốc (bắt buộc với nguồn chính thống)
+            <input
+              type="url"
+              className="mt-1 min-h-12 w-full rounded-lg border px-3"
+              value={form.originalUrl}
+              onChange={(e) => setForm({ ...form, originalUrl: e.target.value })}
+              placeholder="https://"
+              required={form.trustTier !== "editorial"}
+            />
+          </label>
+          <label className="block text-sm">
+            Loại văn bản
+            <select
+              className="mt-1 min-h-12 w-full rounded-lg border px-3"
+              value={form.documentType}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  documentType: e.target.value as
+                    | "guideline"
+                    | "education"
+                    | "policy",
+                })
+              }
+            >
+              <option value="guideline">Hướng dẫn</option>
+              <option value="policy">Chính sách / quy định</option>
+              <option value="education">Giới thiệu / phổ biến</option>
+            </select>
+          </label>
+          <label className="block text-sm">
             Nhóm
             <select
               className="mt-1 min-h-12 w-full rounded-lg border px-3"
@@ -201,8 +260,19 @@ export function AdminPage() {
                 <div>
                   <p className="font-medium">{s.title}</p>
                   <p className="text-xs text-[var(--color-ink-muted)]">
-                    {s.issuer} · {s.status}/{s.review_status} · {s.category}
+                    {s.issuer} · {s.trust_tier ?? "?"} · {s.status}/{s.review_status} ·{" "}
+                    {s.category}
                   </p>
+                  {s.original_url ? (
+                    <a
+                      href={s.original_url}
+                      className="text-xs text-[var(--color-blue)] underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {s.original_url}
+                    </a>
+                  ) : null}
                 </div>
                 <Button variant="ghost" onClick={() => withdraw(s.public_id)}>
                   Rút nguồn

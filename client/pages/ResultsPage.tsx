@@ -5,6 +5,7 @@ import { Button } from "../components/Button";
 import { ScoreMeter } from "../components/ui";
 import { api } from "../lib/api";
 import { PILLAR_LABELS, SCORE_DISCLAIMER } from "@shared/constants/product";
+import { questionTopicLabel } from "@shared/rules/scoring";
 
 type Result = {
   publicId: string;
@@ -86,7 +87,7 @@ export function ResultsPage() {
     <AppShell>
       <div className="space-y-6 fade-up">
         <div>
-          <h1 className="font-display text-3xl">Hồ sơ sẵn sàng của bạn</h1>
+          <h1 className="font-display text-3xl">Mức độ chuẩn bị của bạn</h1>
           <p className="mt-2 text-lg">
             Điểm tổng quan: <strong>{result.overallScore}/100</strong>
           </p>
@@ -133,7 +134,7 @@ export function ResultsPage() {
           <ul className="mt-3 space-y-1">
             {result.explainability.breakdown.map((b) => (
               <li key={b.questionKey}>
-                {b.questionKey}:{" "}
+                {questionTopicLabel(b.questionKey)}:{" "}
                 {b.answered ? `điểm ${b.rawScore}` : "chưa trả lời"}
               </li>
             ))}
