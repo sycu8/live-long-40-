@@ -40,7 +40,21 @@ export const securityHeaders = createMiddleware(async (c, next) => {
       "form-action 'self'",
     ].join("; "),
   );
-  c.res.headers.set("Cache-Control", "no-store");
+  const path = new URL(c.req.url).pathname;
+  const isPublicDiscovery =
+    path === "/" ||
+    path === "/robots.txt" ||
+    path === "/sitemap.xml" ||
+    path === "/feed.xml" ||
+    path === "/auth.md" ||
+    path === "/openapi.json" ||
+    path === "/llms.txt" ||
+    path === "/mcp" ||
+    path.startsWith("/mcp/") ||
+    path.startsWith("/.well-known/");
+  if (!isPublicDiscovery) {
+    c.res.headers.set("Cache-Control", "no-store");
+  }
 });
 
 async function ensureSession(c: Parameters<typeof requestContext>[0]) {

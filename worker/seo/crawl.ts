@@ -190,41 +190,49 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 Disallow: /ket-qua
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 
 User-agent: GPTBot
 Allow: /
 Disallow: /admin
 Disallow: /api/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 
 User-agent: ChatGPT-User
 Allow: /
 Disallow: /admin
 Disallow: /api/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 
 User-agent: Google-Extended
 Allow: /
 Disallow: /admin
 Disallow: /api/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 
 User-agent: anthropic-ai
 Allow: /
 Disallow: /admin
 Disallow: /api/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 
 User-agent: ClaudeBot
 Allow: /
 Disallow: /admin
 Disallow: /api/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 
 User-agent: PerplexityBot
 Allow: /
 Disallow: /admin
 Disallow: /api/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
 
 User-agent: Bytespider
 Allow: /
 Disallow: /admin
 Disallow: /api/
+Content-Signal: ai-train=no, search=yes, ai-input=no
 
 Sitemap: ${base}/sitemap.xml
 `;
