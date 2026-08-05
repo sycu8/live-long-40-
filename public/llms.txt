@@ -1,0 +1,26 @@
+# VivaAge
+
+> Công cụ giáo dục tiếng Việt giúp người từ tuổi 40 chuẩn bị sức khỏe, tài chính và kỹ năng chăm sóc — chuẩn bị hôm nay, tự chủ về sau.
+
+- Trang chủ: https://song-an-40.sycu-lee.workers.dev/
+- Đánh giá sẵn sàng (~7 phút): https://song-an-40.sycu-lee.workers.dev/danh-gia
+- Kế hoạch 30 ngày: https://song-an-40.sycu-lee.workers.dev/ke-hoach
+- Hỏi đáp có nguồn: https://song-an-40.sycu-lee.workers.dev/hoi
+- Góc động viên (blog): https://song-an-40.sycu-lee.workers.dev/blog
+- Thư viện bài học: https://song-an-40.sycu-lee.workers.dev/thu-vien
+
+## Tên thương hiệu
+- “Viva” gợi sức sống, tích cực, không nhấn mạnh sự già yếu.
+- “Age” thể hiện lĩnh vực tuổi tác và healthy aging.
+- Tagline: VivaAge - Chuẩn bị hôm nay, tự chủ về sau
+
+## Ngôn ngữ & khu vực
+- Ngôn ngữ chính: tiếng Việt (vi-VN)
+- Đối tượng: người Việt Nam khoảng 40 tuổi trở lên
+- Không phải ứng dụng chính thức của Nhà nước
+
+## Giới hạn
+VivaAge là công cụ giáo dục và lập kế hoạch — không chẩn đoán bệnh, không kê đơn, không thay bác sĩ / tư vấn tài chính / tư vấn pháp lý.
+
+## Liên hệ nội dung
+Sitemap: https://song-an-40.sycu-lee.workers.dev/sitemap.xml

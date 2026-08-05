@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BRAND } from "@shared/brand";
 import { ensureSession } from "./lib/api";
+import { DocumentHead } from "./components/DocumentHead";
 import { LandingPage } from "./pages/LandingPage";
 import { TodayPage } from "./pages/TodayPage";
 import { AssessmentPage } from "./pages/AssessmentPage";
@@ -40,13 +42,14 @@ export function App() {
   if (!ready) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-[var(--color-ink-muted)] lg:max-w-2xl">
-        Đang khởi tạo VivaAge…
+        Đang khởi tạo {BRAND.name}…
       </div>
     );
   }
 
   return (
     <BrowserRouter>
+      <DocumentHead />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/hom-nay" element={<TodayPage />} />
