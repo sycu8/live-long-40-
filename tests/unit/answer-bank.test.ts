@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ANSWER_BANK } from "../../shared/content/answer-bank";
-import { OFFICIAL_SOURCES } from "../../shared/content/official-sources";
+import {
+  FORBIDDEN_HOMEPAGE_URLS,
+  OFFICIAL_SOURCES,
+  isGenericHomepageUrl,
+} from "../../shared/content/official-sources";
 import { EXAMPLE_QUESTIONS } from "../../shared/constants/product";
 import {
   isOfficialIssuer,
@@ -24,15 +28,17 @@ describe("answer bank official sources", () => {
     }
   });
 
-  it("attaches official issuers and https URLs on every bank source", () => {
+  it("attaches official issuers and document-level https URLs on every bank source", () => {
     for (const entry of ANSWER_BANK) {
       expect(answerHasCitations(entry.answer)).toBe(true);
       for (const s of entry.sources) {
         expect(s.url.startsWith("https://")).toBe(true);
+        expect(isGenericHomepageUrl(s.url), s.url).toBe(false);
         expect(isOfficialIssuer(s.issuer)).toBe(true);
-        expect(s.trustTier === "official_vn" || s.trustTier === "intl_guideline").toBe(
-          true,
-        );
+        expect(
+          s.trustTier === "official_vn" || s.trustTier === "intl_guideline",
+        ).toBe(true);
+        expect(s.title.length).toBeGreaterThan(12);
       }
       const cached = bankEntryToCached(entry);
       expect(isGroundedOfficialAnswer(cached)).toBe(true);
@@ -64,11 +70,24 @@ describe("answer bank official sources", () => {
 });
 
 describe("official source registry", () => {
-  it("lists only official_vn / intl_guideline entries with urls", () => {
-    expect(OFFICIAL_SOURCES.length).toBeGreaterThanOrEqual(6);
+  it("lists only official_vn / intl_guideline entries with document-level urls", () => {
+    expect(OFFICIAL_SOURCES.length).toBeGreaterThanOrEqual(8);
     for (const s of OFFICIAL_SOURCES) {
       expect(s.url.startsWith("https://")).toBe(true);
+      expect(isGenericHomepageUrl(s.url), `${s.id} → ${s.url}`).toBe(false);
       expect(sourceLooksOfficial(s)).toBe(true);
+      expect(s.title.toLowerCase()).not.toMatch(/^cổng thông tin/);
     }
+  });
+
+  it("flags known organization homepages as generic", () => {
+    for (const home of FORBIDDEN_HOMEPAGE_URLS) {
+      expect(isGenericHomepageUrl(home)).toBe(true);
+    }
+    expect(
+      isGenericHomepageUrl(
+        "https://www.who.int/news-room/fact-sheets/detail/hypertension",
+      ),
+    ).toBe(false);
   });
 });

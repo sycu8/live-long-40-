@@ -35,7 +35,7 @@ export function AdminPage() {
     category: LIBRARY_CATEGORIES[0]!.id,
     documentType: "guideline",
     trustTier: "official_vn",
-    originalUrl: "https://moh.gov.vn/",
+    originalUrl: "",
     reviewedText: "",
     summary: "",
   });
@@ -187,13 +187,13 @@ export function AdminPage() {
             </select>
           </label>
           <label className="block text-sm">
-            URL nguồn gốc (bắt buộc với nguồn chính thống)
+            URL tài liệu gốc (bắt buộc với nguồn chính thống — tới đúng bài/tờ thông tin, không dùng trang chủ cơ quan)
             <input
               type="url"
               className="mt-1 min-h-12 w-full rounded-lg border px-3"
               value={form.originalUrl}
               onChange={(e) => setForm({ ...form, originalUrl: e.target.value })}
-              placeholder="https://"
+              placeholder="https://…/đường-dẫn-tới-tài-liệu-cụ-thể"
               required={form.trustTier !== "editorial"}
             />
           </label>

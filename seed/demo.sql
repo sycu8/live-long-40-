@@ -1150,9 +1150,9 @@ INSERT OR IGNORE INTO source_documents (
 (
   'src_official_byt',
   'psrc_official_byt',
-  'cong-thong-tin-bo-y-te',
-  'Cổng thông tin điện tử Bộ Y tế',
-  'Thông tin y tế công cộng chính thống của Bộ Y tế Việt Nam.',
+  'byt-kham-dinh-ky-nguoi-cao-tuoi',
+  'Khám sức khỏe định kỳ và chăm sóc người cao tuổi — Bộ Y tế',
+  'Bài trên cổng Bộ Y tế nhấn mạnh khám định kỳ, sổ theo dõi bệnh và dùng thuốc đúng chỉ định cho người cao tuổi.',
   'Bộ Y tế Việt Nam',
   'VN',
   'guideline',
@@ -1160,11 +1160,35 @@ INSERT OR IGNORE INTO source_documents (
   'kham-phong-benh',
   'health',
   5,
-  'https://moh.gov.vn/',
+  'https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre',
   'active',
   'approved',
-  '2024-01-01',
-  '2024-01-01',
+  '2023-12-01',
+  '2023-12-01',
+  '2026-07-01',
+  'seed',
+  'official_vn',
+  datetime('now'),
+  datetime('now')
+),
+(
+  'src_official_byt_drug',
+  'psrc_official_byt_drug',
+  'byt-tra-cuu-dang-ky-thuoc',
+  'Hướng dẫn tra cứu giấy đăng ký lưu hành thuốc — Cục Quản lý Dược, Bộ Y tế',
+  'Hướng dẫn người dân tra cứu thuốc đã được cấp phép và kiểm tra nguồn gốc khi mua thuốc.',
+  'Bộ Y tế Việt Nam',
+  'VN',
+  'guideline',
+  'vi',
+  'kham-phong-benh',
+  'health',
+  5,
+  'https://moh.gov.vn/tin-lien-quan/-/asset_publisher/vjYyM7O9aWnX/content/cuc-quan-ly-duoc-bo-y-te-huong-dan-nguoi-dan-doanh-nghiep-tra-cuu-thong-tin-giay-ang-ky-luu-hanh-thuoc',
+  'active',
+  'approved',
+  '2024-06-01',
+  '2024-06-01',
   '2026-07-01',
   'seed',
   'official_vn',
@@ -1176,7 +1200,7 @@ INSERT OR IGNORE INTO source_documents (
   'psrc_official_who_bp',
   'who-hypertension-fact-sheet',
   'Tăng huyết áp — Tổ chức Y tế Thế giới',
-  'Hướng dẫn quốc tế về tăng huyết áp và theo dõi huyết áp.',
+  'Tờ thông tin WHO về tăng huyết áp và theo dõi huyết áp.',
   'Tổ chức Y tế Thế giới (WHO)',
   'INTL',
   'guideline',
@@ -1194,16 +1218,228 @@ INSERT OR IGNORE INTO source_documents (
   'intl_guideline',
   datetime('now'),
   datetime('now')
+),
+(
+  'src_official_who_falls',
+  'psrc_official_who_falls',
+  'who-falls-fact-sheet',
+  'Ngã ở người cao tuổi — Tổ chức Y tế Thế giới',
+  'Tờ thông tin WHO về ngã và phòng ngã ở người lớn tuổi.',
+  'Tổ chức Y tế Thế giới (WHO)',
+  'INTL',
+  'guideline',
+  'vi',
+  'cham-soc-cha-me',
+  'caregiving',
+  6,
+  'https://www.who.int/news-room/fact-sheets/detail/falls',
+  'active',
+  'approved',
+  '2021-04-26',
+  '2021-04-26',
+  '2026-07-01',
+  'seed',
+  'intl_guideline',
+  datetime('now'),
+  datetime('now')
+),
+(
+  'src_official_who_ageing',
+  'psrc_official_who_ageing',
+  'who-ageing-and-health',
+  'Già hóa và sức khỏe — Tổ chức Y tế Thế giới',
+  'Tờ thông tin WHO về già hóa khỏe mạnh và chuẩn bị sức khỏe sớm.',
+  'Tổ chức Y tế Thế giới (WHO)',
+  'INTL',
+  'guideline',
+  'vi',
+  'suc-khoe-trung-nien',
+  'health',
+  6,
+  'https://www.who.int/news-room/fact-sheets/detail/ageing-and-health',
+  'active',
+  'approved',
+  '2024-10-01',
+  '2024-10-01',
+  '2026-07-01',
+  'seed',
+  'intl_guideline',
+  datetime('now'),
+  datetime('now')
+),
+(
+  'src_official_who_activity',
+  'psrc_official_who_activity',
+  'who-physical-activity-guidelines',
+  'Vận động thể chất — Tổ chức Y tế Thế giới',
+  'Hướng dẫn WHO về vận động thể chất cho người lớn.',
+  'Tổ chức Y tế Thế giới (WHO)',
+  'INTL',
+  'guideline',
+  'vi',
+  'suc-khoe-trung-nien',
+  'health',
+  6,
+  'https://www.who.int/publications/i/item/9789240015128',
+  'active',
+  'approved',
+  '2020-11-25',
+  '2020-11-25',
+  '2026-07-01',
+  'seed',
+  'intl_guideline',
+  datetime('now'),
+  datetime('now')
+),
+(
+  'src_official_who_mental',
+  'psrc_official_who_mental',
+  'who-mental-health-older-adults',
+  'Sức khỏe tinh thần người lớn tuổi — Tổ chức Y tế Thế giới',
+  'Tờ thông tin WHO về sức khỏe tinh thần và giấc ngủ ở người lớn tuổi.',
+  'Tổ chức Y tế Thế giới (WHO)',
+  'INTL',
+  'guideline',
+  'vi',
+  'tri-nho-tinh-than',
+  'health',
+  6,
+  'https://www.who.int/news-room/fact-sheets/detail/mental-health-of-older-adults',
+  'active',
+  'approved',
+  '2023-10-20',
+  '2023-10-20',
+  '2026-07-01',
+  'seed',
+  'intl_guideline',
+  datetime('now'),
+  datetime('now')
+),
+(
+  'src_official_bhxh_bhyt',
+  'psrc_official_bhxh_bhyt',
+  'bhxh-tra-cuu-the-bhyt',
+  'Tra cứu giá trị sử dụng thẻ BHYT — Bảo hiểm xã hội Việt Nam',
+  'Công cụ chính thức để kiểm tra thời hạn và giá trị sử dụng thẻ bảo hiểm y tế.',
+  'Bảo hiểm xã hội Việt Nam',
+  'VN',
+  'policy',
+  'vi',
+  'nha-o-giay-to',
+  'finance',
+  4,
+  'https://baohiemxahoi.gov.vn/tracuu/Pages/tra-cuu-thoi-han-su-dung-the-bhyt.aspx',
+  'active',
+  'approved',
+  '2024-01-01',
+  '2024-01-01',
+  '2026-07-01',
+  'seed',
+  'official_vn',
+  datetime('now'),
+  datetime('now')
+),
+(
+  'src_official_bhxh_pension',
+  'psrc_official_bhxh_pension',
+  'bhxh-thu-tuc-luong-huu',
+  'Thủ tục giải quyết hưởng lương hưu, trợ cấp hàng tháng — Bảo hiểm xã hội Việt Nam',
+  'Thành phần hồ sơ và cách nộp để giải quyết hưởng lương hưu, trợ cấp hàng tháng.',
+  'Bảo hiểm xã hội Việt Nam',
+  'VN',
+  'policy',
+  'vi',
+  'nha-o-giay-to',
+  'finance',
+  5,
+  'https://baohiemxahoi.gov.vn/thu-tuc-hanh-chinh/pages/default.aspx?ItemID=54',
+  'active',
+  'approved',
+  '2024-01-01',
+  '2024-01-01',
+  '2026-07-01',
+  'seed',
+  'official_vn',
+  datetime('now'),
+  datetime('now')
+),
+(
+  'src_official_sbv_edu',
+  'psrc_official_sbv_edu',
+  'sbv-giao-duc-tai-chinh',
+  'Truyền thông giáo dục tài chính và Chiến lược tài chính toàn diện — Ngân hàng Nhà nước Việt Nam',
+  'Bài Ngân hàng Nhà nước về giáo dục tài chính giúp quản lý chi tiêu và tiết kiệm an toàn hơn.',
+  'Ngân hàng Nhà nước Việt Nam',
+  'VN',
+  'education',
+  'vi',
+  'chuan-bi-tai-chinh',
+  'finance',
+  5,
+  'https://sbv.gov.vn/vi/w/sbv599430',
+  'active',
+  'approved',
+  '2024-06-01',
+  '2024-06-01',
+  '2026-07-01',
+  'seed',
+  'official_vn',
+  datetime('now'),
+  datetime('now')
 );
+
+-- Keep remote DBs that already inserted portal rows aligned with document-level URLs.
+UPDATE source_documents SET
+  slug = 'byt-kham-dinh-ky-nguoi-cao-tuoi',
+  title = 'Khám sức khỏe định kỳ và chăm sóc người cao tuổi — Bộ Y tế',
+  summary = 'Bài trên cổng Bộ Y tế nhấn mạnh khám định kỳ, sổ theo dõi bệnh và dùng thuốc đúng chỉ định cho người cao tuổi.',
+  original_url = 'https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre',
+  publication_date = '2023-12-01',
+  effective_from = '2023-12-01',
+  updated_at = datetime('now')
+WHERE id = 'src_official_byt';
+
+UPDATE source_documents SET
+  title = 'Tăng huyết áp — Tổ chức Y tế Thế giới',
+  summary = 'Tờ thông tin WHO về tăng huyết áp và theo dõi huyết áp.',
+  original_url = 'https://www.who.int/news-room/fact-sheets/detail/hypertension',
+  updated_at = datetime('now')
+WHERE id = 'src_official_who_bp';
+
+UPDATE source_versions SET
+  content_hash = 'seedhash_byt_v2',
+  reviewed_text = '# Khám sức khỏe định kỳ và chăm sóc người cao tuổi — Bộ Y tế
+
+Bài trên cổng thông tin Bộ Y tế nêu thách thức già hóa dân số và chi phí điều trị cao ở người cao tuổi.
+
+Chuyên gia nhấn mạnh: duy trì thói quen thăm khám sức khỏe định kỳ, có sổ theo dõi bệnh và tuân thủ dùng thuốc đúng chỉ định của bác sĩ.
+https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre'
+WHERE id = 'sver_official_byt';
+
+UPDATE source_chunks SET
+  heading = 'Khám định kỳ người cao tuổi',
+  content = 'Bộ Y tế: người cao tuổi nên khám sức khỏe định kỳ, có sổ theo dõi bệnh và dùng thuốc đúng chỉ định bác sĩ. https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre',
+  content_hash = 'seedchunk_byt_v2',
+  metadata_json = '{"source_id":"src_official_byt","title":"Khám sức khỏe định kỳ và chăm sóc người cao tuổi — Bộ Y tế","issuer":"Bộ Y tế Việt Nam","status":"active","review_status":"approved","publication_date":"2023-12-01","category":"kham-phong-benh","trust_tier":"official_vn","original_url":"https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre"}'
+WHERE id = 'chk_official_byt_1';
 
 INSERT OR IGNORE INTO source_versions (id, source_id, version_number, content_hash, reviewed_text, created_at, created_by) VALUES
 (
-  'sver_official_byt', 'src_official_byt', 1, 'seedhash_byt',
-  '# Cổng thông tin Bộ Y tế
+  'sver_official_byt', 'src_official_byt', 1, 'seedhash_byt_v2',
+  '# Khám sức khỏe định kỳ và chăm sóc người cao tuổi — Bộ Y tế
 
-Bộ Y tế công bố thông tin y tế công cộng và hướng dẫn chuyên môn trên cổng thông tin chính thức https://moh.gov.vn/.
+Bài trên cổng thông tin Bộ Y tế nêu thách thức già hóa dân số và chi phí điều trị cao ở người cao tuổi.
 
-Người dân nên dùng thông tin chính thống khi chuẩn bị khám chữa bệnh và hỏi ý kiến cơ sở y tế khi có triệu chứng.',
+Chuyên gia nhấn mạnh: duy trì thói quen thăm khám sức khỏe định kỳ, có sổ theo dõi bệnh và tuân thủ dùng thuốc đúng chỉ định của bác sĩ.
+https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre',
+  datetime('now'), 'seed'
+),
+(
+  'sver_official_byt_drug', 'src_official_byt_drug', 1, 'seedhash_byt_drug',
+  '# Hướng dẫn tra cứu giấy đăng ký lưu hành thuốc — Cục Quản lý Dược
+
+Cục Quản lý Dược (Bộ Y tế) hướng dẫn người dân tra cứu thuốc đã được cấp phép lưu hành; kiểm tra nhãn, hạn dùng, nguồn gốc; thuốc kê đơn mua theo đơn bác sĩ.
+https://moh.gov.vn/tin-lien-quan/-/asset_publisher/vjYyM7O9aWnX/content/cuc-quan-ly-duoc-bo-y-te-huong-dan-nguoi-dan-doanh-nghiep-tra-cuu-thong-tin-giay-ang-ky-luu-hanh-thuoc',
   datetime('now'), 'seed'
 ),
 (
@@ -1215,16 +1451,79 @@ Tổ chức Y tế Thế giới nêu tăng huyết áp là nguy cơ bệnh tim m
 Không tự ý thay đổi thuốc khi chưa được bác sĩ hướng dẫn.
 https://www.who.int/news-room/fact-sheets/detail/hypertension',
   datetime('now'), 'seed'
+),
+(
+  'sver_official_who_falls', 'src_official_who_falls', 1, 'seedhash_who_falls',
+  '# WHO Falls
+
+Ngã là nguyên nhân chấn thương phổ biến ở người lớn tuổi. Giữ nhà cửa thông thoáng, đủ sáng; nếu không đứng dậy được hoặc đau nhiều thì đưa đi cấp cứu.
+https://www.who.int/news-room/fact-sheets/detail/falls',
+  datetime('now'), 'seed'
+),
+(
+  'sver_official_who_ageing', 'src_official_who_ageing', 1, 'seedhash_who_ageing',
+  '# WHO Ageing and health
+
+Chuẩn bị sớm từ tuổi ngoài 40: khám đều, vận động vừa sức, ăn uống hợp lý và đi khám khi cần.
+https://www.who.int/news-room/fact-sheets/detail/ageing-and-health',
+  datetime('now'), 'seed'
+),
+(
+  'sver_official_who_activity', 'src_official_who_activity', 1, 'seedhash_who_activity',
+  '# WHO Physical activity
+
+Người lớn nên vận động đều và bớt ngồi lâu; hỏi bác sĩ trước khi tập nặng nếu đang có bệnh.
+https://www.who.int/publications/i/item/9789240015128',
+  datetime('now'), 'seed'
+),
+(
+  'sver_official_who_mental', 'src_official_who_mental', 1, 'seedhash_who_mental',
+  '# WHO Mental health of older adults
+
+Giấc ngủ và bệnh lâu ngày ảnh hưởng tinh thần người lớn tuổi; mất ngủ kéo dài nên đi khám.
+https://www.who.int/news-room/fact-sheets/detail/mental-health-of-older-adults',
+  datetime('now'), 'seed'
+),
+(
+  'sver_official_bhxh_bhyt', 'src_official_bhxh_bhyt', 1, 'seedhash_bhxh_bhyt',
+  '# Tra cứu giá trị sử dụng thẻ BHYT
+
+Trên Cổng BHXH Việt Nam, người tham gia nhập mã thẻ/họ tên/ngày sinh để kiểm tra thời hạn thẻ BHYT.
+https://baohiemxahoi.gov.vn/tracuu/Pages/tra-cuu-thoi-han-su-dung-the-bhyt.aspx',
+  datetime('now'), 'seed'
+),
+(
+  'sver_official_bhxh_pension', 'src_official_bhxh_pension', 1, 'seedhash_bhxh_pension',
+  '# Thủ tục giải quyết hưởng lương hưu
+
+BHXH Việt Nam công bố thành phần hồ sơ và cách nộp để giải quyết hưởng lương hưu, trợ cấp hàng tháng.
+https://baohiemxahoi.gov.vn/thu-tuc-hanh-chinh/pages/default.aspx?ItemID=54',
+  datetime('now'), 'seed'
+),
+(
+  'sver_official_sbv_edu', 'src_official_sbv_edu', 1, 'seedhash_sbv_edu',
+  '# Giáo dục tài chính — Ngân hàng Nhà nước
+
+NHNN nhấn mạnh truyền thông giáo dục tài chính giúp nâng cao kiến thức quản lý chi tiêu, tiết kiệm và giảm rủi ro.
+https://sbv.gov.vn/vi/w/sbv599430',
+  datetime('now'), 'seed'
 );
 
 INSERT OR IGNORE INTO source_chunks (
   id, source_id, version_id, chunk_index, heading, location_ref, content, content_hash, metadata_json, indexing_status, created_at
 ) VALUES
 (
-  'chk_official_byt_1', 'src_official_byt', 'sver_official_byt', 0, 'Cổng Bộ Y tế', 'chunk-0',
-  'Bộ Y tế công bố thông tin y tế công cộng chính thống tại https://moh.gov.vn/. Dùng kênh chính thức khi chuẩn bị khám chữa bệnh; hỏi cơ sở y tế khi có triệu chứng.',
-  'seedchunk_byt',
-  '{"source_id":"src_official_byt","title":"Cổng thông tin điện tử Bộ Y tế","issuer":"Bộ Y tế Việt Nam","status":"active","review_status":"approved","publication_date":"2024-01-01","category":"kham-phong-benh","trust_tier":"official_vn","original_url":"https://moh.gov.vn/"}',
+  'chk_official_byt_1', 'src_official_byt', 'sver_official_byt', 0, 'Khám định kỳ người cao tuổi', 'chunk-0',
+  'Bộ Y tế: người cao tuổi nên khám sức khỏe định kỳ, có sổ theo dõi bệnh và dùng thuốc đúng chỉ định bác sĩ. https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre',
+  'seedchunk_byt_v2',
+  '{"source_id":"src_official_byt","title":"Khám sức khỏe định kỳ và chăm sóc người cao tuổi — Bộ Y tế","issuer":"Bộ Y tế Việt Nam","status":"active","review_status":"approved","publication_date":"2023-12-01","category":"kham-phong-benh","trust_tier":"official_vn","original_url":"https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre"}',
+  'indexed', datetime('now')
+),
+(
+  'chk_official_byt_drug_1', 'src_official_byt_drug', 'sver_official_byt_drug', 0, 'Tra cứu đăng ký thuốc', 'chunk-0',
+  'Cục Quản lý Dược (Bộ Y tế) hướng dẫn tra cứu giấy đăng ký lưu hành thuốc; kiểm tra nhãn, hạn dùng; thuốc kê đơn theo đơn bác sĩ. https://moh.gov.vn/tin-lien-quan/-/asset_publisher/vjYyM7O9aWnX/content/cuc-quan-ly-duoc-bo-y-te-huong-dan-nguoi-dan-doanh-nghiep-tra-cuu-thong-tin-giay-ang-ky-luu-hanh-thuoc',
+  'seedchunk_byt_drug',
+  '{"source_id":"src_official_byt_drug","title":"Hướng dẫn tra cứu giấy đăng ký lưu hành thuốc — Cục Quản lý Dược, Bộ Y tế","issuer":"Bộ Y tế Việt Nam","status":"active","review_status":"approved","publication_date":"2024-06-01","category":"kham-phong-benh","trust_tier":"official_vn","original_url":"https://moh.gov.vn/tin-lien-quan/-/asset_publisher/vjYyM7O9aWnX/content/cuc-quan-ly-duoc-bo-y-te-huong-dan-nguoi-dan-doanh-nghiep-tra-cuu-thong-tin-giay-ang-ky-luu-hanh-thuoc"}',
   'indexed', datetime('now')
 ),
 (
@@ -1233,20 +1532,67 @@ INSERT OR IGNORE INTO source_chunks (
   'seedchunk_who_bp',
   '{"source_id":"src_official_who_bp","title":"Tăng huyết áp — Tổ chức Y tế Thế giới","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2023-03-16","category":"kham-phong-benh","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/hypertension"}',
   'indexed', datetime('now')
+),
+(
+  'chk_official_who_falls_1', 'src_official_who_falls', 'sver_official_who_falls', 0, 'WHO Falls', 'chunk-0',
+  'WHO: ngã phổ biến ở người lớn tuổi; nhà cửa an toàn; cấp cứu khi không đứng dậy được hoặc đau nhiều. https://www.who.int/news-room/fact-sheets/detail/falls',
+  'seedchunk_who_falls',
+  '{"source_id":"src_official_who_falls","title":"Ngã ở người cao tuổi — Tổ chức Y tế Thế giới","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2021-04-26","category":"cham-soc-cha-me","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/falls"}',
+  'indexed', datetime('now')
+),
+(
+  'chk_official_who_ageing_1', 'src_official_who_ageing', 'sver_official_who_ageing', 0, 'WHO Ageing', 'chunk-0',
+  'WHO: chuẩn bị sớm từ tuổi ngoài 40 — khám đều, vận động vừa sức, đi khám khi cần. https://www.who.int/news-room/fact-sheets/detail/ageing-and-health',
+  'seedchunk_who_ageing',
+  '{"source_id":"src_official_who_ageing","title":"Già hóa và sức khỏe — Tổ chức Y tế Thế giới","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2024-10-01","category":"suc-khoe-trung-nien","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/ageing-and-health"}',
+  'indexed', datetime('now')
+),
+(
+  'chk_official_who_activity_1', 'src_official_who_activity', 'sver_official_who_activity', 0, 'WHO Activity', 'chunk-0',
+  'WHO: người lớn vận động đều, bớt ngồi lâu; hỏi bác sĩ trước khi tập nặng. https://www.who.int/publications/i/item/9789240015128',
+  'seedchunk_who_activity',
+  '{"source_id":"src_official_who_activity","title":"Vận động thể chất — Tổ chức Y tế Thế giới","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2020-11-25","category":"suc-khoe-trung-nien","trust_tier":"intl_guideline","original_url":"https://www.who.int/publications/i/item/9789240015128"}',
+  'indexed', datetime('now')
+),
+(
+  'chk_official_who_mental_1', 'src_official_who_mental', 'sver_official_who_mental', 0, 'WHO Mental', 'chunk-0',
+  'WHO: giấc ngủ ảnh hưởng tinh thần người lớn tuổi; mất ngủ kéo dài nên đi khám. https://www.who.int/news-room/fact-sheets/detail/mental-health-of-older-adults',
+  'seedchunk_who_mental',
+  '{"source_id":"src_official_who_mental","title":"Sức khỏe tinh thần người lớn tuổi — Tổ chức Y tế Thế giới","issuer":"Tổ chức Y tế Thế giới (WHO)","status":"active","review_status":"approved","publication_date":"2023-10-20","category":"tri-nho-tinh-than","trust_tier":"intl_guideline","original_url":"https://www.who.int/news-room/fact-sheets/detail/mental-health-of-older-adults"}',
+  'indexed', datetime('now')
+),
+(
+  'chk_official_bhxh_bhyt_1', 'src_official_bhxh_bhyt', 'sver_official_bhxh_bhyt', 0, 'Tra cứu thẻ BHYT', 'chunk-0',
+  'BHXH Việt Nam: tra cứu giá trị sử dụng thẻ BHYT tại https://baohiemxahoi.gov.vn/tracuu/Pages/tra-cuu-thoi-han-su-dung-the-bhyt.aspx',
+  'seedchunk_bhxh_bhyt',
+  '{"source_id":"src_official_bhxh_bhyt","title":"Tra cứu giá trị sử dụng thẻ BHYT — Bảo hiểm xã hội Việt Nam","issuer":"Bảo hiểm xã hội Việt Nam","status":"active","review_status":"approved","publication_date":"2024-01-01","category":"nha-o-giay-to","trust_tier":"official_vn","original_url":"https://baohiemxahoi.gov.vn/tracuu/Pages/tra-cuu-thoi-han-su-dung-the-bhyt.aspx"}',
+  'indexed', datetime('now')
+),
+(
+  'chk_official_bhxh_pension_1', 'src_official_bhxh_pension', 'sver_official_bhxh_pension', 0, 'Thủ tục lương hưu', 'chunk-0',
+  'BHXH Việt Nam: thủ tục giải quyết hưởng lương hưu, trợ cấp hàng tháng — thành phần hồ sơ và cách nộp. https://baohiemxahoi.gov.vn/thu-tuc-hanh-chinh/pages/default.aspx?ItemID=54',
+  'seedchunk_bhxh_pension',
+  '{"source_id":"src_official_bhxh_pension","title":"Thủ tục giải quyết hưởng lương hưu, trợ cấp hàng tháng — Bảo hiểm xã hội Việt Nam","issuer":"Bảo hiểm xã hội Việt Nam","status":"active","review_status":"approved","publication_date":"2024-01-01","category":"nha-o-giay-to","trust_tier":"official_vn","original_url":"https://baohiemxahoi.gov.vn/thu-tuc-hanh-chinh/pages/default.aspx?ItemID=54"}',
+  'indexed', datetime('now')
+),
+(
+  'chk_official_sbv_edu_1', 'src_official_sbv_edu', 'sver_official_sbv_edu', 0, 'Giáo dục tài chính', 'chunk-0',
+  'NHNN: truyền thông giáo dục tài chính giúp nâng cao kiến thức quản lý chi tiêu và tiết kiệm. https://sbv.gov.vn/vi/w/sbv599430',
+  'seedchunk_sbv_edu',
+  '{"source_id":"src_official_sbv_edu","title":"Truyền thông giáo dục tài chính và Chiến lược tài chính toàn diện — Ngân hàng Nhà nước Việt Nam","issuer":"Ngân hàng Nhà nước Việt Nam","status":"active","review_status":"approved","publication_date":"2024-06-01","category":"chuan-bi-tai-chinh","trust_tier":"official_vn","original_url":"https://sbv.gov.vn/vi/w/sbv599430"}',
+  'indexed', datetime('now')
 );
 
--- Link library lessons to official source documents + show official issuer attribution
-UPDATE library_lessons SET source_document_id = 'src_official_who_bp', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'theo-doi-huyet-ap';
-UPDATE library_lessons SET source_document_id = 'src_demo_checkup', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'kham-dinh-ky';
-UPDATE library_lessons SET source_document_id = 'src_demo_fund', issuer = 'Ngân hàng Nhà nước Việt Nam', updated_at = datetime('now') WHERE slug = 'quy-du-phong';
-UPDATE library_lessons SET source_document_id = 'src_demo_docs', issuer = 'Bảo hiểm xã hội Việt Nam', updated_at = datetime('now') WHERE slug = 'giay-to-tuoi-gia';
-UPDATE library_lessons SET source_document_id = 'src_demo_fall', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'phong-nga';
-UPDATE library_lessons SET source_document_id = 'src_official_byt', issuer = 'Bộ Y tế Việt Nam', updated_at = datetime('now') WHERE slug = 'danh-sach-thuoc';
-UPDATE library_lessons SET source_document_id = 'src_demo_checkup', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'giac-ngu';
-UPDATE library_lessons SET source_document_id = 'src_demo_checkup', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'van-dong-trung-nien';
-
--- Link remaining library lessons to nearest official sources
-UPDATE library_lessons SET source_document_id = 'src_demo_fall', issuer = 'Tổ chức Y tế Thế giới (WHO)', updated_at = datetime('now') WHERE slug = 'lien-he-khan-cap';
-UPDATE library_lessons SET source_document_id = 'src_demo_docs', issuer = 'Bảo hiểm xã hội Việt Nam', updated_at = datetime('now') WHERE slug = 'trao-doi-gia-dinh';
-UPDATE library_lessons SET source_document_id = 'src_demo_fund', issuer = 'Ngân hàng Nhà nước Việt Nam', updated_at = datetime('now') WHERE slug = 'nguon-thu';
-UPDATE library_lessons SET source_document_id = 'src_demo_fund', issuer = 'Ngân hàng Nhà nước Việt Nam', updated_at = datetime('now') WHERE slug = 'chi-phi-ve-huu';
+-- Link library lessons to matching document-level official sources (not org homepages / editorial stubs).
+UPDATE library_lessons SET source_document_id = 'src_official_who_bp', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'theo-doi-huyet-ap';
+UPDATE library_lessons SET source_document_id = 'src_official_who_ageing', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'kham-dinh-ky';
+UPDATE library_lessons SET source_document_id = 'src_official_sbv_edu', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'quy-du-phong';
+UPDATE library_lessons SET source_document_id = 'src_official_bhxh_pension', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'giay-to-tuoi-gia';
+UPDATE library_lessons SET source_document_id = 'src_official_who_falls', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'phong-nga';
+UPDATE library_lessons SET source_document_id = 'src_official_byt_drug', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'danh-sach-thuoc';
+UPDATE library_lessons SET source_document_id = 'src_official_who_mental', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'giac-ngu';
+UPDATE library_lessons SET source_document_id = 'src_official_who_activity', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'van-dong-trung-nien';
+UPDATE library_lessons SET source_document_id = 'src_official_who_falls', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'lien-he-khan-cap';
+UPDATE library_lessons SET source_document_id = 'src_official_bhxh_bhyt', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'trao-doi-gia-dinh';
+UPDATE library_lessons SET source_document_id = 'src_official_sbv_edu', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'nguon-thu';
+UPDATE library_lessons SET source_document_id = 'src_official_sbv_edu', issuer = 'VivaAge Biên tập giáo dục', updated_at = datetime('now') WHERE slug = 'chi-phi-ve-huu';

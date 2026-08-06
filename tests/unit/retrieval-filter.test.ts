@@ -6,7 +6,7 @@ const officialMeta = {
   review_status: "approved",
   trust_tier: "official_vn",
   issuer: "Bộ Y tế Việt Nam",
-  original_url: "https://moh.gov.vn/",
+  original_url: "https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre",
 };
 
 describe("retrieval filtering", () => {

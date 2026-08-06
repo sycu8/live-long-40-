@@ -5,8 +5,10 @@ Thư viện của VivaAge gồm **bài viết giáo dục ngắn**: giải thíc
 Không phải:
 
 - Danh sách việc phải làm trong kế hoạch 30 ngày (kế hoạch nằm ở `/ke-hoach`)
-- Tài liệu chính thức của Nhà nước (có thể trích dẫn / liên kết nguồn riêng)
+- Tài liệu chính thức của Nhà nước (có thể trích dẫn / liên kết **tới đúng tài liệu**, không chỉ trang chủ cơ quan)
 - Tư vấn y khoa, đầu tư, hoặc pháp lý cá nhân hóa
+
+Khi gắn `source_document_id`, UI thư viện hiển thị **tên tài liệu** + đường dẫn nguồn.
 
 ## Seed
 

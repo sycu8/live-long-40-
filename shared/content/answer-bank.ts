@@ -73,8 +73,8 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
         "Tổ chức Y tế Thế giới khuyến cáo đo huyết áp đều vì huyết áp cao làm tăng nguy cơ bệnh tim mạch; đổi thuốc chỉ theo lời bác sĩ.",
       ),
       cite(
-        "byt-portal",
-        "Bộ Y tế đăng thông tin sức khỏe chính thức; nên hỏi bác sĩ hoặc trạm y tế gần nhà về lịch khám phù hợp với mình.",
+        "byt-elderly-checkup",
+        "Bài trên cổng Bộ Y tế nhấn mạnh khám sức khỏe định kỳ, có sổ theo dõi bệnh và dùng thuốc đúng chỉ định — hỏi bác sĩ hoặc trạm y tế gần nhà về lịch khám phù hợp.",
       ),
     ],
     answer: `Từ tuổi 40, việc hữu ích nhất là **đi khám sức khỏe định kỳ** và chuẩn bị sẵn câu hỏi để hỏi bác sĩ — đừng tự đoán bệnh ở nhà. [S1][S3]
@@ -113,12 +113,12 @@ Thông tin này để bạn chuẩn bị cuộc nói chuyện với bác sĩ, **
     ],
     sources: [
       cite(
-        "sbv-portal",
-        "Ngân hàng Nhà nước là nguồn tin chính thức về hệ thống ngân hàng; việc để dành tiền trong gia đình không đồng nghĩa với lời khuyên đầu tư cho từng người.",
+        "sbv-financial-education",
+        "Ngân hàng Nhà nước nhấn mạnh giáo dục tài chính giúp quản lý chi tiêu và tiết kiệm an toàn hơn — không phải lời khuyên đầu tư cho từng người.",
       ),
       cite(
-        "bhxh-portal",
-        "Bảo hiểm xã hội Việt Nam công bố quyền lợi bảo hiểm chính thức; tiền để dành khi có việc đột xuất bổ sung cho phần bảo hiểm chưa chi trả.",
+        "bhxh-bhyt-card-lookup",
+        "Trang tra cứu thẻ BHYT của Bảo hiểm xã hội Việt Nam giúp kiểm tra thời hạn thẻ; tiền dự phòng bổ sung phần chi phí bảo hiểm chưa chi trả.",
       ),
     ],
     answer: `**Quỹ dự phòng** là khoản tiền để dành khi có việc đột xuất (ốm đau, sửa nhà, mất việc tạm thời…), giúp gia đình **bớt phải vay nóng**. Đây là thói quen lo liệu tiền bạc, không phải cách “làm giàu”. [S1]
@@ -127,14 +127,14 @@ Thông tin này để bạn chuẩn bị cuộc nói chuyện với bác sĩ, **
 1. Ước lượng chi tiêu cần thiết mỗi tháng: ăn ở, điện nước, đi lại, thuốc men cơ bản. [S1]
 2. Đặt mục tiêu nhỏ trước — ví dụ bằng khoảng 1 tháng chi tiêu cần thiết — rồi tăng dần khi ổn.
 3. Để riêng một chỗ (ví hoặc tài khoản tách) và chuyển đều đặn số tiền vừa với thu nhập.
-4. Xem thêm quyền lợi bảo hiểm y tế / bảo hiểm xã hội trên trang Bảo hiểm xã hội Việt Nam để biết phần nào đã được hỗ trợ. [S2]
+4. Kiểm tra thời hạn thẻ bảo hiểm y tế trên trang **Tra cứu giá trị sử dụng thẻ BHYT** của Bảo hiểm xã hội Việt Nam để biết phần nào đã được hỗ trợ. [S2]
 
 **Giữ vững**
 - Để đều mỗi tuần/tháng còn hơn để một lần lớn rồi bỏ.
 - Không lấy tiền dự phòng để chơi chứng khoán hay chi tiêu không cần thiết.
 
 **Giới hạn rõ**
-VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm cụ thể. Nếu cần tư vấn riêng, hãy hỏi người có chuyên môn hoặc xem thông tin trên cổng Ngân hàng Nhà nước Việt Nam / Bảo hiểm xã hội Việt Nam. [S1][S2]`,
+VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm cụ thể. Nếu cần tư vấn riêng, hãy hỏi người có chuyên môn; tham khảo bài giáo dục tài chính của Ngân hàng Nhà nước và trang tra cứu thẻ BHYT nêu trên. [S1][S2]`,
   },
   {
     id: "parent-fall",
@@ -156,8 +156,8 @@ VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm
         "Tổ chức Y tế Thế giới cho biết ngã dễ gây chấn thương ở người lớn tuổi; cần nhà cửa an toàn và đưa đi cấp cứu khi không đứng dậy được hoặc đau nhiều.",
       ),
       cite(
-        "byt-portal",
-        "Bộ Y tế khuyến cáo dùng thông tin y tế chính thức; việc cấp cứu cần gọi cơ sở y tế hoặc số cấp cứu địa phương.",
+        "byt-elderly-checkup",
+        "Bài Bộ Y tế về chăm sóc người cao tuổi nhắc duy trì khám định kỳ và sổ theo dõi bệnh; khi ngã nặng cần đưa đến cơ sở y tế kịp thời.",
       ),
     ],
     answer: `Khi cha mẹ hoặc người thân lớn tuổi bị ngã, hãy **giữ bình tĩnh và xem tình trạng trước**, đừng vội đỡ dậy bằng mọi giá. [S1]
@@ -172,7 +172,7 @@ VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm
 - Lối đi thông thoáng, đủ đèn; gọn dây điện, thảm trơn. [S1]
 - Đi dép chống trượt; đồ hay dùng để trong tầm với.
 
-Đây là hướng dẫn tham khảo theo Tổ chức Y tế Thế giới và Bộ Y tế, **không thay** cấp cứu. Khi tình trạng nặng: gọi cấp cứu địa phương ngay. [S2]`,
+Đây là hướng dẫn tham khảo theo tờ thông tin **Ngã ở người cao tuổi** của Tổ chức Y tế Thế giới và bài Bộ Y tế về chăm sóc người cao tuổi, **không thay** cấp cứu. Khi tình trạng nặng: gọi cấp cứu địa phương ngay. [S2]`,
   },
   {
     id: "aging-documents",
@@ -188,21 +188,26 @@ VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm
     ],
     sources: [
       cite(
-        "bhxh-portal",
-        "Bảo hiểm xã hội Việt Nam là nơi xem thông tin bảo hiểm y tế, bảo hiểm xã hội và thủ tục hồ sơ chính thức.",
+        "bhxh-pension-procedure",
+        "Trang thủ tục của Bảo hiểm xã hội Việt Nam nêu thành phần hồ sơ và cách nộp để giải quyết hưởng lương hưu, trợ cấp hàng tháng.",
       ),
       cite(
-        "byt-portal",
-        "Thông tin khám chữa bệnh đăng trên cổng Bộ Y tế; nên mang theo giấy tờ sức khỏe cá nhân khi đi khám.",
+        "bhxh-bhyt-card-lookup",
+        "Trang tra cứu giá trị sử dụng thẻ BHYT giúp kiểm tra thời hạn thẻ trước khi đi khám.",
+      ),
+      cite(
+        "byt-drug-registration-lookup",
+        "Hướng dẫn Cục Quản lý Dược (Bộ Y tế) về tra cứu thuốc đã cấp phép — nên giữ sổ thuốc và mang theo khi đi khám.",
       ),
     ],
     answer: `Chuẩn bị giấy tờ cho tuổi già nghĩa là **gom lại – làm bản sao – cho người nhà tin cậy biết để ở đâu**, để lúc cần không phải tìm cuống cuồng. [S1]
 
 **Nhóm giấy nên rà soát**
 - Giấy tùy thân (căn cước còn hạn, hộ chiếu nếu có)
-- Bảo hiểm y tế / hồ sơ bảo hiểm xã hội — xem trên trang Bảo hiểm xã hội Việt Nam [S1]
+- Bảo hiểm y tế — kiểm tra thời hạn trên trang **Tra cứu giá trị sử dụng thẻ BHYT** [S2]
+- Hồ sơ liên quan lương hưu / BHXH — xem **thủ tục giải quyết hưởng lương hưu** trên trang Bảo hiểm xã hội Việt Nam [S1]
 - Giấy tờ nhà đất, hợp đồng thuê (nếu có)
-- Sổ thuốc đang uống, bệnh đã mắc, dị ứng thuốc [S2]
+- Sổ thuốc đang uống, bệnh đã mắc, dị ứng thuốc [S3]
 - Số điện thoại người thân, hàng xóm, phòng khám khi khẩn cấp
 
 **Làm gọn trong 1–2 buổi**
@@ -212,7 +217,7 @@ VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm
 4. Xem lại mỗi 6–12 tháng hoặc khi có thay đổi lớn.
 
 **Giới hạn**
-VivaAge **không** soạn di chúc hay tư vấn luật cho từng người. Thủ tục bảo hiểm: dùng cổng Bảo hiểm xã hội Việt Nam. [S1]`,
+VivaAge **không** soạn di chúc hay tư vấn luật cho từng người. Thủ tục và tra cứu bảo hiểm: dùng đúng các trang BHXH nêu trên. [S1][S2]`,
   },
   {
     id: "blood-pressure-home",
@@ -231,8 +236,8 @@ VivaAge **không** soạn di chúc hay tư vấn luật cho từng người. Th�
         "Tổ chức Y tế Thế giới khuyến cáo đo và theo dõi huyết áp; đổi thuốc chỉ theo lời bác sĩ.",
       ),
       cite(
-        "byt-portal",
-        "Thông tin sức khỏe chính thức của Bộ Y tế; nên mang sổ huyết áp khi đi khám.",
+        "byt-elderly-checkup",
+        "Bài Bộ Y tế về chăm sóc người cao tuổi nhắc có sổ theo dõi bệnh và tuân thủ dùng thuốc theo bác sĩ — mang sổ huyết áp khi đi khám.",
       ),
     ],
     answer: `Đo huyết áp tại nhà giúp bạn có **sổ ghi chép mang đi khám** — không phải để tự kê đơn. [S1]
@@ -246,7 +251,7 @@ VivaAge **không** soạn di chúc hay tư vấn luật cho từng người. Th�
 - Tự tăng, giảm hoặc ngưng thuốc huyết áp chỉ vì một lần đo. [S1]
 - Bỏ qua dấu hiệu nặng: đau ngực dữ dội, khó thở nặng, yếu nửa người.
 
-Nếu số đo thường xuyên cao hoặc bạn lo lắng, hãy hẹn bác sĩ thay vì tự kết luận. [S1][S2]`,
+Nếu số đo thường xuyên cao hoặc bạn lo lắng, hãy hẹn bác sĩ thay vì tự kết luận. Tham khảo tờ thông tin tăng huyết áp của Tổ chức Y tế Thế giới và bài Bộ Y tế về khám / theo dõi bệnh. [S1][S2]`,
   },
   {
     id: "sleep-habit",

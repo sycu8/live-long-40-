@@ -1,6 +1,6 @@
 /**
- * Registry of official references. Titles/snippets use plain Vietnamese
- * for display; URLs point to the authoritative page.
+ * Registry of official references. Each entry MUST point to a specific
+ * document or tool page (title + deep URL) — never an organization homepage alone.
  */
 export type OfficialSourceRef = {
   id: string;
@@ -17,20 +17,57 @@ export type OfficialSourceRef = {
   snippet: string;
 };
 
+/** Organization homepages that must not be used as the sole citation URL. */
+export const FORBIDDEN_HOMEPAGE_URLS = [
+  "https://moh.gov.vn/",
+  "https://moh.gov.vn",
+  "https://baohiemxahoi.gov.vn/",
+  "https://baohiemxahoi.gov.vn",
+  "https://www.sbv.gov.vn/",
+  "https://www.sbv.gov.vn",
+  "https://sbv.gov.vn/",
+  "https://sbv.gov.vn",
+  "https://www.who.int/",
+  "https://www.who.int",
+] as const;
+
+export function isGenericHomepageUrl(url: string): boolean {
+  const normalized = url.trim().replace(/\/+$/, "");
+  return FORBIDDEN_HOMEPAGE_URLS.some(
+    (home) => home.replace(/\/+$/, "") === normalized,
+  );
+}
+
 export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
   {
-    id: "byt-portal",
-    title: "Cổng thông tin điện tử Bộ Y tế",
+    id: "byt-elderly-checkup",
+    title:
+      "Khám sức khỏe định kỳ và chăm sóc người cao tuổi — Bộ Y tế",
     issuer: "Bộ Y tế Việt Nam",
     trustTier: "official_vn",
     jurisdiction: "VN",
     documentType: "guideline",
     category: "kham-phong-benh",
     pillar: "health",
-    publicationDate: "2024-01-01",
-    url: "https://moh.gov.vn/",
+    publicationDate: "2023-12-01",
+    url: "https://moh.gov.vn/hoat-dong-cua-dia-phuong/-/asset_publisher/gHbla8vOQDuS/content/trung-binh-nguoi-cao-tuoi-o-viet-nam-mac-nhieu-benh-ket-hop-chi-phi-ieu-tri-cao-gap-8-10-lan-nguoi-tre",
     snippet:
-      "Bộ Y tế đăng thông tin sức khỏe và hướng dẫn khám chữa bệnh trên cổng chính thức. Nên xem thông tin tại đây và hỏi bác sĩ hoặc trạm y tế gần nhà khi thấy bất thường.",
+      "Bộ Y tế nhấn mạnh người cao tuổi nên khám sức khỏe định kỳ, có sổ theo dõi bệnh và dùng thuốc đúng chỉ định bác sĩ — hỏi cơ sở y tế gần nhà khi thấy bất thường.",
+  },
+  {
+    id: "byt-drug-registration-lookup",
+    title:
+      "Hướng dẫn tra cứu giấy đăng ký lưu hành thuốc — Cục Quản lý Dược, Bộ Y tế",
+    issuer: "Bộ Y tế Việt Nam",
+    trustTier: "official_vn",
+    jurisdiction: "VN",
+    documentType: "guideline",
+    category: "kham-phong-benh",
+    pillar: "health",
+    publicationDate: "2024-06-01",
+    url: "https://moh.gov.vn/tin-lien-quan/-/asset_publisher/vjYyM7O9aWnX/content/cuc-quan-ly-duoc-bo-y-te-huong-dan-nguoi-dan-doanh-nghiep-tra-cuu-thong-tin-giay-ang-ky-luu-hanh-thuoc",
+    snippet:
+      "Cục Quản lý Dược (Bộ Y tế) hướng dẫn người dân tra cứu thông tin thuốc đã được cấp phép; khi mua thuốc kê đơn cần theo đơn bác sĩ và kiểm tra nhãn, hạn dùng, nguồn gốc.",
   },
   {
     id: "who-hypertension",
@@ -75,8 +112,8 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
       "Tổ chức Y tế Thế giới khuyến khích chuẩn bị sớm từ tuổi ngoài 40: khám bệnh đều, vận động vừa sức, ăn uống hợp lý và đi khám khi cần — để giữ sức và sống tự chủ lâu hơn.",
   },
   {
-    id: "bhxh-portal",
-    title: "Cổng thông tin Bảo hiểm xã hội Việt Nam",
+    id: "bhxh-bhyt-card-lookup",
+    title: "Tra cứu giá trị sử dụng thẻ BHYT — Bảo hiểm xã hội Việt Nam",
     issuer: "Bảo hiểm xã hội Việt Nam",
     trustTier: "official_vn",
     jurisdiction: "VN",
@@ -84,23 +121,39 @@ export const OFFICIAL_SOURCES: OfficialSourceRef[] = [
     category: "nha-o-giay-to",
     pillar: "finance",
     publicationDate: "2024-01-01",
-    url: "https://baohiemxahoi.gov.vn/",
+    url: "https://baohiemxahoi.gov.vn/tracuu/Pages/tra-cuu-thoi-han-su-dung-the-bhyt.aspx",
     snippet:
-      "Bảo hiểm xã hội Việt Nam công bố thông tin về bảo hiểm y tế, bảo hiểm xã hội và thủ tục liên quan. Nên kiểm tra thẻ/bảo hiểm và hồ sơ trên trang chính thức của ngành.",
+      "Trên trang tra cứu của Bảo hiểm xã hội Việt Nam, người tham gia có thể kiểm tra thời hạn và giá trị sử dụng thẻ bảo hiểm y tế để tránh gián đoạn quyền lợi khám chữa bệnh.",
   },
   {
-    id: "sbv-portal",
-    title: "Cổng thông tin Ngân hàng Nhà nước Việt Nam",
+    id: "bhxh-pension-procedure",
+    title:
+      "Thủ tục giải quyết hưởng lương hưu, trợ cấp hàng tháng — Bảo hiểm xã hội Việt Nam",
+    issuer: "Bảo hiểm xã hội Việt Nam",
+    trustTier: "official_vn",
+    jurisdiction: "VN",
+    documentType: "policy",
+    category: "nha-o-giay-to",
+    pillar: "finance",
+    publicationDate: "2024-01-01",
+    url: "https://baohiemxahoi.gov.vn/thu-tuc-hanh-chinh/pages/default.aspx?ItemID=54",
+    snippet:
+      "Bảo hiểm xã hội Việt Nam công bố thành phần hồ sơ và cách nộp để giải quyết hưởng lương hưu, trợ cấp hàng tháng — nên xem đúng thủ tục trước khi gom giấy tờ.",
+  },
+  {
+    id: "sbv-financial-education",
+    title:
+      "Truyền thông giáo dục tài chính và Chiến lược tài chính toàn diện — Ngân hàng Nhà nước Việt Nam",
     issuer: "Ngân hàng Nhà nước Việt Nam",
     trustTier: "official_vn",
     jurisdiction: "VN",
     documentType: "education",
     category: "chuan-bi-tai-chinh",
     pillar: "finance",
-    publicationDate: "2024-01-01",
-    url: "https://www.sbv.gov.vn/",
+    publicationDate: "2024-06-01",
+    url: "https://sbv.gov.vn/vi/w/sbv599430",
     snippet:
-      "Ngân hàng Nhà nước đăng thông tin chính thức về hệ thống ngân hàng. Việc để dành và lo liệu tiền trong gia đình nên dựa trên nguồn tin cậy — đây không phải lời khuyên mua bán đầu tư cho từng người.",
+      "Ngân hàng Nhà nước nhấn mạnh giáo dục tài chính giúp người dân nâng cao kiến thức quản lý chi tiêu, tiết kiệm và giảm rủi ro — đây là thông tin giáo dục, không phải lời khuyên đầu tư cá nhân.",
   },
   {
     id: "who-physical-activity",
