@@ -403,7 +403,7 @@ export function ChatPage() {
                 rel="noopener noreferrer"
                 className="mt-2 block break-all text-sm text-[var(--color-blue)] underline"
               >
-                Xem trang nguồn: {drawerSource.url}
+                Xem tài liệu nguồn: {drawerSource.url}
               </a>
             ) : null}
             <p className="mt-4 whitespace-pre-wrap text-[var(--color-ink)]">
