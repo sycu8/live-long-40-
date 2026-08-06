@@ -28,5 +28,8 @@ describe("blog helpers", () => {
     }
     const slugs = new Set(bank.map((p) => p.slug));
     expect(slugs.size).toBe(bank.length);
+    const intro = bank.find((p) => p.slug === "gioi-thieu-vivaage");
+    expect(intro?.title).toMatch(/VivaAge/);
+    expect(intro?.body).toContain("Chuẩn bị hôm nay, tự chủ về sau");
   });
 });

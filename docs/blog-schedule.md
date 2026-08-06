@@ -35,7 +35,9 @@ pnpm db:seed:blog       # local D1
 pnpm db:seed:blog:remote
 ```
 
-Cadence seed: **1 ngày / bài**. `INSERT OR IGNORE` không ghi đè bài cron đã publish.
+Bài giới thiệu dự án (`gioi-thieu-vivaage`) luôn `INSERT OR REPLACE` và publish ngay.
+
+Cadence seed: **1 ngày / bài**. `INSERT OR IGNORE` không ghi đè bài cron đã publish (trừ intro).
 
 ## Admin
 
