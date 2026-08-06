@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isGenericHomepageUrl } from "../content/official-sources";
 
 export const ErrorCodeSchema = z.enum([
   "VALIDATION_ERROR",
@@ -94,6 +95,18 @@ export const AdminSourceCreateSchema = z
         path: ["originalUrl"],
         message:
           "Nguồn chính thống / hướng dẫn quốc tế bắt buộc có đường dẫn gốc (originalUrl).",
+      });
+    }
+    if (
+      val.originalUrl &&
+      (val.trustTier === "official_vn" || val.trustTier === "intl_guideline") &&
+      isGenericHomepageUrl(val.originalUrl)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["originalUrl"],
+        message:
+          "Hãy dẫn tới đúng tài liệu (bài/tờ thông tin/trang thủ tục), không dùng trang chủ cơ quan.",
       });
     }
   });

@@ -131,7 +131,7 @@ export function LibraryPage() {
                   </p>
                   {item.source?.url ? (
                     <p className="mt-1 text-xs text-[var(--color-green)]">
-                      Nguồn: {item.source.issuer}
+                      Nguồn: {item.source.title}
                     </p>
                   ) : null}
                 </Link>
@@ -214,7 +214,7 @@ export function LibraryDetailPage() {
                 rel="noopener noreferrer"
                 className="mt-3 inline-block break-all text-sm text-[var(--color-blue)] underline"
               >
-                Xem trang nguồn
+                Xem tài liệu nguồn
               </a>
             ) : null}
           </aside>
