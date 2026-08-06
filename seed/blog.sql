@@ -4,6 +4,97 @@
 
 -- Cadence: 1 bài / ngày; cron 02:00 UTC publish + fill horizon
 
+INSERT OR REPLACE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at
+) VALUES (
+  'blog_intro',
+  'gioi-thieu-vivaage',
+  'VivaAge là gì? Giới thiệu dự án chuẩn bị hôm nay, tự chủ về sau',
+  'VivaAge giúp người Việt từ tuổi 40+ chủ động chuẩn bị sức khỏe, tài chính và kỹ năng chăm sóc — bằng đánh giá, kế hoạch 30 ngày, thư viện và câu trả lời có nguồn.',
+  'tinh-than',
+  8,
+  '## Một lời chào thẳng thắn
+
+Nếu bạn đang ngoài 40 và thỉnh thoảng tự hỏi: _Mình đã sẵn sàng cho những năm phía trước chưa?_ — bạn không đơn độc.
+
+**VivaAge** ra đời đúng từ câu hỏi đó. Đây là công cụ giáo dục và lập kế hoạch trên web (cài như ứng dụng được), giúp bạn **rõ hơn một chút mỗi ngày** về sức khỏe, tiền bạc và kỹ năng chăm sóc — không hù dọa, không bán sản phẩm đầu tư, không thay bác sĩ.
+
+Khẩu hiệu của chúng tôi rất ngắn: **Chuẩn bị hôm nay, tự chủ về sau.**
+
+## Vì sao tên VivaAge?
+
+- **Viva** gợi sức sống, tích cực — không nhấn vào sự già yếu.
+- **Age** nói thẳng lĩnh vực tuổi tác và _healthy aging_ (già hóa khỏe mạnh).
+
+Tên gọi nhắc bạn: tuổi già không phải đoạn kết. Đó là một chặng đường dài cần **chuẩn bị sớm**, bắt đầu từ tuổi trung niên.
+
+## VivaAge giúp gì?
+
+Bạn có thể dùng từng phần, theo nhịp của mình:
+
+### 1. Đánh giá mức độ sẵn sàng
+
+Một bài đánh giá khoảng vài phút để bạn thấy mình đang vững / còn mơ hồ ở đâu: sức khỏe, tài chính, chăm sóc. Kết quả không phải “điểm tốt – điểm xấu để xấu hổ”, mà là **bản đồ** để biết nên bắt đầu từ đâu.
+
+### 2. Kế hoạch 30 ngày với việc nhỏ
+
+Không phải lịch nhồi nhét. Mỗi tuần chỉ vài việc vừa sức — đi bộ, ghi huyết áp, sắp giấy tờ, nói chuyện với gia đình… Mục tiêu là **thắng cuộc chơi dài**, không cháy hết động lực tuần đầu.
+
+### 3. Thư viện bài học ngắn
+
+Các bài viết giáo dục giải thích khái niệm bằng tiếng Việt dễ đọc: khám định kỳ, quỹ dự phòng, phòng ngã, giấy tờ tuổi già… Mỗi bài gắn **nguồn tài liệu cụ thể** khi có thể (không dẫn trang chủ chung chung).
+
+### 4. Hỏi VivaAge
+
+Đặt câu hỏi giáo dục — ví dụ nên kiểm tra gì từ tuổi 40, quỹ dự phòng thế nào, làm gì khi người thân bị ngã. Câu trả lời cố gắng kèm **trích dẫn từ nguồn tin cậy** (cơ quan Việt Nam hoặc Tổ chức Y tế Thế giới). Nếu chưa đủ bằng chứng, hệ thống sẽ nói rõ thay vì bịa.
+
+### 5. Góc động viên
+
+Những bài như bài bạn đang đọc: giúp bớt tiêu cực, thích nghi với thay đổi, giữ thói quen nhỏ. Động viên không thay tư vấn chuyên môn — nhưng đôi khi chính là thứ giúp bạn **bắt đầu**.
+
+## Ba trụ cột chuẩn bị
+
+1. **Sức khỏe chủ động** — thói quen, khám định kỳ, theo dõi vài chỉ số cơ bản, biết khi nào cần gặp nhân viên y tế.
+2. **Tài chính vững vàng** — quỹ dự phòng, bảo hiểm đang hiệu lực, ước lượng chi tiêu; **không** phải lời khuyên mua bán đầu tư cá nhân.
+3. **Kỹ năng chăm sóc** — phòng ngã, danh sách thuốc, liên hệ khẩn cấp, nói chuyện sớm trong gia đình.
+
+Ba trụ này dựa vào đời sống thật của người Việt 40+: vừa đi làm, vừa lo nhà, vừa nghĩ tới bố mẹ và tới chính mình sau này.
+
+## VivaAge không phải gì?
+
+Rất quan trọng để nói rõ:
+
+- **Không** phải ứng dụng của cơ quan Nhà nước.
+- **Không** chẩn đoán bệnh, kê đơn, hay thay lời bác sĩ.
+- **Không** tư vấn đầu tư, bảo hiểm sản phẩm cụ thể, hay soạn thảo pháp lý cá nhân.
+- **Không** lưu hồ sơ y tế đầy đủ thay cho bệnh viện.
+
+Bạn vẫn cần cơ sở y tế, bảo hiểm xã hội / bảo hiểm y tế, và người có chuyên môn khi quyết định cho bản thân.
+
+## Bắt đầu thế nào trong 10 phút?
+
+1. Vào trang chủ VivaAge và chọn **Kiểm tra mức độ sẵn sàng**, hoặc
+2. Mở **Hỏi VivaAge** với một câu đang làm bạn băn khoăn, hoặc
+3. Đọc một bài trong **Thư viện** / **Góc động viên**.
+
+Không cần đăng ký tài khoản phức tạp để khởi động. Phiên làm việc được thiết kế nhẹ, tập trung vào việc bạn **làm được hôm nay**.
+
+## Lời nhắn từ biên tập
+
+Chúng tôi không hứa cuộc sống phía trước sẽ bằng phẳng. Chúng tôi muốn bạn **bớt mơ hồ** — biết mình đang đứng đâu, việc nhỏ tiếp theo là gì, và thông tin nào đáng tin.
+
+Cứ bước. Chậm cũng được. Miễn là về phía chăm sóc, rõ ràng và tự chủ hơn một chút so với hôm qua.
+
+Chào mừng bạn đến với VivaAge.',
+  'published',
+  '2026-08-06',
+  '2026-08-06T02:00:00.000Z',
+  'Biên tập VivaAge',
+  '2026-08-06T01:00:00.000Z',
+  '2026-08-06T01:00:00.000Z'
+);
+
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at
