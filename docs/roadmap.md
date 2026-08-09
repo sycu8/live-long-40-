@@ -14,7 +14,7 @@ Nguyên tắc: giáo dục + kế hoạch — **không** thay bác sĩ, tư vấ
 | Kế hoạch 30 ngày (2 + 1 việc / tuần) | Có |
 | Hỏi VivaAge (an toàn + nguồn) | Có |
 | Thư viện bài học | Có |
-| Góc động viên (blog 1 bài/ngày + crawl sitemap/feed) | Có |
+| Góc động viên (blog ≥2 bài/ngày, nguồn, AI cover + crawl) | Có |
 | Admin nạp nguồn / duyệt | Có (MVP) |
 | PWA + phiên ẩn danh | Có |
 

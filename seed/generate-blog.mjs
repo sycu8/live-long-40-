@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Generate seed/blog.sql + shared/content/blog-editorial-bank.json
- * Motivational posts: 1 bài / ngày.
+ * Advisory posts: target ≥2 bài / ngày; advisor batch has sources.
  * First posts are already published so the blog is useful immediately;
  * later posts stay scheduled for the daily cron publisher + horizon filler.
  */

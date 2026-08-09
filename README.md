@@ -174,7 +174,7 @@ pnpm exec wrangler deploy --env staging
 3. **Kết quả** → khoảng trống + điểm mạnh + giải thích  
 4. **Kế hoạch 30 ngày** → 2 việc chính + 1 tùy chọn mỗi tuần (+ phản ánh khi hoàn thành)  
 5. **Hỏi VivaAge** → risk route → retrieve → generate có citation (lưu hội thoại tùy chọn)  
-6. **Góc động viên** → bài viết động viên, lịch 1 bài/ngày (cron + sitemap/feed)  
+6. **Góc động viên** → bài tư vấn giáo dục ≥300 từ, có nguồn; lịch ≥2 bài/ngày (Workers AI + cron + sitemap/feed)  
 7. **Thư viện** → bài học theo nhóm  
 8. **Admin** → upload/R2, ingest workflow, approve, withdraw  
 
