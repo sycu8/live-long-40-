@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ensureSession } from "./lib/api";
 import { DocumentHead } from "./components/DocumentHead";
+import { BackToTop } from "./components/BackToTop";
 import { LandingPage } from "./pages/LandingPage";
 import { TodayPage } from "./pages/TodayPage";
 import { AssessmentPage } from "./pages/AssessmentPage";
@@ -79,6 +80,7 @@ export function App() {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <BackToTop />
     </BrowserRouter>
   );
 }
