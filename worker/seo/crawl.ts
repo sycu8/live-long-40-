@@ -1,8 +1,5 @@
 import { Hono } from "hono";
-import {
-  BLOG_CADENCE_DAYS,
-  DEFAULT_PUBLIC_SITE_URL,
-} from "@shared/constants/blog";
+import { DEFAULT_PUBLIC_SITE_URL } from "@shared/constants/blog";
 import { INDEXABLE_ROUTES } from "@shared/brand";
 import type { Env, AppVariables } from "../env";
 import { themeLabel } from "../api/blog";
