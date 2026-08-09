@@ -12,7 +12,30 @@ export const BLOG_SCHEDULE_HORIZON_DAYS = 21;
 /** Minimum word count for advisory blog bodies (Vietnamese whitespace tokens). */
 export const BLOG_MIN_WORDS = 300;
 
+/** Blog index page size (fast load). */
+export const BLOG_PAGE_SIZE_DEFAULT = 8;
+export const BLOG_PAGE_SIZE_MIN = 6;
+export const BLOG_PAGE_SIZE_MAX = 9;
+
+/** Max featured / hot posts shown in the hero block on page 1. */
+export const BLOG_FEATURED_LIMIT = 3;
+
 export const BLOG_AUTHOR_DEFAULT = "Biên tập VivaAge";
+
+export function clampBlogPageSize(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return BLOG_PAGE_SIZE_DEFAULT;
+  return Math.min(
+    BLOG_PAGE_SIZE_MAX,
+    Math.max(BLOG_PAGE_SIZE_MIN, Math.round(n)),
+  );
+}
+
+export function clampBlogPage(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.floor(n);
+}
 
 /** Fallback public origin when PUBLIC_SITE_URL is unset. */
 export const DEFAULT_PUBLIC_SITE_URL =

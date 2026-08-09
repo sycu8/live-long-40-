@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { EmptyState } from "../components/ui";
 import { MarkdownBody } from "../components/MarkdownBody";
 import { Button } from "../components/Button";
 import { api } from "../lib/api";
+import { BLOG_PAGE_SIZE_DEFAULT } from "@shared/constants/blog";
 
 type BlogSource = {
   id: string;
@@ -30,6 +31,7 @@ type BlogItem = {
   coverAlt?: string | null;
   sources?: BlogSource[];
   sourceCount?: number;
+  featured?: boolean;
 };
 
 type Backlink = { to: string; label: string };
@@ -56,9 +58,124 @@ function formatDate(iso: string | null | undefined) {
   }
 }
 
+function PostMeta({ item }: { item: BlogItem }) {
+  return (
+    <p className="text-xs text-[var(--color-ink-muted)]">
+      {item.themeLabel} · {item.readingMinutes} phút đọc ·{" "}
+      {formatDate(item.publishedAt)}
+      {item.sourceCount ? ` · ${item.sourceCount} nguồn` : null}
+    </p>
+  );
+}
+
+function FeaturedHero({ item }: { item: BlogItem }) {
+  return (
+    <Link
+      to={`/blog/${item.slug}`}
+      className="group relative block overflow-hidden rounded-2xl bg-[var(--color-green-dark)] text-white shadow-sm transition hover:opacity-[0.98]"
+    >
+      {item.coverImageUrl ? (
+        <img
+          src={item.coverImageUrl}
+          alt={item.coverAlt || ""}
+          className="absolute inset-0 h-full w-full object-cover opacity-40 transition duration-500 group-hover:scale-[1.02]"
+          fetchPriority="high"
+        />
+      ) : (
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-[var(--color-green)] to-[var(--color-green-dark)]"
+          aria-hidden
+        />
+      )}
+      <div className="relative flex min-h-[280px] flex-col justify-end p-6 sm:min-h-[320px] sm:p-8 lg:min-h-[360px] lg:p-10">
+        <span className="mb-3 inline-flex w-fit rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold tracking-wide uppercase backdrop-blur-sm">
+          Bài nổi bật
+        </span>
+        <p className="text-xs text-white/80">
+          {item.themeLabel} · {item.readingMinutes} phút ·{" "}
+          {formatDate(item.publishedAt)}
+        </p>
+        <h2 className="mt-2 font-display text-2xl leading-snug sm:text-3xl lg:text-4xl">
+          {item.title}
+        </h2>
+        <p className="mt-3 max-w-2xl text-sm text-white/90 sm:text-base">
+          {item.excerpt}
+        </p>
+        <p className="mt-4 text-sm font-medium text-white">Đọc bài nổi bật →</p>
+      </div>
+    </Link>
+  );
+}
+
+function FeaturedSecondary({ item }: { item: BlogItem }) {
+  return (
+    <Link
+      to={`/blog/${item.slug}`}
+      className="flex flex-col overflow-hidden rounded-2xl border border-[var(--color-sand)]/50 bg-white/70 transition hover:border-[var(--color-green)]/40 hover:bg-white"
+    >
+      {item.coverImageUrl ? (
+        <img
+          src={item.coverImageUrl}
+          alt={item.coverAlt || ""}
+          className="aspect-[16/9] w-full object-cover"
+          loading="lazy"
+        />
+      ) : null}
+      <div className="flex flex-1 flex-col p-4">
+        <span className="text-xs font-semibold text-[var(--color-green)]">
+          Nổi bật
+        </span>
+        <PostMeta item={item} />
+        <h3 className="mt-2 font-display text-xl text-[var(--color-ink)]">
+          {item.title}
+        </h3>
+        <p className="mt-2 line-clamp-3 flex-1 text-sm text-[var(--color-ink-muted)]">
+          {item.excerpt}
+        </p>
+        <p className="mt-3 text-sm font-medium text-[var(--color-green)]">
+          Đọc tiếp →
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+function PostCard({ item }: { item: BlogItem }) {
+  return (
+    <Link
+      to={`/blog/${item.slug}`}
+      className="block border-b border-[var(--color-sand)]/45 pb-5 transition hover:opacity-90 lg:rounded-2xl lg:border-0 lg:bg-white/60 lg:p-5 lg:pb-5"
+    >
+      {item.coverImageUrl ? (
+        <img
+          src={item.coverImageUrl}
+          alt={item.coverAlt || ""}
+          className="mb-3 aspect-[16/9] w-full rounded-xl object-cover"
+          loading="lazy"
+        />
+      ) : null}
+      <PostMeta item={item} />
+      <h2 className="mt-2 font-display text-2xl text-[var(--color-ink)]">
+        {item.title}
+      </h2>
+      <p className="mt-2 text-[var(--color-ink-muted)]">{item.excerpt}</p>
+      <p className="mt-3 text-sm font-medium text-[var(--color-green)]">
+        Đọc tiếp →
+      </p>
+    </Link>
+  );
+}
+
 export function BlogPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const theme = searchParams.get("theme") ?? "";
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+
   const [items, setItems] = useState<BlogItem[]>([]);
-  const [theme, setTheme] = useState("");
+  const [featured, setFeatured] = useState<BlogItem[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(BLOG_PAGE_SIZE_DEFAULT);
   const [postsPerDay, setPostsPerDay] = useState(2);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,33 +184,69 @@ export function BlogPage() {
     (async () => {
       setLoading(true);
       setError(null);
-      const q = theme ? `?theme=${encodeURIComponent(theme)}` : "";
+      const params = new URLSearchParams();
+      if (theme) params.set("theme", theme);
+      params.set("page", String(page));
+      params.set("pageSize", String(BLOG_PAGE_SIZE_DEFAULT));
       try {
         const data = await api<{
           items: BlogItem[];
+          featured?: BlogItem[];
           cadenceDays: number;
           postsPerDay?: number;
-        }>(`/blog${q}`);
+          page: number;
+          pageSize: number;
+          total: number;
+          totalPages: number;
+        }>(`/blog?${params.toString()}`);
         setItems(data.items);
+        setFeatured(data.featured ?? []);
+        setTotalPages(data.totalPages || 1);
+        setTotal(data.total || 0);
+        setPageSize(data.pageSize || BLOG_PAGE_SIZE_DEFAULT);
         if (data.postsPerDay) setPostsPerDay(data.postsPerDay);
+        if (data.page && data.page !== page) {
+          const next = new URLSearchParams(searchParams);
+          next.set("page", String(data.page));
+          setSearchParams(next, { replace: true });
+        }
       } catch (e) {
         setItems([]);
+        setFeatured([]);
         setError(e instanceof Error ? e.message : "Không tải được blog.");
       } finally {
         setLoading(false);
       }
     })();
-  }, [theme]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync URL page from API clamp
+  }, [theme, page]);
+
+  function setTheme(nextTheme: string) {
+    const next = new URLSearchParams();
+    if (nextTheme) next.set("theme", nextTheme);
+    next.set("page", "1");
+    setSearchParams(next);
+  }
+
+  function goToPage(nextPage: number) {
+    const next = new URLSearchParams(searchParams);
+    next.set("page", String(nextPage));
+    setSearchParams(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  const hero = featured[0] ?? null;
+  const secondaryFeatured = featured.slice(1);
 
   return (
     <AppShell>
-      <div className="space-y-6 fade-up">
+      <div className="space-y-8 fade-up">
         <div>
           <h1 className="font-display text-3xl">Góc động viên</h1>
           <p className="mt-2 text-[var(--color-ink-muted)]">
-            Bài viết dài hơi ở góc nhìn tư vấn giáo dục cho người lớn tuổi —
-            thông tin cần chính xác, có nguồn chính thống, và gắn việc nhỏ bạn
-            có thể làm trên VivaAge. Mục tiêu khoảng {postsPerDay} bài mỗi ngày.
+            Bài viết tư vấn giáo dục cho người lớn tuổi — có nguồn chính thống.
+            Mỗi trang {pageSize} bài để tải nhanh; bài nổi bật hiện trước.
+            Khoảng {postsPerDay} bài mới mỗi ngày.
           </p>
           <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
             Không thay lời bác sĩ hay tư vấn đầu tư. Câu hỏi chuyên môn nằm ở{" "}
@@ -131,7 +284,8 @@ export function BlogPage() {
             {error}
           </p>
         ) : null}
-        {!loading && !error && items.length === 0 ? (
+
+        {!loading && !error && items.length === 0 && featured.length === 0 ? (
           <EmptyState
             title="Chưa có bài mới"
             description="Bài viết được lên lịch mỗi ngày. Bạn có thể đọc Thư viện hoặc hỏi VivaAge trong lúc chờ."
@@ -143,45 +297,93 @@ export function BlogPage() {
           />
         ) : null}
 
+        {!loading && hero ? (
+          <section aria-label="Bài nổi bật" className="space-y-4">
+            <FeaturedHero item={hero} />
+            {secondaryFeatured.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {secondaryFeatured.map((item) => (
+                  <FeaturedSecondary key={item.slug} item={item} />
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
         {!loading && items.length > 0 ? (
-          <ul className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
-            {items.map((item) => (
-              <li
-                key={item.slug}
-                className="lg:rounded-2xl lg:bg-white/60 lg:p-5"
+          <section aria-label="Tất cả bài viết" className="space-y-4">
+            {page === 1 && featured.length > 0 ? (
+              <h2 className="font-display text-xl text-[var(--color-ink)]">
+                Bài mới &amp; đang đọc
+              </h2>
+            ) : null}
+            <ul className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0 xl:grid-cols-3">
+              {items.map((item) => (
+                <li key={item.slug}>
+                  <PostCard item={item} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {!loading && totalPages > 1 ? (
+          <nav
+            className="flex flex-col items-center gap-3 border-t border-[var(--color-sand)]/40 pt-6 sm:flex-row sm:justify-between"
+            aria-label="Phân trang blog"
+          >
+            <p className="text-sm text-[var(--color-ink-muted)]">
+              Trang {page} / {totalPages} · {total} bài
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button
+                variant="secondary"
+                disabled={page <= 1}
+                onClick={() => goToPage(page - 1)}
               >
-                <Link
-                  to={`/blog/${item.slug}`}
-                  className="block border-b border-[var(--color-sand)]/45 pb-5 transition hover:opacity-90 lg:border-0 lg:pb-0"
-                >
-                  {item.coverImageUrl ? (
-                    <img
-                      src={item.coverImageUrl}
-                      alt={item.coverAlt || ""}
-                      className="mb-3 aspect-[16/9] w-full rounded-xl object-cover"
-                      loading="lazy"
-                    />
-                  ) : null}
-                  <p className="text-xs text-[var(--color-ink-muted)]">
-                    {item.themeLabel} · {item.readingMinutes} phút đọc ·{" "}
-                    {formatDate(item.publishedAt)}
-                    {item.sourceCount
-                      ? ` · ${item.sourceCount} nguồn`
-                      : null}
-                  </p>
-                  <h2 className="mt-2 font-display text-2xl text-[var(--color-ink)]">
-                    {item.title}
-                  </h2>
-                  <p className="mt-2 text-[var(--color-ink-muted)]">
-                    {item.excerpt}
-                  </p>
-                  <p className="mt-3 text-sm font-medium text-[var(--color-green)]">
-                    Đọc tiếp →
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                ← Trước
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => {
+                  if (totalPages <= 7) return true;
+                  return (
+                    p === 1 ||
+                    p === totalPages ||
+                    Math.abs(p - page) <= 1
+                  );
+                })
+                .map((p, idx, arr) => {
+                  const prev = arr[idx - 1];
+                  const showEllipsis = prev != null && p - prev > 1;
+                  return (
+                    <span key={p} className="flex items-center gap-2">
+                      {showEllipsis ? (
+                        <span className="text-[var(--color-ink-muted)]">…</span>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => goToPage(p)}
+                        className={`min-h-10 min-w-10 rounded-lg px-3 text-sm ${
+                          p === page
+                            ? "bg-[var(--color-green)] text-white"
+                            : "bg-white/70 text-[var(--color-ink)]"
+                        }`}
+                        aria-current={p === page ? "page" : undefined}
+                      >
+                        {p}
+                      </button>
+                    </span>
+                  );
+                })}
+              <Button
+                variant="secondary"
+                disabled={page >= totalPages}
+                onClick={() => goToPage(page + 1)}
+              >
+                Sau →
+              </Button>
+            </div>
+          </nav>
         ) : null}
       </div>
     </AppShell>
@@ -240,6 +442,7 @@ export function BlogDetailPage() {
             ← Góc động viên
           </Link>
           <p className="text-xs text-[var(--color-ink-muted)]">
+            {item.featured ? "Bài nổi bật · " : null}
             {item.themeLabel} · {item.readingMinutes} phút ·{" "}
             {formatDate(item.publishedAt)} · {item.authorName}
           </p>
@@ -304,9 +507,7 @@ export function BlogDetailPage() {
                 .map((b) => (
                   <Link key={b.to} to={b.to}>
                     <Button
-                      variant={
-                        b.to === "/danh-gia" ? "primary" : "secondary"
-                      }
+                      variant={b.to === "/danh-gia" ? "primary" : "secondary"}
                     >
                       {b.label}
                     </Button>
@@ -327,6 +528,7 @@ export function BlogDetailPage() {
                       to={`/blog/${r.slug}`}
                       className="font-medium text-[var(--color-green)] hover:underline"
                     >
+                      {r.featured ? "★ " : null}
                       {r.title}
                     </Link>
                   </li>
@@ -338,17 +540,26 @@ export function BlogDetailPage() {
             <h2 className="font-display text-xl">Trong VivaAge</h2>
             <ul className="mt-3 space-y-2 text-sm">
               <li>
-                <Link className="text-[var(--color-green)] underline" to="/ke-hoach">
+                <Link
+                  className="text-[var(--color-green)] underline"
+                  to="/ke-hoach"
+                >
                   Kế hoạch 30 ngày
                 </Link>
               </li>
               <li>
-                <Link className="text-[var(--color-green)] underline" to="/thu-vien">
+                <Link
+                  className="text-[var(--color-green)] underline"
+                  to="/thu-vien"
+                >
                   Thư viện giáo dục
                 </Link>
               </li>
               <li>
-                <Link className="text-[var(--color-green)] underline" to="/danh-gia">
+                <Link
+                  className="text-[var(--color-green)] underline"
+                  to="/danh-gia"
+                >
                   Đánh giá sẵn sàng
                 </Link>
               </li>

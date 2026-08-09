@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 import { themeLabel } from "../../worker/api/blog";
 import {
   BLOG_CADENCE_DAYS,
+  BLOG_FEATURED_LIMIT,
   BLOG_MIN_WORDS,
+  BLOG_PAGE_SIZE_DEFAULT,
+  BLOG_PAGE_SIZE_MAX,
+  BLOG_PAGE_SIZE_MIN,
   BLOG_POSTS_PER_DAY,
   BLOG_SCHEDULE_HORIZON_DAYS,
+  clampBlogPage,
+  clampBlogPageSize,
   countBlogWords,
 } from "../../shared/constants/blog";
 import { resolveBlogSources } from "../../shared/content/blog-theme-sources";
@@ -24,6 +30,21 @@ describe("blog helpers", () => {
     expect(BLOG_POSTS_PER_DAY).toBe(2);
     expect(BLOG_SCHEDULE_HORIZON_DAYS).toBeGreaterThanOrEqual(14);
     expect(BLOG_MIN_WORDS).toBe(300);
+  });
+
+  it("clamps blog page size to 6–9 and page to >= 1", () => {
+    expect(BLOG_PAGE_SIZE_DEFAULT).toBe(8);
+    expect(BLOG_PAGE_SIZE_MIN).toBe(6);
+    expect(BLOG_PAGE_SIZE_MAX).toBe(9);
+    expect(BLOG_FEATURED_LIMIT).toBe(3);
+    expect(clampBlogPageSize(undefined)).toBe(8);
+    expect(clampBlogPageSize(3)).toBe(6);
+    expect(clampBlogPageSize(12)).toBe(9);
+    expect(clampBlogPageSize(7)).toBe(7);
+    expect(clampBlogPage(0)).toBe(1);
+    expect(clampBlogPage(-2)).toBe(1);
+    expect(clampBlogPage("3")).toBe(3);
+    expect(clampBlogPage("nope")).toBe(1);
   });
 
   it("ships an editorial bank for the daily scheduler", () => {

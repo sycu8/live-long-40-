@@ -4,10 +4,12 @@
 
 -- Cadence target: 2 bài / ngày (UTC); cron 02:00 UTC publish + fill horizon
 
+-- Featured: is_featured + featured_rank for hero layout on /blog
+
 INSERT OR REPLACE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_intro',
   'gioi-thieu-vivaage',
@@ -96,13 +98,15 @@ Chào mừng bạn đến với VivaAge.',
   '2026-08-06T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  1,
+  1
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_001',
   'tuoi-40-khong-phai-diem-dung',
@@ -149,13 +153,15 @@ Bạn không cần trở thành phiên bản hoàn hảo lúc 40. Bạn chỉ c�
   '2026-07-01T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_002',
   'viec-nho-thang-lon',
@@ -196,13 +202,15 @@ Kế hoạch 30 ngày của VivaAge cố ý không nhồi nhét. Hai việc chí
   '2026-07-02T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_003',
   'noi-ve-tuoi-gia-khong-so',
@@ -249,13 +257,15 @@ Bạn không cần “yêu” mọi thay đổi. Bạn chỉ cần **không đ�
   '2026-07-03T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_004',
   'cham-soc-ma-khong-mat-minh',
@@ -299,13 +309,15 @@ Bạn xứng đáng được khỏe. Chăm sóc tốt nhất thường đến t�
   '2026-07-04T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_005',
   'tien-bac-binh-tinh',
@@ -350,13 +362,15 @@ VivaAge không tư vấn đầu tư. Chúng tôi chỉ muốn bạn **bớt sợ
   '2026-07-05T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_006',
   'co-the-thay-doi-khong-phai-that-bai',
@@ -395,13 +409,15 @@ Bạn không cần phạt bản thân. Bạn cần đồng hành với cơ thể
   '2026-07-06T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_007',
   'co-don-va-ket-noi',
@@ -436,13 +452,15 @@ Chuẩn bị tuổi già không chỉ là tiền và thuốc. Đó còn là **c�
   '2026-07-07T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_008',
   'ngu-la-suc-manh',
@@ -477,13 +495,15 @@ Ngủ tốt không giải quyết hết mọi việc. Nhưng nó làm mọi vi�
   '2026-07-08T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_009',
   'xin-giup-do-la-tri-tue',
@@ -522,13 +542,15 @@ Người khôn ngoan không phải người không cần ai. Là người **bi�
   '2026-08-05T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_010',
   'an-mung-chien-thang-nho',
@@ -564,13 +586,15 @@ Trong kế hoạch, mỗi việc hoàn thành là một tín hiệu: bạn đang
   '2026-08-05T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_011',
   'nha-la-cho-an-toan',
@@ -604,13 +628,15 @@ Mỗi chỉnh sửa nhỏ là một món quà cho tương lai: bạn giảm kh�
   '2026-08-06T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_012',
   'hy-vong-cho-nhung-thap-nien-toi',
@@ -653,13 +679,15 @@ Hẹn bạn ở bài viết tiếp theo — đều đặn mỗi ngày, như mộ
   '2026-08-06T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_013',
   'on-dinh-cam-xuc-tuoi-trung-nien',
@@ -696,13 +724,15 @@ Khóc được. Giận được. Nhưng sau đó hãy chọn **một hành độ
   '2026-08-07T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_014',
   'tap-the-duc-khong-xau-ho',
@@ -740,13 +770,15 @@ Mỗi bước chân là lời khẳng định: mình vẫn đầu tư cho thập
   '2026-08-07T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_015',
   'noi-chuyen-voi-con-ve-tuoi-gia',
@@ -783,13 +815,15 @@ Cuộc nói chuyện sớm là món quà. Nó biến tình yêu thành kế ho�
   '2026-08-08T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_016',
   'biet-on-ma-van-thay-doi',
@@ -821,13 +855,15 @@ VivaAge không dạy bạn giả vờ vui. Chúng tôi muốn bạn **vừa dị
   '2026-08-08T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_017',
   'ngay-xau-van-cuu-duoc',
@@ -864,13 +900,15 @@ Ngày xấu không xóa giá trị bạn. Protocol nhỏ giúp bạn nhớ: mìn
   '2026-08-09T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_018',
   'mot-trang-so-sach',
@@ -908,13 +946,15 @@ Một trang sổ sách là bước đầu của sự bình tĩnh. VivaAge không
   '2026-08-09T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_019',
   'kham-dinh-ky-khong-hoang',
@@ -947,13 +987,15 @@ Khám định kỳ là cách bạn **chăm sóc tương lai**, không phải ch�
   '2026-08-10T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_020',
   'ranh-gioi-nhe-nhang',
@@ -982,13 +1024,15 @@ Bạn được phép quý trọng sức mình. Đó cũng là cách chuẩn bị
   '2026-08-10T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_021',
   'di-bo-nhu-lieu-phap',
@@ -1017,13 +1061,15 @@ Mỗi vòng đi bộ là một viên gạch nhỏ cho sức khỏe dài hạn. �
   '2026-08-11T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_022',
   'thuoc-co-nhan',
@@ -1053,13 +1099,15 @@ Mang theo danh sách. Đừng dựa vào trí nhớ lúc hồi hộp.
   '2026-08-11T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_023',
   'goi-mot-cuoc',
@@ -1088,13 +1136,15 @@ Chuẩn bị tuổi già cũng là nuôi vài mối liên hệ ổn định. B�
   '2026-08-12T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_024',
   'mot-hop-giay-to',
@@ -1127,13 +1177,15 @@ Bạn không đang “nghĩ chuyện xấu”. Bạn đang **giảm tải cho ng
   '2026-08-12T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR IGNORE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_025',
   'tuan-nay-mot-viec',
@@ -1166,13 +1218,15 @@ VivaAge cố ý thiết kế kế hoạch 30 ngày với ít việc. Không ph�
   '2026-08-13T01:00:00.000Z',
   '[]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR REPLACE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_adv_on-dinh-tinh-than-tuoi-trung-nien-co-ngu',
   'on-dinh-tinh-than-tuoi-trung-nien-co-nguon',
@@ -1237,13 +1291,15 @@ VivaAge **không** thay thế khám bệnh. Bạn có thể [Hỏi VivaAge](/hoi
   '2026-08-13T01:00:00.000Z',
   '["who-mental-sleep","who-ageing","byt-elderly-checkup"]',
   NULL,
-  NULL
+  NULL,
+  1,
+  2
 );
 
 INSERT OR REPLACE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_adv_thoi-quen-20-phut-cho-nguoi-40',
   'thoi-quen-20-phut-cho-nguoi-40',
@@ -1299,13 +1355,15 @@ Bài này là giáo dục hành vi. Không phải giáo án tập luyện cá nh
   '2026-08-14T01:00:00.000Z',
   '["who-physical-activity","who-ageing","byt-elderly-checkup"]',
   NULL,
-  NULL
+  NULL,
+  1,
+  3
 );
 
 INSERT OR REPLACE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_adv_kham-va-theo-doi-suc-khoe-tuoi-40',
   'kham-va-theo-doi-suc-khoe-tuoi-40',
@@ -1368,13 +1426,15 @@ VivaAge không chẩn đoán, không kê đơn, không thay phòng khám. Bài v
   '2026-08-14T01:00:00.000Z',
   '["byt-elderly-checkup","who-hypertension","who-ageing"]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR REPLACE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_adv_quy-du-phong-va-bao-hiem-binh-tinh',
   'quy-du-phong-va-bao-hiem-binh-tinh',
@@ -1433,13 +1493,15 @@ Bình tĩnh là kỹ năng tài chính quan trọng ở tuổi trung niên: rõ 
   '2026-08-15T01:00:00.000Z',
   '["sbv-financial-education","bhxh-bhyt-card-lookup","bhxh-pension-procedure"]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR REPLACE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_adv_cham-soc-nguoi-than-an-toan-co-ranh-gioi',
   'cham-soc-nguoi-than-an-toan-co-ranh-gioi',
@@ -1509,13 +1571,15 @@ Bài viết không thay cấp cứu, không thay điều dưỡng tại gia. Khi
   '2026-08-15T01:00:00.000Z',
   '["who-falls","byt-elderly-checkup","byt-drug-registration-lookup"]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
 
 INSERT OR REPLACE INTO blog_posts (
   id, slug, title, excerpt, theme, reading_minutes, body_markdown,
   status, scheduled_for, published_at, author_name, created_at, updated_at,
-  sources_json, cover_image_key, cover_alt
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
 ) VALUES (
   'blog_adv_noi-chuyen-gia-dinh-ve-tuoi-gia',
   'noi-chuyen-gia-dinh-ve-tuoi-gia',
@@ -1579,5 +1643,13 @@ VivaAge không soạn di chúc, không phân chia tài sản, không đại di�
   '2026-08-16T01:00:00.000Z',
   '["bhxh-pension-procedure","bhxh-bhyt-card-lookup","who-ageing"]',
   NULL,
-  NULL
+  NULL,
+  0,
+  100
 );
+
+UPDATE blog_posts SET is_featured = 1, featured_rank = 1, updated_at = datetime('now') WHERE slug = 'gioi-thieu-vivaage';
+
+UPDATE blog_posts SET is_featured = 1, featured_rank = 2, updated_at = datetime('now') WHERE slug = 'on-dinh-tinh-than-tuoi-trung-nien-co-nguon';
+
+UPDATE blog_posts SET is_featured = 1, featured_rank = 3, updated_at = datetime('now') WHERE slug = 'thoi-quen-20-phut-cho-nguoi-40';

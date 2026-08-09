@@ -3,7 +3,10 @@ import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
 import {
   BLOG_CADENCE_DAYS,
+  BLOG_FEATURED_LIMIT,
   BLOG_POSTS_PER_DAY,
+  clampBlogPage,
+  clampBlogPageSize,
 } from "@shared/constants/blog";
 import { resolveBlogSources } from "@shared/content/blog-theme-sources";
 import { publishDueBlogPosts } from "../blog/schedule";
@@ -35,9 +38,45 @@ function parseSourceIds(raw: unknown): string[] {
   }
 }
 
-function coverUrlFor(key: string | null | undefined, slug: string): string | null {
+function coverUrlFor(
+  key: string | null | undefined,
+  slug: string,
+): string | null {
   if (!key) return null;
   return `/api/v1/blog/covers/${encodeURIComponent(slug)}`;
+}
+
+type ListRow = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  theme: string;
+  reading_minutes: number;
+  published_at: string;
+  author_name: string;
+  cover_image_key: string | null;
+  cover_alt: string | null;
+  sources_json: string | null;
+  is_featured: number | null;
+  featured_rank: number | null;
+};
+
+function mapListItem(row: ListRow) {
+  return {
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt,
+    theme: row.theme,
+    themeLabel: themeLabel(String(row.theme)),
+    readingMinutes: row.reading_minutes,
+    publishedAt: row.published_at,
+    authorName: row.author_name,
+    coverImageUrl: coverUrlFor(row.cover_image_key, String(row.slug)),
+    coverAlt: row.cover_alt ?? null,
+    sourceCount: parseSourceIds(row.sources_json).length,
+    featured: Number(row.is_featured) === 1,
+    featuredRank: Number(row.featured_rank) || 100,
+  };
 }
 
 blogRoutes.get("/blog/covers/:slug", async (c) => {
@@ -62,45 +101,57 @@ blogRoutes.get("/blog/covers/:slug", async (c) => {
 
 blogRoutes.get("/blog", async (c) => {
   await publishDueBlogPosts(c.env.DB);
-  const theme = c.req.query("theme");
+  const theme = c.req.query("theme")?.trim() || "";
+  const page = clampBlogPage(c.req.query("page"));
+  const pageSize = clampBlogPageSize(c.req.query("pageSize"));
+
+  const where = theme
+    ? `status = 'published' AND theme = ?`
+    : `status = 'published'`;
+  const countSql = `SELECT COUNT(*) AS c FROM blog_posts WHERE ${where}`;
+  const countRow = theme
+    ? await c.env.DB.prepare(countSql).bind(theme).first<{ c: number }>()
+    : await c.env.DB.prepare(countSql).first<{ c: number }>();
+  const total = Number(countRow?.c ?? 0);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
+  const safePage = Math.min(page, totalPages);
+  const offset = (safePage - 1) * pageSize;
+
+  const listSql = `
+    SELECT slug, title, excerpt, theme, reading_minutes, published_at, author_name,
+           cover_image_key, cover_alt, sources_json, is_featured, featured_rank
+    FROM blog_posts
+    WHERE ${where}
+    ORDER BY is_featured DESC, featured_rank ASC, published_at DESC
+    LIMIT ? OFFSET ?`;
+
   const rows = theme
-    ? await c.env.DB.prepare(
-        `SELECT slug, title, excerpt, theme, reading_minutes, published_at, author_name,
-                cover_image_key, cover_alt, sources_json
-         FROM blog_posts
-         WHERE status = 'published' AND theme = ?
-         ORDER BY published_at DESC`,
-      )
-        .bind(theme)
-        .all()
-    : await c.env.DB.prepare(
-        `SELECT slug, title, excerpt, theme, reading_minutes, published_at, author_name,
-                cover_image_key, cover_alt, sources_json
-         FROM blog_posts
-         WHERE status = 'published'
-         ORDER BY published_at DESC`,
-      ).all();
+    ? await c.env.DB.prepare(listSql)
+        .bind(theme, pageSize, offset)
+        .all<ListRow>()
+    : await c.env.DB.prepare(listSql).bind(pageSize, offset).all<ListRow>();
+
+  const items = (rows.results ?? []).map(mapListItem);
+  // Hero featured block: only page 1, leading featured posts (cap BLOG_FEATURED_LIMIT).
+  const featured =
+    safePage === 1
+      ? items.filter((i) => i.featured).slice(0, BLOG_FEATURED_LIMIT)
+      : [];
+  const rest =
+    safePage === 1
+      ? items.filter((i) => !featured.some((f) => f.slug === i.slug))
+      : items;
 
   return c.json({
     cadenceDays: BLOG_CADENCE_DAYS,
     postsPerDay: BLOG_POSTS_PER_DAY,
     themes: THEME_LABELS,
-    items: (rows.results ?? []).map((row) => ({
-      slug: row.slug,
-      title: row.title,
-      excerpt: row.excerpt,
-      theme: row.theme,
-      themeLabel: themeLabel(String(row.theme)),
-      readingMinutes: row.reading_minutes,
-      publishedAt: row.published_at,
-      authorName: row.author_name,
-      coverImageUrl: coverUrlFor(
-        row.cover_image_key as string | null,
-        String(row.slug),
-      ),
-      coverAlt: row.cover_alt ?? null,
-      sourceCount: parseSourceIds(row.sources_json).length,
-    })),
+    page: safePage,
+    pageSize,
+    total,
+    totalPages,
+    featured,
+    items: rest,
   });
 });
 
@@ -110,7 +161,7 @@ blogRoutes.get("/blog/:slug", async (c) => {
   const row = await c.env.DB.prepare(
     `SELECT slug, title, excerpt, theme, reading_minutes, body_markdown,
             published_at, author_name, scheduled_for, sources_json,
-            cover_image_key, cover_alt
+            cover_image_key, cover_alt, is_featured, featured_rank
      FROM blog_posts
      WHERE slug = ? AND status = 'published'`,
   )
@@ -127,6 +178,8 @@ blogRoutes.get("/blog/:slug", async (c) => {
       sources_json: string | null;
       cover_image_key: string | null;
       cover_alt: string | null;
+      is_featured: number | null;
+      featured_rank: number | null;
     }>();
 
   if (!row) {
@@ -134,10 +187,11 @@ blogRoutes.get("/blog/:slug", async (c) => {
   }
 
   const related = await c.env.DB.prepare(
-    `SELECT slug, title, excerpt, theme, reading_minutes, published_at, cover_image_key
+    `SELECT slug, title, excerpt, theme, reading_minutes, published_at, cover_image_key,
+            is_featured, featured_rank
      FROM blog_posts
      WHERE status = 'published' AND theme = ? AND slug != ?
-     ORDER BY published_at DESC
+     ORDER BY is_featured DESC, featured_rank ASC, published_at DESC
      LIMIT 4`,
   )
     .bind(row.theme, slug)
@@ -169,6 +223,7 @@ blogRoutes.get("/blog/:slug", async (c) => {
       coverImageUrl: coverUrlFor(row.cover_image_key, row.slug),
       coverAlt: row.cover_alt,
       sources,
+      featured: Number(row.is_featured) === 1,
     },
     related: (related.results ?? []).map((r) => ({
       slug: r.slug,
@@ -181,6 +236,7 @@ blogRoutes.get("/blog/:slug", async (c) => {
         r.cover_image_key as string | null,
         String(r.slug),
       ),
+      featured: Number(r.is_featured) === 1,
     })),
     backlinks: themeBacklinks(row.theme),
   });

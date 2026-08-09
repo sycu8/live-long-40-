@@ -133,8 +133,31 @@ export function openApiDocument(origin: string) {
       "/api/v1/blog": {
         get: {
           operationId: "listBlog",
-          summary: "List published motivational posts",
-          responses: { "200": { description: "Posts" } },
+          summary:
+            "List published posts (paginated 6–9/page; featured hero on page 1)",
+          parameters: [
+            {
+              name: "page",
+              in: "query",
+              schema: { type: "integer", minimum: 1 },
+            },
+            {
+              name: "pageSize",
+              in: "query",
+              schema: { type: "integer", minimum: 6, maximum: 9 },
+            },
+            {
+              name: "theme",
+              in: "query",
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            "200": {
+              description:
+                "featured + items, page, pageSize, total, totalPages",
+            },
+          },
         },
       },
       "/api/v1/chat/sessions": {

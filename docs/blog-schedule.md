@@ -35,6 +35,13 @@ Job `runBlogDailyJob`:
 
 Hằng số: `shared/constants/blog.ts` (`BLOG_POSTS_PER_DAY`, `BLOG_MIN_WORDS`).
 
+## Listing: featured + pagination
+
+- **Page size:** 6–9 bài (`BLOG_PAGE_SIZE_DEFAULT` = 8) — `GET /api/v1/blog?page=&pageSize=&theme=`
+- **Featured / bài hot:** `is_featured` + `featured_rank` (thấp hơn = ưu tiên hơn); trang 1 trả `featured` (tối đa `BLOG_FEATURED_LIMIT` = 3) rồi `items` còn lại
+- Thứ tự: `is_featured DESC, featured_rank ASC, published_at DESC`
+- Seed gắn nổi bật: intro `gioi-thieu-vivaage`, `on-dinh-tinh-than-tuoi-trung-nien-co-nguon`, `thoi-quen-20-phut-cho-nguoi-40`
+
 ## Crawl surfaces
 
 | Path | Mục đích |
