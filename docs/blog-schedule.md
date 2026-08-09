@@ -2,9 +2,25 @@
 
 ## Mục tiêu
 
-- **1 bài / ngày** trên Góc động viên
-- Máy tìm kiếm / GEO agent **crawl** được danh sách + nội dung bài mới
-- Cron tự publish bài đến hạn và **lấp lịch** trước 21 ngày
+- **≥ 2 bài / ngày** trên Góc động viên (UTC)
+- Giọng **tư vấn giáo dục cho người lớn tuổi**: chính xác, không đoán mò, có **nguồn chính thống** (document-level URL)
+- Mỗi bài **≥ 300 từ**; khuyến nghị 450–700 từ
+- Workers AI: sinh nội dung (khi bank hết) + ảnh bìa (R2 `blog-covers/`)
+- Máy tìm kiếm crawl được danh sách + nội dung bài mới
+- On-page backlink: liên kết nội bộ tới `/danh-gia`, `/ke-hoach`, `/thu-vien`, `/hoi`, `/blog`
+
+## Chuẩn nội dung
+
+| Tiêu chí | Yêu cầu |
+| --- | --- |
+| Góc viết | Tư vấn viên / coach giáo dục 40+ — ấm, rõ, không hù dọa |
+| Độ dài | ≥ 300 từ (`BLOG_MIN_WORDS`) |
+| Nguồn | 1–3 id từ `shared/content/official-sources.ts` (không trang chủ cơ quan) |
+| Link nội bộ | ≥ 2 trong body markdown |
+| Giới hạn | Disclaimer: không thay bác sĩ / tư vấn đầu tư / pháp lý |
+| Ảnh | Workers AI → R2; phục vụ `/api/v1/blog/covers/:slug` |
+
+Xem thêm chiến lược backlink: [`blog-backlinks.md`](./blog-backlinks.md).
 
 ## Cron (Workers)
 
@@ -13,19 +29,19 @@
 Job `runBlogDailyJob`:
 
 1. `publishDueBlogPosts` — `scheduled` → `published` khi `scheduled_for <= hôm nay`
-2. `ensureDailyBlogSchedule` — với mỗi ngày trống trong horizon (21 ngày):
-   - ưu tiên bài chưa dùng trong `shared/content/blog-editorial-bank.json`
-   - nếu hết bank → draft bằng Workers AI (giọng động viên, có disclaimer)
+2. `ensureDailyBlogSchedule` — mỗi ngày trong horizon (21 ngày) đủ **`BLOG_POSTS_PER_DAY` (2)** bài:
+   - ưu tiên bài chưa dùng trong `blog-editorial-bank.json` (+ `blog-advisor-batch.json`)
+   - nếu hết bank → Workers AI (text + cover)
 
-## Crawl surfaces (Worker, `run_worker_first`)
+Hằng số: `shared/constants/blog.ts` (`BLOG_POSTS_PER_DAY`, `BLOG_MIN_WORDS`).
+
+## Crawl surfaces
 
 | Path | Mục đích |
 | --- | --- |
 | `/robots.txt` | Allow nội dung công khai; Sitemap URL |
-| `/sitemap.xml` | Route tĩnh + `/thu-vien/:slug` (active) + mọi `/blog/:slug` đã publish |
-| `/feed.xml` | Atom feed (full text) cho crawler không chạy SPA JS |
-
-`PUBLIC_SITE_URL` trong `wrangler.jsonc` đặt canonical origin.
+| `/sitemap.xml` | Route tĩnh + thư viện + mọi `/blog/:slug` đã publish |
+| `/feed.xml` | Atom feed (full text) |
 
 ## Seed
 
@@ -35,21 +51,10 @@ pnpm db:seed:blog       # local D1
 pnpm db:seed:blog:remote
 ```
 
-Bài giới thiệu dự án (`gioi-thieu-vivaage`) luôn `INSERT OR REPLACE` và publish ngay.
-
-Cadence seed: **1 ngày / bài**. `INSERT OR IGNORE` không ghi đè bài cron đã publish (trừ intro).
+- Intro `gioi-thieu-vivaage` và **advisor batch** (6 bài): `INSERT OR REPLACE`, publish ngay
+- Bài khác: `INSERT OR IGNORE` (không ghi đè bài cron đã publish)
 
 ## Admin
 
-- `GET /api/v1/admin/blog/schedule` — xem lịch gần đây
-- `POST /api/v1/admin/blog/run-schedule` — chạy cùng job với cron (thủ công)
-
-## Kiểm thử local
-
-```bash
-pnpm test
-# với wrangler dev --test-scheduled:
-curl "http://localhost:8787/cdn-cgi/handler/scheduled?format=json"
-curl -s http://localhost:8787/sitemap.xml | head
-curl -s http://localhost:8787/feed.xml | head
-```
+- `GET /api/v1/admin/blog/schedule`
+- `POST /api/v1/admin/blog/run-schedule`

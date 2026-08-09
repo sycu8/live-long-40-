@@ -7,6 +7,10 @@ export type BlogEditorialPost = {
   theme: BlogTheme | string;
   minutes: number;
   body: string;
+  /** Official registry ids from shared/content/official-sources.ts */
+  sourceIds?: string[];
+  coverAlt?: string;
+  coverImageKey?: string | null;
 };
 
 export type BlogDailyJobResult = {

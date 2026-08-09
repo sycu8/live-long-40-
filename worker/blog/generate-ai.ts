@@ -1,25 +1,33 @@
 import {
   BLOG_AUTHOR_DEFAULT,
+  BLOG_MIN_WORDS,
   BLOG_THEMES,
+  countBlogWords,
   type BlogTheme,
 } from "@shared/constants/blog";
+import {
+  defaultSourceIdsForTheme,
+  resolveBlogSources,
+} from "@shared/content/blog-theme-sources";
+import { OFFICIAL_SOURCES } from "@shared/content/official-sources";
 import { createId, nowIso } from "@shared/utils/id";
 import type { Env } from "../env";
+import { generateAndStoreBlogCover } from "./images";
 import type { BlogEditorialPost } from "./types";
 
 const DISCLAIMER = `
 
 ---
 
-*Bài viết động viên của VivaAge. Không thay lời bác sĩ, không phải tư vấn tiền bạc hay pháp lý.*
+*Bài viết giáo dục – động viên của VivaAge, viết ở góc nhìn tư vấn viên hỗ trợ người lớn tuổi. Không thay lời bác sĩ, không phải tư vấn đầu tư hay pháp lý cá nhân. Hãy đối chiếu nguồn chính thống bên dưới và hỏi cơ sở y tế khi cần quyết định cho bản thân.*
 `;
 
-function themeForDate(isoDate: string): BlogTheme {
+function themeForDate(isoDate: string, slot = 0): BlogTheme {
   const day = Number(isoDate.replace(/-/g, "")) || 0;
-  return BLOG_THEMES[day % BLOG_THEMES.length]!;
+  return BLOG_THEMES[(day + slot) % BLOG_THEMES.length]!;
 }
 
-function slugifyTitle(title: string, isoDate: string): string {
+function slugifyTitle(title: string, isoDate: string, slot = 0): string {
   const base = title
     .toLowerCase()
     .normalize("NFD")
@@ -27,8 +35,8 @@ function slugifyTitle(title: string, isoDate: string): string {
     .replace(/đ/g, "d")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 60);
-  return `${base || "dong-vien"}-${isoDate}`;
+    .slice(0, 50);
+  return `${base || "dong-vien"}-${isoDate}${slot ? `-b${slot + 1}` : ""}`;
 }
 
 function parseJsonObject(text: string): Record<string, unknown> | null {
@@ -41,30 +49,50 @@ function parseJsonObject(text: string): Record<string, unknown> | null {
   }
 }
 
+function allowlistForPrompt(theme: BlogTheme): string {
+  const preferred = defaultSourceIdsForTheme(theme);
+  const rows = OFFICIAL_SOURCES.filter((s) => preferred.includes(s.id));
+  return rows
+    .map((s) => `- ${s.id}: ${s.title} (${s.url})`)
+    .join("\n");
+}
+
 /**
- * Draft one motivational editorial post for a calendar day when the bank is empty.
- * Educational tone only — no diagnosis, no investment advice.
+ * Draft one advisory editorial post (professional counselor tone for older adults).
+ * Attaches official source ids + optional Workers AI cover image.
  */
 export async function generateEditorialPostWithAi(
   env: Env,
   isoDate: string,
+  slot = 0,
 ): Promise<BlogEditorialPost | null> {
   if (!env.AI) return null;
 
-  const theme = themeForDate(isoDate);
+  const theme = themeForDate(isoDate, slot);
   const themeHint: Record<BlogTheme, string> = {
-    "tinh-than": "tinh thần, hy vọng, giảm tiêu cực",
-    "thoi-quen": "thói quen nhỏ đều đặn",
-    "suc-khoe": "chăm sóc sức khỏe dịu dàng (không chẩn đoán)",
-    "tai-chinh": "lo liệu tiền bạc bình tĩnh (không tư vấn đầu tư)",
+    "tinh-than": "tinh thần, thích nghi, giảm lo âu (không trị liệu lâm sàng)",
+    "thoi-quen": "thói quen nhỏ đều đặn, kỷ luật dịu dàng",
+    "suc-khoe": "chăm sóc sức khỏe chủ động (không chẩn đoán, không kê đơn)",
+    "tai-chinh": "lo liệu tiền bạc bình tĩnh (không tư vấn đầu tư sản phẩm)",
     "cham-soc": "chăm sóc người thân và an toàn tại nhà",
   };
 
-  const prompt = `Bạn là biên tập viên Góc động viên của VivaAge (người Việt ngoài 40 tuổi).
-Viết MỘT bài tiếng Việt ấm áp, dễ hiểu, chủ đề: ${themeHint[theme]}.
-Tuyệt đối không chẩn đoán bệnh, không kê đơn, không tư vấn đầu tư/pháp lý.
+  const prompt = `Bạn là chuyên viên tư vấn giáo dục sức khỏe cộng đồng / coach chuẩn bị tuổi già của VivaAge, viết cho người Việt ngoài 40–65 tuổi và người đang chăm sóc cha mẹ lớn tuổi.
+Giọng: chuyên nghiệp, ấm, rõ ràng, không hù dọa, không dùng tiếng lóng. Thông tin phải chính xác trong phạm vi giáo dục phổ thông.
+Chủ đề: ${themeHint[theme]}.
+Tuyệt đối không chẩn đoán bệnh, không kê đơn, không tư vấn đầu tư/pháp lý cá nhân.
+
+Yêu cầu bắt buộc:
+- body markdown tiếng Việt, tối thiểu ${BLOG_MIN_WORDS} từ (đếm theo khoảng trắng), khuyến nghị 450–700 từ
+- có ít nhất 3 mục ## 
+- nêu rõ giới hạn của bài (khi nào cần gặp bác sĩ / cơ quan có thẩm quyền)
+- chèn ít nhất 2 liên kết nội bộ markdown trong body, chọn từ:
+  [đánh giá sẵn sàng](/danh-gia), [kế hoạch 30 ngày](/ke-hoach), [thư viện](/thu-vien), [Hỏi VivaAge](/hoi), [Góc động viên](/blog)
+- chọn 1–3 sourceIds CHỈ từ danh sách sau:
+${allowlistForPrompt(theme)}
+
 Trả về ĐÚNG một JSON (không markdown ngoài JSON):
-{"title":"...","excerpt":"1-2 câu","minutes":5,"body":"markdown với ## headings, 400-700 từ"}`;
+{"title":"...","excerpt":"1-2 câu","minutes":8,"sourceIds":["..."],"body":"markdown"}`;
 
   const model = "@cf/meta/llama-3.1-8b-instruct";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,11 +104,15 @@ Trả về ĐÚNG một JSON (không markdown ngoài JSON):
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = await ai.run(model, {
       messages: [
-        { role: "system", content: "Chỉ trả JSON hợp lệ. Tiếng Việt tự nhiên." },
+        {
+          role: "system",
+          content:
+            "Chỉ trả JSON hợp lệ. Tiếng Việt tự nhiên, chính xác, góc nhìn tư vấn giáo dục người lớn tuổi.",
+        },
         { role: "user", content: prompt },
       ],
       stream: false,
-      max_tokens: 1800,
+      max_tokens: 3200,
     });
     const text =
       typeof response?.response === "string"
@@ -92,21 +124,47 @@ Trả về ĐÚNG một JSON (không markdown ngoài JSON):
     if (!parsed) return null;
     const title = String(parsed.title ?? "").trim();
     const excerpt = String(parsed.excerpt ?? "").trim();
-    const body = String(parsed.body ?? "").trim();
+    let body = String(parsed.body ?? "").trim();
     const minutes = Math.min(
-      12,
-      Math.max(4, Number(parsed.minutes) || 6),
+      14,
+      Math.max(7, Number(parsed.minutes) || 9),
     );
-    if (title.length < 12 || body.length < 200 || excerpt.length < 20) {
-      return null;
+    const rawIds = Array.isArray(parsed.sourceIds)
+      ? parsed.sourceIds.map((x) => String(x))
+      : defaultSourceIdsForTheme(theme);
+    let sourceIds = resolveBlogSources(rawIds).map((s) => s.id);
+    if (sourceIds.length === 0) {
+      sourceIds = defaultSourceIdsForTheme(theme);
     }
+
+    if (title.length < 12 || excerpt.length < 20) return null;
+    if (countBlogWords(body) < BLOG_MIN_WORDS) {
+      // Soft pad with structured closer rather than publishing a thin post.
+      body = `${body}
+
+## Việc nhỏ bạn có thể làm tuần này
+
+1. Chọn **một** việc vừa sức liên quan chủ đề bài viết và làm trong 20 phút.
+2. Ghi lại cảm giác sau khi làm — não bộ cần bằng chứng tiến bộ.
+3. Nếu còn băn khoăn chuyên môn, hãy dùng [Hỏi VivaAge](/hoi) (có nguồn) hoặc đặt lịch với bác sĩ / cơ quan có thẩm quyền.
+
+Bạn cũng có thể [kiểm tra mức độ sẵn sàng](/danh-gia) hoặc xem [kế hoạch 30 ngày](/ke-hoach) để biến ý tưởng thành việc nhỏ đều đặn.`;
+    }
+    if (countBlogWords(body) < BLOG_MIN_WORDS) return null;
+
+    const slug = slugifyTitle(title, isoDate, slot);
+    const cover = await generateAndStoreBlogCover(env, slug, title, theme);
+
     return {
-      slug: slugifyTitle(title, isoDate),
+      slug,
       title,
       excerpt,
       theme,
       minutes,
+      sourceIds,
       body: `${body.trim()}${DISCLAIMER}`,
+      coverImageKey: cover?.key ?? null,
+      coverAlt: cover?.alt,
     };
   } catch (err) {
     console.error(
@@ -128,14 +186,17 @@ export async function insertScheduledPost(
 ): Promise<boolean> {
   const now = nowIso();
   const id = createId("blog");
-  const publishedAt = status === "published" ? `${scheduledFor}T02:00:00.000Z` : null;
+  const publishedAt =
+    status === "published" ? `${scheduledFor}T02:00:00.000Z` : null;
+  const sourcesJson = JSON.stringify(post.sourceIds ?? []);
   try {
     await db
       .prepare(
         `INSERT INTO blog_posts (
           id, slug, title, excerpt, theme, reading_minutes, body_markdown,
-          status, scheduled_for, published_at, author_name, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          status, scheduled_for, published_at, author_name, created_at, updated_at,
+          sources_json, cover_image_key, cover_alt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         id,
@@ -151,6 +212,9 @@ export async function insertScheduledPost(
         BLOG_AUTHOR_DEFAULT,
         now,
         now,
+        sourcesJson,
+        post.coverImageKey ?? null,
+        post.coverAlt ?? null,
       )
       .run();
     return true;
