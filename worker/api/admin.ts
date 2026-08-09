@@ -5,7 +5,10 @@ import {
   AdminApproveSchema,
 } from "@shared/schemas/api";
 import { createId, nowIso, sha256Hex } from "@shared/utils/id";
-import { BLOG_CADENCE_DAYS } from "@shared/constants/blog";
+import {
+  BLOG_CADENCE_DAYS,
+  BLOG_POSTS_PER_DAY,
+} from "@shared/constants/blog";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
 import { createSourceVersionWithChunks } from "../knowledge/ingest";
@@ -409,6 +412,7 @@ adminRoutes.get("/blog/schedule", async (c) => {
   ).all();
   return c.json({
     cadenceDays: BLOG_CADENCE_DAYS,
+    postsPerDay: BLOG_POSTS_PER_DAY,
     items: rows.results ?? [],
   });
 });

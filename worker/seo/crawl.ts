@@ -291,7 +291,7 @@ crawlRoutes.get("/feed.xml", async (c) => {
   const feed = `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>VivaAge — Góc động viên</title>
-  <subtitle>Bài viết động viên mỗi ngày cho người Việt ngoài 40 tuổi. Cadence: ${BLOG_CADENCE_DAYS} ngày/bài.</subtitle>
+  <subtitle>Bài tư vấn giáo dục cho người Việt ngoài 40 tuổi (≥2 bài/ngày, có nguồn chính thống).</subtitle>
   <link href="${xmlEscape(base)}/blog" rel="alternate" type="text/html"/>
   <link href="${xmlEscape(base)}/feed.xml" rel="self" type="application/atom+xml"/>
   <id>${xmlEscape(base)}/feed.xml</id>

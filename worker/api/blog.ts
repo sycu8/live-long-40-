@@ -1,8 +1,13 @@
 import { Hono } from "hono";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
-import { BLOG_CADENCE_DAYS } from "@shared/constants/blog";
+import {
+  BLOG_CADENCE_DAYS,
+  BLOG_POSTS_PER_DAY,
+} from "@shared/constants/blog";
+import { resolveBlogSources } from "@shared/content/blog-theme-sources";
 import { publishDueBlogPosts } from "../blog/schedule";
+import { readBlogCover } from "../blog/images";
 
 export { publishDueBlogPosts } from "../blog/schedule";
 
@@ -20,12 +25,48 @@ export function themeLabel(theme: string): string {
   return THEME_LABELS[theme] ?? theme;
 }
 
+function parseSourceIds(raw: unknown): string[] {
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function coverUrlFor(key: string | null | undefined, slug: string): string | null {
+  if (!key) return null;
+  return `/api/v1/blog/covers/${encodeURIComponent(slug)}`;
+}
+
+blogRoutes.get("/blog/covers/:slug", async (c) => {
+  const slug = c.req.param("slug");
+  const row = await c.env.DB.prepare(
+    `SELECT cover_image_key FROM blog_posts WHERE slug = ?`,
+  )
+    .bind(slug)
+    .first<{ cover_image_key: string | null }>();
+  if (!row?.cover_image_key) {
+    return jsonError(c, 404, "NOT_FOUND", "Không có ảnh minh họa.");
+  }
+  const obj = await readBlogCover(c.env, row.cover_image_key);
+  if (!obj) {
+    return jsonError(c, 404, "NOT_FOUND", "Không đọc được ảnh minh họa.");
+  }
+  const headers = new Headers();
+  headers.set("Content-Type", obj.httpMetadata?.contentType || "image/png");
+  headers.set("Cache-Control", "public, max-age=86400");
+  return new Response(obj.body, { headers });
+});
+
 blogRoutes.get("/blog", async (c) => {
   await publishDueBlogPosts(c.env.DB);
   const theme = c.req.query("theme");
   const rows = theme
     ? await c.env.DB.prepare(
-        `SELECT slug, title, excerpt, theme, reading_minutes, published_at, author_name
+        `SELECT slug, title, excerpt, theme, reading_minutes, published_at, author_name,
+                cover_image_key, cover_alt, sources_json
          FROM blog_posts
          WHERE status = 'published' AND theme = ?
          ORDER BY published_at DESC`,
@@ -33,7 +74,8 @@ blogRoutes.get("/blog", async (c) => {
         .bind(theme)
         .all()
     : await c.env.DB.prepare(
-        `SELECT slug, title, excerpt, theme, reading_minutes, published_at, author_name
+        `SELECT slug, title, excerpt, theme, reading_minutes, published_at, author_name,
+                cover_image_key, cover_alt, sources_json
          FROM blog_posts
          WHERE status = 'published'
          ORDER BY published_at DESC`,
@@ -41,6 +83,7 @@ blogRoutes.get("/blog", async (c) => {
 
   return c.json({
     cadenceDays: BLOG_CADENCE_DAYS,
+    postsPerDay: BLOG_POSTS_PER_DAY,
     themes: THEME_LABELS,
     items: (rows.results ?? []).map((row) => ({
       slug: row.slug,
@@ -51,6 +94,12 @@ blogRoutes.get("/blog", async (c) => {
       readingMinutes: row.reading_minutes,
       publishedAt: row.published_at,
       authorName: row.author_name,
+      coverImageUrl: coverUrlFor(
+        row.cover_image_key as string | null,
+        String(row.slug),
+      ),
+      coverAlt: row.cover_alt ?? null,
+      sourceCount: parseSourceIds(row.sources_json).length,
     })),
   });
 });
@@ -60,7 +109,8 @@ blogRoutes.get("/blog/:slug", async (c) => {
   const slug = c.req.param("slug");
   const row = await c.env.DB.prepare(
     `SELECT slug, title, excerpt, theme, reading_minutes, body_markdown,
-            published_at, author_name, scheduled_for
+            published_at, author_name, scheduled_for, sources_json,
+            cover_image_key, cover_alt
      FROM blog_posts
      WHERE slug = ? AND status = 'published'`,
   )
@@ -74,6 +124,9 @@ blogRoutes.get("/blog/:slug", async (c) => {
       body_markdown: string;
       published_at: string;
       author_name: string;
+      sources_json: string | null;
+      cover_image_key: string | null;
+      cover_alt: string | null;
     }>();
 
   if (!row) {
@@ -81,14 +134,26 @@ blogRoutes.get("/blog/:slug", async (c) => {
   }
 
   const related = await c.env.DB.prepare(
-    `SELECT slug, title, excerpt, theme, reading_minutes, published_at
+    `SELECT slug, title, excerpt, theme, reading_minutes, published_at, cover_image_key
      FROM blog_posts
      WHERE status = 'published' AND theme = ? AND slug != ?
      ORDER BY published_at DESC
-     LIMIT 3`,
+     LIMIT 4`,
   )
     .bind(row.theme, slug)
     .all();
+
+  const sources = resolveBlogSources(parseSourceIds(row.sources_json)).map(
+    (s) => ({
+      id: s.id,
+      title: s.title,
+      issuer: s.issuer,
+      url: s.url,
+      publicationDate: s.publicationDate,
+      snippet: s.snippet,
+      trustTier: s.trustTier,
+    }),
+  );
 
   return c.json({
     item: {
@@ -101,6 +166,9 @@ blogRoutes.get("/blog/:slug", async (c) => {
       bodyMarkdown: row.body_markdown,
       publishedAt: row.published_at,
       authorName: row.author_name,
+      coverImageUrl: coverUrlFor(row.cover_image_key, row.slug),
+      coverAlt: row.cover_alt,
+      sources,
     },
     related: (related.results ?? []).map((r) => ({
       slug: r.slug,
@@ -109,6 +177,44 @@ blogRoutes.get("/blog/:slug", async (c) => {
       themeLabel: themeLabel(String(r.theme)),
       readingMinutes: r.reading_minutes,
       publishedAt: r.published_at,
+      coverImageUrl: coverUrlFor(
+        r.cover_image_key as string | null,
+        String(r.slug),
+      ),
     })),
+    backlinks: themeBacklinks(row.theme),
   });
 });
+
+function themeBacklinks(theme: string) {
+  const common = [
+    { to: "/danh-gia", label: "Kiểm tra mức độ sẵn sàng" },
+    { to: "/ke-hoach", label: "Xem kế hoạch 30 ngày" },
+    { to: "/hoi", label: "Hỏi VivaAge (có nguồn)" },
+    { to: "/blog", label: "Tất cả bài Góc động viên" },
+  ];
+  const byTheme: Record<string, { to: string; label: string }> = {
+    "suc-khoe": {
+      to: "/thu-vien?category=suc-khoe-trung-nien",
+      label: "Thư viện: sức khỏe trung niên",
+    },
+    "tai-chinh": {
+      to: "/thu-vien?category=chuan-bi-tai-chinh",
+      label: "Thư viện: chuẩn bị tài chính",
+    },
+    "cham-soc": {
+      to: "/thu-vien?category=cham-soc-cha-me",
+      label: "Thư viện: chăm sóc người thân",
+    },
+    "tinh-than": {
+      to: "/thu-vien?category=tri-nho-tinh-than",
+      label: "Thư viện: trí nhớ & tinh thần",
+    },
+    "thoi-quen": {
+      to: "/thu-vien",
+      label: "Thư viện bài học ngắn",
+    },
+  };
+  const extra = byTheme[theme];
+  return extra ? [extra, ...common] : common;
+}

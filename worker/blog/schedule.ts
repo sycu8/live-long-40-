@@ -1,14 +1,16 @@
 import {
   BLOG_CADENCE_DAYS,
+  BLOG_POSTS_PER_DAY,
   BLOG_SCHEDULE_HORIZON_DAYS,
 } from "@shared/constants/blog";
-import { nowIso } from "@shared/utils/id";
+import { defaultSourceIdsForTheme } from "@shared/content/blog-theme-sources";
 import type { Env } from "../env";
 import bankJson from "@shared/content/blog-editorial-bank.json" with { type: "json" };
 import {
   generateEditorialPostWithAi,
   insertScheduledPost,
 } from "./generate-ai";
+import { generateAndStoreBlogCover } from "./images";
 import type { BlogDailyJobResult, BlogEditorialPost } from "./types";
 
 const EDITORIAL_BANK = bankJson as BlogEditorialPost[];
@@ -26,7 +28,7 @@ function addUtcDays(isoDate: string, days: number): string {
 /** Publish scheduled posts whose scheduled_for date has arrived. */
 export async function publishDueBlogPosts(db: D1Database): Promise<number> {
   const today = utcDateString(new Date());
-  const now = nowIso();
+  const now = new Date().toISOString();
   const result = await db
     .prepare(
       `UPDATE blog_posts
@@ -45,14 +47,19 @@ async function existingSlugs(db: D1Database): Promise<Set<string>> {
   return new Set((rows.results ?? []).map((r) => r.slug));
 }
 
-async function datesWithPosts(db: D1Database): Promise<Set<string>> {
+async function postCountByDate(db: D1Database): Promise<Map<string, number>> {
   const rows = await db
     .prepare(
-      `SELECT scheduled_for AS d FROM blog_posts
-       WHERE status IN ('scheduled', 'published')`,
+      `SELECT substr(scheduled_for, 1, 10) AS d, COUNT(*) AS c FROM blog_posts
+       WHERE status IN ('scheduled', 'published')
+       GROUP BY substr(scheduled_for, 1, 10)`,
     )
-    .all<{ d: string }>();
-  return new Set((rows.results ?? []).map((r) => r.d.slice(0, 10)));
+    .all<{ d: string; c: number }>();
+  const map = new Map<string, number>();
+  for (const row of rows.results ?? []) {
+    map.set(row.d.slice(0, 10), Number(row.c) || 0);
+  }
+  return map;
 }
 
 function nextBankPost(
@@ -64,15 +71,21 @@ function nextBankPost(
     const post = EDITORIAL_BANK[idx]!;
     if (!used.has(post.slug)) {
       cursor.index = idx + 1;
-      return post;
+      return {
+        ...post,
+        sourceIds:
+          post.sourceIds?.length
+            ? post.sourceIds
+            : defaultSourceIdsForTheme(String(post.theme)),
+      };
     }
   }
   return null;
 }
 
 /**
- * Ensure one blog post is scheduled (or published) for each day in the horizon.
- * Prefers unused editorial-bank drafts; falls back to Workers AI when the bank is exhausted.
+ * Ensure at least BLOG_POSTS_PER_DAY posts exist for each day in the horizon.
+ * Prefers unused editorial-bank drafts; falls back to Workers AI (+ cover image).
  */
 export async function ensureDailyBlogSchedule(
   env: Env,
@@ -80,7 +93,7 @@ export async function ensureDailyBlogSchedule(
 ): Promise<Omit<BlogDailyJobResult, "published">> {
   const horizon = options?.horizonDays ?? BLOG_SCHEDULE_HORIZON_DAYS;
   const today = options?.today ?? utcDateString(new Date());
-  const occupied = await datesWithPosts(env.DB);
+  const counts = await postCountByDate(env.DB);
   const usedSlugs = await existingSlugs(env.DB);
   const cursor = { index: 0 };
 
@@ -90,37 +103,54 @@ export async function ensureDailyBlogSchedule(
 
   for (let offset = 0; offset <= horizon; offset += BLOG_CADENCE_DAYS) {
     const day = addUtcDays(today, offset);
-    if (occupied.has(day)) {
-      skipped += 1;
-      continue;
-    }
+    let have = counts.get(day) ?? 0;
 
-    let post = nextBankPost(usedSlugs, cursor);
-    let fromAi = false;
-    if (!post) {
-      post = await generateEditorialPostWithAi(env, day);
-      fromAi = Boolean(post);
-      if (post && usedSlugs.has(post.slug)) {
-        post = {
-          ...post,
-          slug: `${post.slug}-${createShortSuffix()}`,
-        };
+    while (have < BLOG_POSTS_PER_DAY) {
+      const slot = have;
+      let post = nextBankPost(usedSlugs, cursor);
+      let fromAi = false;
+      if (!post) {
+        post = await generateEditorialPostWithAi(env, day, slot);
+        fromAi = Boolean(post);
+        if (post && usedSlugs.has(post.slug)) {
+          post = {
+            ...post,
+            slug: `${post.slug}-${createShortSuffix()}`,
+          };
+        }
+      } else if (!post.coverImageKey && env.AI && env.SOURCES) {
+        const cover = await generateAndStoreBlogCover(
+          env,
+          post.slug,
+          post.title,
+          String(post.theme),
+        );
+        if (cover) {
+          post = {
+            ...post,
+            coverImageKey: cover.key,
+            coverAlt: cover.alt,
+          };
+        }
       }
-    }
-    if (!post) {
-      skipped += 1;
-      continue;
-    }
 
-    const status = day <= today ? "published" : "scheduled";
-    const ok = await insertScheduledPost(env.DB, post, day, status);
-    if (ok) {
-      usedSlugs.add(post.slug);
-      occupied.add(day);
-      scheduled += 1;
-      if (fromAi) aiGenerated += 1;
-    } else {
-      skipped += 1;
+      if (!post) {
+        skipped += 1;
+        break;
+      }
+
+      const status = day <= today ? "published" : "scheduled";
+      const ok = await insertScheduledPost(env.DB, post, day, status);
+      if (ok) {
+        usedSlugs.add(post.slug);
+        have += 1;
+        counts.set(day, have);
+        scheduled += 1;
+        if (fromAi) aiGenerated += 1;
+      } else {
+        skipped += 1;
+        break;
+      }
     }
   }
 

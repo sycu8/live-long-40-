@@ -54,11 +54,16 @@ export const securityHeaders = createMiddleware(async (c, next) => {
     path === "/mcp" ||
     path.startsWith("/mcp/") ||
     path.startsWith("/.well-known/");
+  const isBlogCover = path.startsWith("/api/v1/blog/covers/");
   if (isHashedAsset) {
     c.res.headers.set(
       "Cache-Control",
       "public, max-age=31536000, immutable",
     );
+  } else if (isBlogCover) {
+    if (!c.res.headers.has("Cache-Control")) {
+      c.res.headers.set("Cache-Control", "public, max-age=86400");
+    }
   } else if (!isPublicDiscovery) {
     c.res.headers.set("Cache-Control", "no-store");
   }
