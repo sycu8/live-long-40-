@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
+  agentMapDirective,
+  aiCatalogDocument,
   apiCatalogLinkset,
   homepageLinkHeaders,
   mcpServerCard,
@@ -17,6 +21,40 @@ describe("agent discovery documents", () => {
     expect(links.some((l) => l.includes('rel="api-catalog"'))).toBe(true);
     expect(links.some((l) => l.includes("/openapi.json"))).toBe(true);
     expect(links.some((l) => l.includes("/auth.md"))).toBe(true);
+    expect(links.some((l) => l.includes('rel="ai-catalog"'))).toBe(true);
+    expect(links.some((l) => l.includes("/.well-known/ai-catalog.json"))).toBe(true);
+    expect(links.some((l) => l.includes('rel="ard"'))).toBe(true);
+  });
+
+  it("points robots.txt Agentmap at the ARD manifest", () => {
+    expect(agentMapDirective(ORIGIN)).toBe(
+      `Agentmap: ${ORIGIN}/.well-known/ai-catalog.json`,
+    );
+  });
+
+  it("builds an ARD ai-catalog manifest", () => {
+    const doc = aiCatalogDocument(ORIGIN);
+    expect(doc.specVersion).toBe("1.0");
+    expect(doc.host.displayName).toBe("VivaAge");
+    expect(doc.host.identifier).toBe("did:web:example.com");
+    expect(doc.entries.length).toBeGreaterThanOrEqual(2);
+
+    for (const entry of doc.entries) {
+      expect(entry.identifier).toMatch(/^urn:air:example\.com:[a-z0-9-]+:[a-z0-9-]+$/);
+      expect(entry.displayName.length).toBeGreaterThan(0);
+      expect(entry.type).toMatch(/^[a-z]+\/[a-z0-9][a-z0-9.+-]*$/);
+      expect(entry.url.startsWith(`${ORIGIN}/`)).toBe(true);
+      expect("data" in entry).toBe(false);
+      expect(entry.representativeQueries.length).toBeGreaterThanOrEqual(2);
+      expect(entry.representativeQueries.length).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it("advertises the catalog from the homepage HTML head", () => {
+    const html = readFileSync(resolve("index.html"), "utf8");
+    expect(html).toContain('rel="ai-catalog"');
+    expect(html).toContain("/.well-known/ai-catalog.json");
+    expect(html).toContain('rel="ard"');
   });
 
   it("builds api-catalog linkset+json shape", () => {

@@ -29,7 +29,8 @@
     "cf:dev": "vite",
     "deploy:dry-run": "pnpm build && wrangler deploy --dry-run",
     "deploy:preview": "node scripts/deploy-preview.mjs",
-    "deploy:ci": "node scripts/ci-deploy.mjs"
+    "deploy:ci": "node scripts/ci-deploy.mjs",
+    "dns:aid": "node scripts/publish-dns-aid.mjs"
   },
   "dependencies": {
     "@fontsource/be-vietnam-pro": "^5.3.0",

@@ -27,8 +27,16 @@ export function homepageLinkHeaders(origin: string): string[] {
     `<${o}/.well-known/oauth-protected-resource>; rel="oauth-protected-resource"`,
     `<${o}/.well-known/mcp/server-card.json>; rel="mcp-server-card"; type="application/json"`,
     `<${o}/.well-known/agent-skills/index.json>; rel="agent-skills"; type="application/json"`,
+    `<${o}/.well-known/ai-catalog.json>; rel="ai-catalog"; type="application/json"`,
+    `<${o}/.well-known/ard.json>; rel="ard"; type="application/json"`,
     `<${o}/sitemap.xml>; rel="describedby"; type="application/xml"`,
   ];
+}
+
+/** robots.txt Agentmap directive (ARD §5.1) pointing at the capability manifest. */
+export function agentMapDirective(origin: string): string {
+  const o = origin.replace(/\/$/, "");
+  return `Agentmap: ${o}/.well-known/ai-catalog.json`;
 }
 
 export function applyHomepageLinkHeaders(res: Response, origin: string): Response {
@@ -52,12 +60,22 @@ export function jsonPublic(
   body: unknown,
   contentType = "application/json; charset=utf-8",
   maxAge = 3600,
+  extraHeaders?: Record<string, string>,
 ) {
   return c.body(JSON.stringify(body, null, 2), 200, {
     "Content-Type": contentType,
     "Cache-Control": `public, max-age=${maxAge}`,
+    ...extraHeaders,
   });
 }
+
+/** CORS for the public ARD manifest. Scanners require a wildcard origin. */
+export const ARD_CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Accept, Content-Type",
+  "Access-Control-Max-Age": "86400",
+};
 
 export const APP_VERSION = "0.1.0";
 
@@ -133,8 +151,7 @@ export function openApiDocument(origin: string) {
       "/api/v1/blog": {
         get: {
           operationId: "listBlog",
-          summary:
-            "List published posts (paginated 6–9/page; featured hero on page 1)",
+          summary: "List published posts (paginated 6–9/page; featured hero on page 1)",
           parameters: [
             {
               name: "page",
@@ -154,8 +171,7 @@ export function openApiDocument(origin: string) {
           ],
           responses: {
             "200": {
-              description:
-                "featured + items, page, pageSize, total, totalPages",
+              description: "featured + items, page, pageSize, total, totalPages",
             },
           },
         },
@@ -215,12 +231,7 @@ export function oauthProtectedResource(origin: string) {
   return {
     resource: `${o}/`,
     authorization_servers: [`${o}/`],
-    scopes_supported: [
-      "public:read",
-      "session:anonymous",
-      "chat:ask",
-      "assessment:run",
-    ],
+    scopes_supported: ["public:read", "session:anonymous", "chat:ask", "assessment:run"],
     bearer_methods_supported: ["header", "cookie"],
     resource_documentation: `${o}/auth.md`,
   };
@@ -234,15 +245,13 @@ export function oauthAuthorizationServer(origin: string) {
     token_endpoint: `${o}/api/v1/session`,
     registration_endpoint: `${o}/api/v1/session`,
     jwks_uri: `${o}/.well-known/jwks.json`,
-    grant_types_supported: ["urn:ietf:params:oauth:grant-type:device_code", "client_credentials"],
+    grant_types_supported: [
+      "urn:ietf:params:oauth:grant-type:device_code",
+      "client_credentials",
+    ],
     response_types_supported: ["token"],
     token_endpoint_auth_methods_supported: ["none"],
-    scopes_supported: [
-      "public:read",
-      "session:anonymous",
-      "chat:ask",
-      "assessment:run",
-    ],
+    scopes_supported: ["public:read", "session:anonymous", "chat:ask", "assessment:run"],
     service_documentation: `${o}/auth.md`,
     code_challenge_methods_supported: ["S256"],
     agent_auth: {
@@ -286,11 +295,86 @@ export function mcpServerCard(origin: string) {
       },
       {
         name: "ask_vivaage",
-        description: "Ask an educational question; returns a grounded answer when sources exist.",
+        description:
+          "Ask an educational question; returns a grounded answer when sources exist.",
       },
       {
         name: "get_meta",
         description: "Product disclaimer, versions, and example questions.",
+      },
+    ],
+  };
+}
+
+/**
+ * ARD / ai-catalog capability manifest.
+ * specVersion is the ai-catalog data model (1.0), not the ARD spec version.
+ * Each entry has exactly one of url or data (ARD §4.3).
+ */
+export function aiCatalogDocument(origin: string) {
+  const o = origin.replace(/\/$/, "");
+  const host = new URL(o).hostname;
+  const urn = (namespace: string, name: string) => `urn:air:${host}:${namespace}:${name}`;
+
+  return {
+    specVersion: "1.0",
+    host: {
+      displayName: BRAND.name,
+      identifier: `did:web:${host}`,
+    },
+    entries: [
+      {
+        identifier: urn("server", "vivaage"),
+        displayName: "VivaAge MCP Server",
+        description:
+          "Educational MCP tools for library lessons, product meta, and grounded Q&A.",
+        type: "application/mcp-server-card+json",
+        url: `${o}/.well-known/mcp/server-card.json`,
+        capabilities: ["list_library", "ask_vivaage", "get_meta"],
+        representativeQueries: [
+          "list VivaAge library lessons about healthy aging",
+          "ask an educational question about preparing for later life",
+          "what tools does the VivaAge MCP server expose",
+        ],
+      },
+      {
+        identifier: urn("api", "public"),
+        displayName: "VivaAge Public HTTP API",
+        description:
+          "OpenAPI description of the public educational API: library, blog, assessment, and chat.",
+        type: "application/openapi+json",
+        url: `${o}/openapi.json`,
+        capabilities: ["library", "blog", "assessment", "chat"],
+        representativeQueries: [
+          "how do I list published VivaAge blog posts",
+          "what is the readiness assessment API",
+          "bootstrap an anonymous session for the public API",
+        ],
+      },
+      {
+        identifier: urn("skills", "index"),
+        displayName: "VivaAge Agent Skills",
+        description:
+          "Agent skills index for the VivaAge overview and anonymous-session auth skill.",
+        type: "application/agent-skills+json",
+        url: `${o}/.well-known/agent-skills/index.json`,
+        capabilities: ["vivaage-overview", "vivaage-auth"],
+        representativeQueries: [
+          "how should an agent authenticate to VivaAge",
+          "what can the VivaAge educational agent do",
+        ],
+      },
+      {
+        identifier: urn("catalog", "api"),
+        displayName: "VivaAge API Catalog",
+        description: "RFC 9727 linkset for the public API, docs, and health endpoint.",
+        type: "application/linkset+json",
+        url: `${o}/.well-known/api-catalog`,
+        capabilities: ["service-desc", "service-doc", "status"],
+        representativeQueries: [
+          "where is the OpenAPI description for VivaAge",
+          "find the health endpoint for the VivaAge API",
+        ],
       },
     ],
   };

@@ -13,11 +13,7 @@ import {
 
 const DEFAULT_OG = "/og-image.jpg";
 
-function upsertMeta(
-  attr: "name" | "property",
-  key: string,
-  content: string,
-) {
+function upsertMeta(attr: "name" | "property", key: string, content: string) {
   const selector = `meta[${attr}="${CSS.escape(key)}"]`;
   let el = document.head.querySelector(selector) as HTMLMetaElement | null;
   if (!el) {
@@ -83,8 +79,7 @@ function resolvePage(pathname: string): PageSeo {
     return {
       path: pathname,
       title: pageTitle("Kết quả đánh giá"),
-      description:
-        "Xem điểm sẵn sàng theo sức khỏe, tài chính và chăm sóc trên VivaAge.",
+      description: "Xem điểm sẵn sàng theo sức khỏe, tài chính và chăm sóc trên VivaAge.",
       noIndex: true,
     };
   }
@@ -99,9 +94,7 @@ function resolvePage(pathname: string): PageSeo {
 
 function isNoIndex(pathname: string, page: PageSeo): boolean {
   if (page.noIndex) return true;
-  return NOINDEX_ROUTES.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`),
-  );
+  return NOINDEX_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
 /**
@@ -172,6 +165,12 @@ export function DocumentHead({
     upsertLink("canonical", url);
     upsertLink("alternate", url, { hreflang: BRAND.language });
     upsertLink("alternate", url, { hreflang: "x-default" });
+    upsertLink("ai-catalog", absoluteUrl("/.well-known/ai-catalog.json"), {
+      type: "application/json",
+    });
+    upsertLink("ard", absoluteUrl("/.well-known/ard.json"), {
+      type: "application/json",
+    });
 
     if (pathname === "/") {
       upsertJsonLd("sa-jsonld", override?.jsonLd ?? homeJsonLdGraph());

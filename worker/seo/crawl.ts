@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { DEFAULT_PUBLIC_SITE_URL } from "@shared/constants/blog";
 import { INDEXABLE_ROUTES } from "@shared/brand";
 import type { Env, AppVariables } from "../env";
+import { agentMapDirective } from "../discovery/meta";
 import { themeLabel } from "../api/blog";
 import { publishDueBlogPosts } from "../blog/schedule";
 
@@ -142,10 +143,7 @@ export function buildSitemapUrls(input: {
   }
 
   for (const post of input.blogPosts) {
-    const lastmod = (post.published_at || post.updated_at || input.today).slice(
-      0,
-      10,
-    );
+    const lastmod = (post.published_at || post.updated_at || input.today).slice(0, 10);
     urls.push({
       path: `/blog/${post.slug}`,
       lastmod,
@@ -231,6 +229,7 @@ Disallow: /admin
 Disallow: /api/
 Content-Signal: ai-train=no, search=yes, ai-input=no
 
+${agentMapDirective(base)}
 Sitemap: ${base}/sitemap.xml
 `;
   return c.text(body, 200, {

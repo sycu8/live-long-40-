@@ -45,6 +45,7 @@ After registration, reuse the session cookie for subsequent API calls. Send the 
 - API catalog: {{SITE_URL}}/.well-known/api-catalog
 - OpenAPI: {{SITE_URL}}/openapi.json
 - MCP server card: {{SITE_URL}}/.well-known/mcp/server-card.json
+- AI catalog (ARD): {{SITE_URL}}/.well-known/ai-catalog.json
 
 ## Scopes
 
