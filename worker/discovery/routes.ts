@@ -1,8 +1,10 @@
 import { Hono } from "hono";
 import type { Env, AppVariables } from "../env";
 import {
+  aiCatalogDocument,
   apiCatalogLinkset,
   applyHomepageLinkHeaders,
+  ARD_CORS_HEADERS,
   jsonPublic,
   mcpServerCard,
   oauthAuthorizationServer,
@@ -32,9 +34,7 @@ discoveryRoutes.get("/openapi.json", (c) =>
 );
 
 discoveryRoutes.get("/llms.txt", (c) => servePlainTextAsset(c, "/llms.txt"));
-discoveryRoutes.get("/llms-full.txt", (c) =>
-  servePlainTextAsset(c, "/llms-full.txt"),
-);
+discoveryRoutes.get("/llms-full.txt", (c) => servePlainTextAsset(c, "/llms-full.txt"));
 
 discoveryRoutes.get("/auth.md", async (c) => {
   const origin = publicOrigin(c);
@@ -67,6 +67,24 @@ discoveryRoutes.get("/.well-known/api-catalog", (c) =>
 discoveryRoutes.get("/.well-known/oauth-protected-resource", (c) =>
   jsonPublic(c, oauthProtectedResource(publicOrigin(c))),
 );
+
+for (const catalogPath of [
+  "/.well-known/ai-catalog.json",
+  "/.well-known/ard.json",
+] as const) {
+  discoveryRoutes.get(catalogPath, (c) =>
+    jsonPublic(
+      c,
+      aiCatalogDocument(publicOrigin(c)),
+      "application/json; charset=utf-8",
+      3600,
+      ARD_CORS_HEADERS,
+    ),
+  );
+  discoveryRoutes.options(catalogPath, () => {
+    return new Response(null, { status: 204, headers: ARD_CORS_HEADERS });
+  });
+}
 
 discoveryRoutes.get("/.well-known/oauth-authorization-server", (c) =>
   jsonPublic(c, oauthAuthorizationServer(publicOrigin(c))),
@@ -127,10 +145,7 @@ discoveryRoutes.get("/.well-known/agent-skills/:skill/SKILL.md", async (c) => {
 discoveryRoutes.all("/mcp", (c) => handleMcpRequest(c));
 discoveryRoutes.all("/mcp/*", (c) => handleMcpRequest(c));
 
-async function servePlainTextAsset(
-  c: Parameters<typeof publicOrigin>[0],
-  path: string,
-) {
+async function servePlainTextAsset(c: Parameters<typeof publicOrigin>[0], path: string) {
   if (!c.env.ASSETS) {
     return c.text("ASSETS binding missing", 500);
   }

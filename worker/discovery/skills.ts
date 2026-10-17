@@ -2,10 +2,7 @@
  * Agent skills discovery helpers — digests computed from bundled markdown.
  */
 
-const SKILLS: Record<
-  string,
-  { name: string; description: string; markdown: string }
-> = {
+const SKILLS: Record<string, { name: string; description: string; markdown: string }> = {
   "vivaage-overview": {
     name: "vivaage-overview",
     description:
@@ -25,6 +22,7 @@ Help users prepare for later life with educational content — not medical or in
 - API catalog: \`/.well-known/api-catalog\`
 - Auth for agents: \`/auth.md\` (anonymous session)
 - MCP card: \`/.well-known/mcp/server-card.json\`
+- ARD catalog: \`/.well-known/ai-catalog.json\`
 
 ## Limits
 Do not diagnose, prescribe, or give personalized investment advice. Prefer official Vietnamese / WHO sources when answering.
@@ -57,9 +55,7 @@ No end-user OAuth login is required for public library, blog, meta, or assessmen
 async function sha256Hex(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest("SHA-256", data);
-  return [...new Uint8Array(digest)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export async function agentSkillsIndex(

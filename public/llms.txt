@@ -11,6 +11,7 @@ VivaAge provides education and planning tools only. It does not diagnose disease
 - [auth.md](https://song-an-40.sycu-lee.workers.dev/auth.md): How agents authenticate with anonymous sessions
 - [Agent skills index](https://song-an-40.sycu-lee.workers.dev/.well-known/agent-skills/index.json): Discoverable skills with SHA-256 digests
 - [MCP server card](https://song-an-40.sycu-lee.workers.dev/.well-known/mcp/server-card.json): Model Context Protocol entrypoint
+- [AI catalog](https://song-an-40.sycu-lee.workers.dev/.well-known/ai-catalog.json): ARD capability manifest (MCP, OpenAPI, skills, API catalog)
 - [Sitemap](https://song-an-40.sycu-lee.workers.dev/sitemap.xml): Crawlable product, library, and blog URLs
 - [llms-full.txt](https://song-an-40.sycu-lee.workers.dev/llms-full.txt): Expanded link list for larger context windows
 

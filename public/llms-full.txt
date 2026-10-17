@@ -11,6 +11,8 @@ Use this file when a larger context window is available. Prefer `/llms.txt` for 
 - [API catalog](https://song-an-40.sycu-lee.workers.dev/.well-known/api-catalog): RFC 9727 linkset (`application/linkset+json`)
 - [auth.md](https://song-an-40.sycu-lee.workers.dev/auth.md): Anonymous session registration for agents
 - [OAuth protected resource](https://song-an-40.sycu-lee.workers.dev/.well-known/oauth-protected-resource): RFC 9728 resource metadata
+- [AI catalog](https://song-an-40.sycu-lee.workers.dev/.well-known/ai-catalog.json): ARD capability manifest (`specVersion`, host, entries)
+- [ARD manifest](https://song-an-40.sycu-lee.workers.dev/.well-known/ard.json): Same capability manifest at the current well-known path
 - [OAuth authorization server](https://song-an-40.sycu-lee.workers.dev/.well-known/oauth-authorization-server): AS metadata with `agent_auth`
 - [Agent skills index](https://song-an-40.sycu-lee.workers.dev/.well-known/agent-skills/index.json): Skills discovery index
 - [VivaAge overview skill](https://song-an-40.sycu-lee.workers.dev/.well-known/agent-skills/vivaage-overview/SKILL.md): Product overview skill markdown
