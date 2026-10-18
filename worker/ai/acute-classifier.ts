@@ -21,6 +21,7 @@ export const ACUTE_CATEGORIES = [
   "poisoning",
   "head_injury",
   "fall",
+  "burn",
   "self_harm",
 ] as const;
 
@@ -55,6 +56,7 @@ const CATEGORY_TO_RISK: Record<AcuteCategory, Exclude<RiskClass, "none"> | null>
   poisoning: "poisoning",
   head_injury: "head_injury",
   fall: "fall_emergency",
+  burn: "burn",
   self_harm: "self_harm",
 };
 

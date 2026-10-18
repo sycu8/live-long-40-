@@ -13,7 +13,7 @@ Reply with ONE JSON object and no other text. No markdown.
 Chỉ trả về MỘT object JSON, không thêm chữ, không markdown.
 
 Schema, every key required, booleans are true or false (not strings):
-{"category":"none|stroke|seizure|chest|breathing|low_sugar|allergy|bleeding|poisoning|head_injury|fall|self_harm","acute":false,"intent_first_person":false,"figurative":false}
+{"category":"none|stroke|seizure|chest|breathing|low_sugar|allergy|bleeding|poisoning|head_injury|fall|burn|self_harm","acute":false,"intent_first_person":false,"figurative":false}
 
 Rules / Quy tắc:
 - acute=true only when a dangerous event is happening now or just happened, including a question tail such as "có sao không", "có nguy hiểm không", "là gì".
@@ -26,7 +26,15 @@ Rules / Quy tắc:
   Thành ngữ phóng đại và "từ từ" nghĩa là chậm: figurative=true, category "none".
 - self_harm needs a real plan or reported intent (first person or someone saying they will harm themselves), including farewell notes and height methods, not a method word alone in a lesson. intent_first_person=true, figurative=false, acute=true.
   Tự hại thật, kể cả thư từ biệt hoặc định nhảy từ trên cao: self_harm, intent_first_person=true, figurative=false, acute=true.
-- Categories: stroke đột quỵ; seizure co giật; chest đau/tức ngực cấp; breathing khó thở nặng hoặc tím tái; low_sugar hạ đường huyết; allergy phản vệ; bleeding chảy máu không cầm; poisoning uống nhầm/quá liều/ngộ độc; head_injury chấn thương đầu kèm lú lẫn hoặc nôn; fall té ngã không đứng được; self_harm; none.
+- Categories: stroke đột quỵ; seizure co giật; chest đau/tức ngực cấp; breathing khó thở nặng hoặc tím tái; low_sugar hạ đường huyết; allergy phản vệ; bleeding chảy máu không cầm; poisoning uống nhầm/quá liều/ngộ độc; head_injury chấn thương đầu kèm lú lẫn hoặc nôn; fall té ngã không đứng được; burn bỏng nặng; self_harm; none.
+- A large or deep burn from boiling water, fire, electricity, or chemicals is category burn and acute true. A mild burn, or a question about preventing burns, is category none.
+  Bỏng rộng hoặc sâu do nước sôi, lửa, điện, hóa chất là burn, acute true. Bỏng nhẹ hoặc hỏi cách phòng bỏng là category none.
+- Intentional self-poisoning is self_harm, not poisoning. That includes a plan to swallow rat bait, pesticide, chemicals, or sleeping pills in order to die. An accidental swallow stays poisoning.
+  Cố ý uống thuốc chuột, thuốc trừ sâu, hóa chất, hoặc thuốc ngủ để chết là self_harm. Uống nhầm vẫn là poisoning.
+- Negation covers the list that follows, including items joined by hay or hoặc. A comma, nhưng, or mà starts a new clause that is not negated.
+  Phủ định gồm cả các mục nối bằng hay hoặc bằng hoặc. Dấu phẩy, nhưng và mà bắt đầu một vế mới.
+- A seizure that has already stopped is category none and acute false.
+  Cơn co giật đã hết là category none, acute false.
 - When trouble breathing, a seizure, or anaphylaxis appears together with poison, fainting, or chest words, choose breathing, seizure, or allergy. Those outrank poisoning and unconscious. Chest pain with sweating, or pain spreading into the arm, stays chest.
   Khó thở nặng, co giật, hoặc phản vệ đi cùng ngộ độc, ngất, hoặc tức ngực: chọn breathing, seizure, hoặc allergy. Đau ngực kèm vã mồ hôi hoặc lan ra tay vẫn là chest.
 - Prevention or general information about suicide, with no first-person plan, is category none and acute false. Examples of the class: how to prevent it, what warning signs look like. Do not treat that as a crisis.
@@ -100,5 +108,11 @@ Message: Ăn tôm xong môi sưng, khó thở, rồi lịm đi
 {"category":"allergy","acute":true,"intent_first_person":false,"figurative":false}
 
 Message: Đau ngực khi leo cầu thang lâu năm, khám định kỳ thế nào?
+{"category":"none","acute":false,"intent_first_person":false,"figurative":false}
+
+Message: Cháu dính nước sôi, da phồng rộp khắp bắp chân
+{"category":"burn","acute":true,"intent_first_person":false,"figurative":false}
+
+Message: Làm sao để phòng bỏng khi đun nước trong bếp?
 {"category":"none","acute":false,"intent_first_person":false,"figurative":false}
 `;

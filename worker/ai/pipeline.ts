@@ -4,8 +4,10 @@ import {
   emergencyMessage,
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
+  POST_SEIZURE_CHECK_LINE,
   questionMentionsSymptom,
   refineClassifierRisk,
+  seizureLooksResolved,
   selfHarmLooksAmbiguous,
   selfHarmLooksInformational,
   selfHarmLooksPastStable,
@@ -398,6 +400,13 @@ export function appendAcuteSafetyNet(
   ) {
     out = `${out.replace(/\s+$/, "")}\n\n${GENTLE_SUPPORT_LINE}`;
   }
+  if (
+    seizureLooksResolved(question) &&
+    !out.includes("Nên làm:") &&
+    !out.includes(POST_SEIZURE_CHECK_LINE)
+  ) {
+    out = `${out.replace(/\s+$/, "")}\n\n${POST_SEIZURE_CHECK_LINE}`;
+  }
   const needLine =
     routed || questionMentionsSymptom(question) || category !== "none" || failed;
   if (!needLine) return out;
@@ -416,10 +425,23 @@ function alertFromLayer(
   question: string,
   layer: AcuteLayerResult | null,
 ): Exclude<RiskClass, "none"> | null {
+  if (layer?.status === "fail" && layer.reason === "timeout") {
+    const rules = evaluateHighRisk(question);
+    if (!rules.matched || rules.riskClass === "none") return null;
+    return rules.riskClass;
+  }
   if (!layer || layer.status !== "ok") return null;
   const raw = riskFromAcuteVerdict(layer.verdict);
   if (!raw) return null;
   return refineClassifierRisk(question, raw);
+}
+
+/** Rules alert when the classifier times out. A settled verdict still goes through refine. */
+export function alertFromClassifierLayer(
+  question: string,
+  layer: AcuteLayerResult | null,
+): Exclude<RiskClass, "none"> | null {
+  return alertFromLayer(question, layer);
 }
 
 /** Two microtasks. A still-running model call stays pending. A finished override is visible. */

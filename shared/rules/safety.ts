@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.7.0";
+export const SAFETY_RULESET_VERSION = "v1.8.0";
 
 export type RiskClass =
   | "chest_pain"
@@ -16,6 +16,7 @@ export type RiskClass =
   | "poisoning"
   | "low_blood_sugar"
   | "severe_allergy"
+  | "burn"
   | "none";
 
 export type SafetyMatch = {
@@ -265,6 +266,16 @@ const MESSAGES: Record<Exclude<RiskClass, "none">, string> = {
     ],
     ["Không cho thêm thức ăn, thuốc khác, hoặc nước nếu đang khó thở."],
   ),
+  burn: advice(
+    [
+      "Gọi 115 ngay và nói rõ bỏng do nước sôi, lửa, điện hay hóa chất.",
+      "Nếu an toàn, ngừng tiếp xúc với nguồn gây bỏng và ở bên cạnh người bệnh.",
+    ],
+    [
+      "Không bôi kem đánh răng, dầu ăn, hoặc thuốc không rõ nguồn.",
+      "Không làm vỡ chỗ phồng rộp.",
+    ],
+  ),
 };
 
 const INTENT = new Set(["toi", "em", "minh", "muon", "dinh", "tinh", "toan"]);
@@ -313,6 +324,38 @@ function adjacentTuTuPlan(tokens: SafetyToken[], tuIndex: number): boolean {
   return FIRST_PERSON.has(person.folded) && PLAN_VERBS.has(plan.folded);
 }
 
+/**
+ * Accented tự tử / tự sát, or an unaccented "tu tu" only with the adjacent plan.
+ * Unaccented "từ từ" (slowly) is neither.
+ */
+function suicidePairKind(
+  tokens: SafetyToken[],
+  index: number,
+): "real" | "adjacent" | null {
+  const first = tokens[index];
+  const second = tokens[index + 1];
+  if (!first || !second) return null;
+  const methodPair =
+    (matchesTarget(first, "tự") && matchesTarget(second, "sát")) ||
+    (matchesTarget(first, "tự") && matchesTarget(second, "vẫn")) ||
+    (matchesTarget(first, "tự") && matchesTarget(second, "hại"));
+  if (methodPair) return "real";
+  const tuTu =
+    (matchesTarget(first, "tự") && matchesTarget(second, "tử")) ||
+    (matchesTarget(first, "tử") && matchesTarget(second, "tự"));
+  if (!tuTu) return null;
+  if (first.toned || second.toned) return "real";
+  if (adjacentTuTuPlan(tokens, index)) return "adjacent";
+  return null;
+}
+
+function hasRealSuicidePair(tokens: SafetyToken[]): boolean {
+  for (let i = 0; i < tokens.length - 1; i++) {
+    if (suicidePairKind(tokens, i) === "real") return true;
+  }
+  return false;
+}
+
 function hasTightPersonalPlan(tokens: SafetyToken[]): boolean {
   for (let i = 0; i < tokens.length - 1; i++) {
     const first = tokens[i]!;
@@ -333,7 +376,7 @@ function hasTightPersonalPlan(tokens: SafetyToken[]): boolean {
 const INFO_FRAME =
   /\b(phong ngua|de phong|ngan ngua|cach phong|lam sao phong|dau hieu|nhan biet|cach nhan)\b/;
 const PAST_SELF_HARM =
-  /\b(tung|truoc day|hoi do|ngay xua|luc truoc|nam truoc|da qua|bay gio on|khong con|chang con)\b/;
+  /\b(tung|truoc day|hoi do|ngay xua|luc truoc|nam truoc|da qua|bay gio on)\b/;
 const HET_SYMPTOM = new Set([
   "dau",
   "giat",
@@ -391,7 +434,7 @@ function hasCurrentSelfHarmPlan(tokens: SafetyToken[], joined: string): boolean 
   if (/\b(toi nay|dem nay|ngay bay gio)\b/.test(joined)) return true;
   if (/\bdang dinh\b/.test(joined)) return true;
   for (let i = 0; i < tokens.length - 1; i++) {
-    if (foldedAt(tokens, i) !== "tu" || foldedAt(tokens, i + 1) !== "tu") continue;
+    if (suicidePairKind(tokens, i) !== "real") continue;
     const prev = tokens[i - 1];
     if (!prev || (prev.folded !== "sap" && prev.folded !== "se")) continue;
     if (sameClause(tokens, i - 1, i)) return true;
@@ -399,9 +442,29 @@ function hasCurrentSelfHarmPlan(tokens: SafetyToken[], joined: string): boolean 
   return false;
 }
 
+/**
+ * "không còn" / "chẳng còn" is a settled past only when the next word is the
+ * plan itself. "không còn sức" does not cancel a later "muốn chết".
+ */
+function negatesCurrentPlan(tokens: SafetyToken[]): boolean {
+  for (let i = 0; i < tokens.length - 2; i++) {
+    const token = tokens[i]!;
+    if (foldedAt(tokens, i + 1) !== "con") continue;
+    const negator =
+      token.folded === "khong" ||
+      (token.folded === "chang" && (!token.toned || token.accented === "chẳng")) ||
+      (token.folded === "cha" && token.toned && token.accented === "chả");
+    if (!negator) continue;
+    const next = tokens[i + 2]!;
+    if (next.clauseStart) continue;
+    if (["muon", "nghi", "dinh", "tinh", "tu"].includes(next.folded)) return true;
+  }
+  return false;
+}
+
 function selfHarmIsPastStable(tokens: SafetyToken[], joined: string): boolean {
   if (hasCurrentSelfHarmPlan(tokens, joined)) return false;
-  if (!PAST_SELF_HARM.test(joined)) return false;
+  if (!PAST_SELF_HARM.test(joined) && !negatesCurrentPlan(tokens)) return false;
   return hasSelfHarmTopic(tokens, joined);
 }
 
@@ -433,8 +496,27 @@ function inabilityKeep(tokens: SafetyToken[]): Set<number> {
     const b = foldedAt(tokens, i + 1);
     const c = foldedAt(tokens, i + 2);
     const d = foldedAt(tokens, i + 3);
-    if (a === "khong" && b === "tho") mark(i, 2);
-    if (a === "tho" && b === "khong") mark(i, 2);
+    if (a === "khong" && b === "tho") {
+      let count = 2;
+      if (c === "duoc" || c === "noi" || c === "ra") count = 3;
+      if (c === "ra" && d === "hoi") count = 4;
+      mark(i, count);
+    }
+    if (a === "tho" && b === "khong") {
+      let count = 2;
+      if (c === "noi" || c === "duoc" || c === "ra") count = 3;
+      mark(i, count);
+    }
+    if (a === "khong" && b === "dung") {
+      let count = 2;
+      if (c === "day" || c === "len" || c === "duoc") count = 3;
+      mark(i, count);
+    }
+    if (a === "khong" && (b === "tu" || b === "the") && c === "dung") {
+      let count = 3;
+      if (d === "day" || d === "len" || d === "duoc") count = 4;
+      mark(i, count);
+    }
     if (a === "khong" && b === "hit") mark(i, 2);
     if (a === "ngung" && b === "tho") mark(i, 2);
     if (a === "khong" && b === "lay" && c === "duoc" && d === "hoi") mark(i, 4);
@@ -457,7 +539,6 @@ function inabilityKeep(tokens: SafetyToken[]): Set<number> {
     if (a === "cam" && b === "mau" && c === "khong") mark(i, 3);
     if (a === "chay" && b === "mau" && c === "khong") mark(i, 4);
     if (a === "giat" && b === "khong" && (c === "ngung" || c === "dung")) mark(i, 3);
-    if (a === "khong" && b === "dung") mark(i, 2);
     if (a === "khong" && b === "cu" && c === "dong") mark(i, 3);
     if (a === "khong" && b === "nhac") mark(i, 2);
     if (a === "khong" && b === "noi" && (c === "duoc" || c === "ra" || c === "ro"))
@@ -469,7 +550,23 @@ function inabilityKeep(tokens: SafetyToken[]): Set<number> {
   return keep;
 }
 
-/** Forward scope after a negator, until a clause break or five tokens. */
+function isContrastBut(token: SafetyToken): boolean {
+  if (token.folded !== "nhung") return false;
+  if (!token.toned) return true;
+  return token.accented === "nhưng";
+}
+
+function isContrastMa(token: SafetyToken): boolean {
+  if (token.folded !== "ma") return false;
+  if (!token.toned) return true;
+  return token.accented === "mà";
+}
+
+/**
+ * Forward scope after a negator. A comma, stop, "nhưng", "mà", or a later
+ * "muốn" ends it. "hay" / "hoặc" keep the same negated list going.
+ * The immediate "không muốn …" stays inside the scope.
+ */
 function negationScope(tokens: SafetyToken[]): Set<number> {
   const keep = inabilityKeep(tokens);
   const neg = new Set<number>();
@@ -509,10 +606,15 @@ function negationScope(tokens: SafetyToken[]): Set<number> {
       if (i >= 2 && !tokens[i - 1]?.clauseStart) add(i - 2);
     } else if (w === "het") {
       const next = foldedAt(tokens, i + 1);
-      if (HET_SYMPTOM.has(next)) {
-        add(i + 1);
-        const second = foldedAt(tokens, i + 2);
-        if (HET_SYMPTOM.has(second) && !tokens[i + 2]?.clauseStart) add(i + 2);
+      // "hết co giật" negates the symptom a couple of tokens ahead. "uống hết vỉ" does not.
+      for (let k = 1; k <= 3; k++) {
+        const ahead = tokens[i + k];
+        if (!ahead || ahead.clauseStart) break;
+        const word = ahead.folded;
+        if (word === "roi") break;
+        if (word === "co" || word === "bi" || word === "con" || word === "cai") continue;
+        if (HET_SYMPTOM.has(word)) add(i + k);
+        else break;
       }
       if (next === "roi") {
         if (!token.clauseStart) add(i - 1);
@@ -521,12 +623,32 @@ function negationScope(tokens: SafetyToken[]): Set<number> {
       continue;
     } else if (isSimpleNegator(token)) from = i + 1;
     if (from < 0) continue;
-    for (let j = from; j < tokens.length && j < from + 5; j++) {
-      if (tokens[j]!.clauseStart) break;
+    let limit = 5;
+    for (let j = from; j < tokens.length && j < from + limit; j++) {
+      const current = tokens[j]!;
+      if (current.clauseStart) break;
+      const word = current.folded;
+      if (isContrastBut(current) || isContrastMa(current)) break;
+      if (word === "muon" && j !== from) break;
       add(j);
+      if ((word === "hay" || word === "hoac") && limit < 12) limit = 12;
     }
   }
   return neg;
+}
+
+function applyNegationMask(tokens: SafetyToken[]): SafetyToken[] {
+  const neg = negationScope(tokens);
+  if (neg.size === 0) return tokens;
+  return tokens.map((token, index) => {
+    if (!neg.has(index)) return token;
+    return {
+      accented: "zz",
+      folded: "zz",
+      toned: false,
+      clauseStart: token.clauseStart,
+    };
+  });
 }
 
 function selfHarmEvidence(tokens: SafetyToken[]): number[] {
@@ -579,6 +701,13 @@ function evidenceIndexes(
   else if (riskClass === "stroke") {
     for (const word of ["quy", "meo", "lech", "ngong", "liet"]) pushWord(word);
     for (let i = 0; i < tokens.length; i++) {
+      if (
+        foldedAt(tokens, i) === "noi" &&
+        foldedAt(tokens, i + 1) === "kho" &&
+        foldedAt(tokens, i + 2) !== "nghe"
+      ) {
+        hits.push(i, i + 1);
+      }
       if (foldedAt(tokens, i) !== "yeu") continue;
       const next = foldedAt(tokens, i + 1);
       if (
@@ -613,7 +742,14 @@ function evidenceIndexes(
   } else if (riskClass === "low_blood_sugar") {
     for (const word of ["duong", "insulin"]) pushWord(word);
   } else if (riskClass === "severe_allergy") {
-    for (const word of ["sung", "phu", "man"]) pushWord(word);
+    for (const word of ["sung", "phu", "man", "soc"]) pushWord(word);
+    for (let i = 0; i < tokens.length - 1; i++) {
+      if (foldedAt(tokens, i) === "phan" && foldedAt(tokens, i + 1) === "ve") {
+        hits.push(i, i + 1);
+      }
+    }
+  } else if (riskClass === "burn") {
+    for (const word of ["bong", "rop"]) pushWord(word);
   }
   return hits;
 }
@@ -629,24 +765,115 @@ function classFullyNegated(
   return hits.every((index) => neg.has(index));
 }
 
-function ingestionSelfHarm(joined: string): boolean {
+function ingestionSelfHarm(tokens: SafetyToken[], joined: string): boolean {
+  if (/\buong nham\b/.test(joined)) return false;
   const method = /\b(uong het|ca vi|thuoc ngu|uong thuoc)\b/.test(joined);
   const intent =
-    /\b(de chet|cho chet|tu tu|tu sat|quyen sinh|khong muon song|ket lieu|tu van|tu hai)\b/.test(
+    /\b(de chet|cho chet|tu sat|quyen sinh|khong muon song|ket lieu|tu van|tu hai)\b/.test(
       joined,
-    );
+    ) || hasRealSuicidePair(tokens);
   return method && intent;
 }
 
 /**
- * "muốn chết" is literal only when the previous word is a person, a speech verb,
- * or a plan verb. Any other predecessor is an exaggeration idiom
- * ("rét muốn chết", "chán muốn chết", "điên muốn chết").
+ * A plan to swallow poison, including sleeping pills taken in order to die.
+ * Accidental "uống nhầm" and a sleeping pill with no death intent stay out.
+ * Unaccented "từ từ" is not a death word.
+ */
+function intentionalSelfPoison(tokens: SafetyToken[], joined: string): boolean {
+  if (/\buong nham\b/.test(joined)) return false;
+  const method =
+    /\b(thuoc doc|thuoc chuot|thuoc diet chuot|thuoc diet co|thuoc diet|thuoc tru sau|hoa chat|dau doc|tu dau doc|chat doc|thuoc sau)\b/.test(
+      joined,
+    );
+  const who = /\b(toi|em|minh|ong|ba|bo|me|anh|chau|con|chu|cu|noi|bao|ke|than)\b/.test(
+    joined,
+  );
+  const plan = /\b(muon|dinh|tinh|toan)\b/.test(joined);
+  const firstPersonWill =
+    /\b(se|sap)\b/.test(joined) && /\b(toi|em|minh|noi|bao|ke|than)\b/.test(joined);
+  const death =
+    /\b(de chet|cho chet|chet cho xong|khong day|ngu luon|tu sat|quyen sinh|khong muon song)\b/.test(
+      joined,
+    ) || hasRealSuicidePair(tokens);
+  if (method && who && (plan || firstPersonWill || death)) return true;
+  if (/\bthuoc ngu\b/.test(joined) && who && death) return true;
+  return false;
+}
+
+/** Words that turn "muốn chết" into an intensifier, including a real symptom in the same clause. */
+const INTENSIFIER_BEFORE_DIE = new Set([
+  "ret",
+  "chan",
+  "dien",
+  "met",
+  "doi",
+  "khat",
+  "vui",
+  "buon",
+  "so",
+  "cuoi",
+  "nong",
+  "lanh",
+  "dau",
+  "nhuc",
+  "gian",
+  "soc",
+  "ngai",
+  "kho",
+  "cang",
+  "that",
+  "phien",
+  "om",
+  "bung",
+  "lung",
+  "rang",
+  "hong",
+  "khop",
+  "vai",
+  "nguc",
+  "tay",
+  "sot",
+  "ho",
+]);
+
+function speakerBefore(tokens: SafetyToken[], index: number): boolean {
+  for (let j = 0; j < index; j++) {
+    const word = tokens[j]!.folded;
+    if (FIRST_PERSON.has(word) || SPEECH.has(word)) return true;
+  }
+  return false;
+}
+
+function speakerInSameClause(tokens: SafetyToken[], index: number): boolean {
+  for (let j = index - 1; j >= 0; j--) {
+    if (!sameClause(tokens, j, index)) break;
+    const word = tokens[j]!.folded;
+    if (FIRST_PERSON.has(word) || SPEECH.has(word)) return true;
+  }
+  return false;
+}
+
+function intensifierBefore(tokens: SafetyToken[], wantIndex: number): boolean {
+  for (let j = wantIndex - 1; j >= 0; j--) {
+    if (!sameClause(tokens, j, wantIndex)) break;
+    if (INTENSIFIER_BEFORE_DIE.has(tokens[j]!.folded)) return true;
+  }
+  return false;
+}
+
+/**
+ * "muốn chết" is an idiom when the same clause only intensifies a feeling or a symptom.
+ * A speaker plus a non-idiom predecessor is a plan, including when "muốn" starts the next clause.
  */
 function isHyperboleWantDie(tokens: SafetyToken[], wantIndex: number): boolean {
   const prev = tokens[wantIndex - 1];
   if (!prev) return false;
-  return !LITERAL_BEFORE_DIE.has(prev.folded);
+  if (LITERAL_BEFORE_DIE.has(prev.folded)) return false;
+  if (intensifierBefore(tokens, wantIndex)) return true;
+  if (tokens[wantIndex]!.clauseStart && speakerBefore(tokens, wantIndex)) return false;
+  if (speakerInSameClause(tokens, wantIndex)) return false;
+  return true;
 }
 
 function restContext(tokens: SafetyToken[], index: number): boolean {
@@ -755,7 +982,7 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
 
   if (
     /\bthuoc ngu\b/.test(joined) &&
-    /\b(khong day|ngu luon|tu tu|ket thuc|muon chet|ca vi|het vien|uong het)\b/.test(
+    /\b(khong day|ngu luon|ket thuc|muon chet|ca vi|het vien|uong het|de chet|cho chet)\b/.test(
       joined,
     )
   ) {
@@ -771,12 +998,7 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
   ) {
     return true;
   }
-  if (
-    /\b(uong thuoc chuot|uong thuoc diet chuot|uong thuoc diet)\b/.test(joined) &&
-    /\b(muon|dinh|tinh|tu tu|tu sat|chet)\b/.test(joined)
-  ) {
-    return true;
-  }
+  if (intentionalSelfPoison(tokens, joined)) return true;
 
   if (
     hasPhrase(tokens, "quyên sinh") ||
@@ -789,20 +1011,20 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
   if (/\b(thu tuyet menh|tuyet menh)\b/.test(joined)) return true;
   if (
     /\by dinh\b/.test(joined) &&
-    /\b(tu tu|tu sat|quyen sinh|tu van|tu hai)\b/.test(joined)
+    (hasRealSuicidePair(tokens) || /\b(tu sat|quyen sinh|tu van|tu hai)\b/.test(joined))
   ) {
     return true;
   }
   if (
     /\bdang nghi\b/.test(joined) &&
-    /\b(tu tu|tu sat|quyen sinh)\b/.test(joined) &&
+    hasRealSuicidePair(tokens) &&
     !tokens.some((token, index) => token.folded === "tu" && restContext(tokens, index))
   ) {
     return true;
   }
   if (
     /\b(se|sap)\b/.test(joined) &&
-    /\b(tu tu|tu sat|quyen sinh)\b/.test(joined) &&
+    hasRealSuicidePair(tokens) &&
     !tokens.some(
       (token, index) =>
         token.folded === "tu" &&
@@ -812,7 +1034,7 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
   ) {
     return true;
   }
-  if (ingestionSelfHarm(joined)) return true;
+  if (ingestionSelfHarm(tokens, joined)) return true;
 
   // "chán đời" alone is an idiom. A self-harm hint beside it still counts.
   if (
@@ -930,7 +1152,38 @@ function matchBreathing(folded: string): boolean {
   return false;
 }
 
-function matchSeizure(folded: string): boolean {
+function seizureHasResolved(tokens: SafetyToken[], folded: string): boolean {
+  if (
+    /\b(dang giat|dang co giat|giat khong ngung|giat khong dung|giat lien|sui bot|co cung|cung nguoi|len con)\b/.test(
+      folded,
+    )
+  ) {
+    return false;
+  }
+  const nearSeizure = (index: number): boolean => {
+    for (let k = 1; k <= 4; k++) {
+      const ahead = tokens[index + k];
+      if (!ahead || ahead.clauseStart) break;
+      if (ahead.folded === "giat") return true;
+      if (ahead.folded === "dong" && tokens[index + k + 1]?.folded === "kinh")
+        return true;
+    }
+    return false;
+  };
+  for (let i = 0; i < tokens.length; i++) {
+    const word = tokens[i]!.folded;
+    if (word === "het" || word === "xong") {
+      if (nearSeizure(i)) return true;
+    }
+    if ((word === "dung" || word === "qua") && tokens[i - 1]?.folded === "da") {
+      if (nearSeizure(i)) return true;
+    }
+  }
+  return /\b(co giat|dong kinh)\s+(roi|xong)\b/.test(folded);
+}
+
+function matchSeizure(tokens: SafetyToken[], folded: string): boolean {
+  if (seizureHasResolved(tokens, folded)) return false;
   if (
     /\b(lam sao phong|phong ngua|de phong|ngan ngua|cach phong)\b/.test(folded) &&
     !/\b(dang giat|giat lien|giat khong|lien tuc|sui bot|co cung|cung nguoi|bat tinh|len con)\b/.test(
@@ -957,6 +1210,50 @@ function matchSeizure(folded: string): boolean {
   if (
     /\bdong kinh\b/.test(folded) &&
     /\b(dang|len con|giat|sui bot|co cung|cung nguoi|bat tinh|lien tuc)\b/.test(folded)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function matchBurn(folded: string): boolean {
+  if (
+    /\bbong nhe\b/.test(folded) &&
+    !/\b(khap|rong|nang|sau|dien|hoa chat|nuoc soi|lua)\b/.test(folded)
+  ) {
+    return false;
+  }
+  if (
+    /\b(phong bong|cach phong bong|lam sao phong|de phong bong|ngan ngua bong|cach so cuu)\b/.test(
+      folded,
+    ) &&
+    !/\b(dang bong|vua bong|phong rop|bong nang|bong khap)\b/.test(folded)
+  ) {
+    return false;
+  }
+  if (
+    /\b(bong nang|bong sau|bong khap|bong rong|bong dien|bong hoa chat|bong nuoc soi|bong lua)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(nuoc soi|dinh lua|giat dien|dien giat)\b/.test(folded) &&
+    /\b(bong|phong rop|rop)\b/.test(folded)
+  ) {
+    return true;
+  }
+  if (
+    /\bphong rop\b/.test(folded) &&
+    /\b(khap|rong|nhieu|chan|tay|lung|bung|dui|nguoi)\b/.test(folded)
+  ) {
+    return true;
+  }
+  if (
+    /\b(hoa chat|axit)\b/.test(folded) &&
+    /\bbong\b/.test(folded) &&
+    !/\buong\b/.test(folded)
   ) {
     return true;
   }
@@ -1178,8 +1475,10 @@ function hasHardClinical(folded: string): boolean {
 
 /** Frames that can hide a topic word only when nothing acute is happening. */
 function hasEducationFrame(folded: string): boolean {
+  // "phồng" folds like "phòng". Blisters are not a prevention question.
+  const text = folded.replace(/\bphong rop\b/g, "blister");
   return /\b(co sao khong|co nguy hiem khong|co hai khong|co phai|cham soc|co nen|phong|nen tap|nen an|dinh ky|on dinh|dau hieu|cach so cuu|khi gang suc|vat ly tri lieu|uong thuoc deu|ngay xua|nam truoc|co de bi|co tot khong|de khong|tranh bi|tranh hoc)\b/.test(
-    folded,
+    text,
   );
 }
 
@@ -1206,6 +1505,15 @@ function isEducation(folded: string): boolean {
 }
 
 export const SYMPTOM_SAFETY_LINE = "Nếu có dấu hiệu nguy hiểm, gọi ngay 115.";
+
+/** After a seizure has stopped: hospital check and 115, without the full panic screen. */
+export const POST_SEIZURE_CHECK_LINE =
+  "Cơn co giật đã qua. Hãy đưa người bệnh đi bệnh viện để được kiểm tra, và gọi 115 nếu cơn trở lại hoặc người bệnh chưa tỉnh.";
+
+export function seizureLooksResolved(question: string): boolean {
+  const { tokens, folded } = analyzeQuestion(question);
+  return seizureHasResolved(tokens, folded);
+}
 
 /** One line, not the crisis screen. Used only when the classifier is unsure. */
 export const GENTLE_SUPPORT_LINE =
@@ -1376,8 +1684,8 @@ function allergySignal(folded: string): boolean {
   );
 }
 
-function seizureSignal(folded: string): boolean {
-  if (matchSeizure(folded)) return true;
+function seizureSignal(tokens: SafetyToken[], folded: string): boolean {
+  if (matchSeizure(tokens, folded)) return true;
   if (
     /\b(phong ngua|de phong|ngan ngua|cach phong|lam sao phong)\b/.test(folded) &&
     !/\b(dang giat|giat lien|sui bot|co cung|giat khong)\b/.test(folded)
@@ -1400,6 +1708,57 @@ function onlyHyperboleSelfHarm(tokens: SafetyToken[]): boolean {
   return saw && !hasTightPersonalPlan(tokens);
 }
 
+function matchesClass(
+  riskClass: Exclude<RiskClass, "none">,
+  tokens: SafetyToken[],
+  folded: string,
+): boolean {
+  switch (riskClass) {
+    case "self_harm":
+      return matchSelfHarm(tokens);
+    case "severe_allergy":
+      return matchAllergy(folded);
+    case "low_blood_sugar":
+      return matchGlucose(folded);
+    case "seizure":
+      return matchSeizure(tokens, folded);
+    case "breathing":
+      return matchBreathing(folded);
+    case "choking":
+      return matchChoking(tokens, folded);
+    case "chest_pain":
+      return matchChest(folded);
+    case "poisoning":
+      return matchPoison(folded);
+    case "bleeding":
+      return matchBleeding(folded);
+    case "head_injury":
+      return matchHead(folded);
+    case "unconscious":
+      return matchUnconscious(tokens, folded);
+    case "stroke":
+      return matchStroke(folded);
+    case "fall_emergency":
+      return matchFall(tokens, folded);
+    case "burn":
+      return matchBurn(folded);
+    default:
+      return false;
+  }
+}
+
+/** Unaccented "từ từ" with no real suicide pair. The model must not open a crisis. */
+function gradualTuTuOnly(tokens: SafetyToken[]): boolean {
+  let saw = false;
+  for (let i = 0; i < tokens.length - 1; i++) {
+    if (tokens[i]!.folded !== "tu" || tokens[i + 1]!.folded !== "tu") continue;
+    saw = true;
+    const kind = suicidePairKind(tokens, i);
+    if (kind === "real" || kind === "adjacent") return false;
+  }
+  return saw;
+}
+
 /**
  * Breathing, seizure, allergy, and low sugar win over poisoning and unconscious.
  * A chest-pain picture with sweating or pain spreading to the arm stays chest pain.
@@ -1410,7 +1769,10 @@ export function refineClassifierRisk(
   modelClass: Exclude<RiskClass, "none">,
 ): Exclude<RiskClass, "none"> | null {
   const { tokens, folded } = analyzeQuestion(question);
+  const masked = applyNegationMask(tokens);
+  const maskedFolded = masked.map((token) => token.folded).join(" ");
   const past = selfHarmIsPastStable(tokens, folded);
+  if (modelClass === "chest_pain" && past && !matchChest(folded)) return null;
   if (
     past &&
     !isSudden(folded) &&
@@ -1425,12 +1787,36 @@ export function refineClassifierRisk(
       return null;
     }
   }
-  if (matchSelfHarm(tokens)) return "self_harm";
+  if (matchSelfHarm(masked)) return "self_harm";
+  if (modelClass === "seizure" && seizureHasResolved(tokens, folded)) return null;
+  if (
+    matchesClass(modelClass, tokens, folded) &&
+    !matchesClass(modelClass, masked, maskedFolded)
+  ) {
+    return null;
+  }
+  if (
+    modelClass === "poisoning" &&
+    /\bthuoc ngu\b/.test(folded) &&
+    /\b(de ngu|cho de ngu|kho ngu)\b/.test(folded) &&
+    !matchPoison(folded) &&
+    !matchSelfHarm(masked)
+  ) {
+    return null;
+  }
   if (modelClass === "self_harm") {
     if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens))
       return null;
     if (onlyHyperboleSelfHarm(tokens)) return null;
     if (classFullyNegated(tokens, "self_harm")) return null;
+    if (gradualTuTuOnly(tokens)) return null;
+    if (
+      /\bthuoc ngu\b/.test(folded) &&
+      /\b(de ngu|cho de ngu|kho ngu)\b/.test(folded) &&
+      !matchSelfHarm(masked)
+    ) {
+      return null;
+    }
     return "self_harm";
   }
   if (classFullyNegated(tokens, modelClass)) return null;
@@ -1461,7 +1847,7 @@ export function refineClassifierRisk(
     return "low_blood_sugar";
   }
   if (
-    seizureSignal(folded) &&
+    seizureSignal(tokens, folded) &&
     (modelClass === "poisoning" || modelClass === "unconscious")
   ) {
     return "seizure";
@@ -1505,7 +1891,8 @@ function pickRiskClass(
   }
   if (
     take(
-      matchSeizure(folded) || (seizureSignal(folded) && (poison || unconscious)),
+      matchSeizure(tokens, folded) ||
+        (seizureSignal(tokens, folded) && (poison || unconscious)),
       "seizure",
     )
   ) {
@@ -1520,6 +1907,7 @@ function pickRiskClass(
   ) {
     return "breathing";
   }
+  if (take(matchBurn(folded), "burn")) return "burn";
   if (take(poison, "poisoning")) return "poisoning";
   if (take(matchBleeding(folded), "bleeding")) return "bleeding";
   if (take(matchHead(folded), "head_injury")) return "head_injury";
@@ -1531,7 +1919,9 @@ function pickRiskClass(
 
 export function evaluateHighRisk(question: string): SafetyMatch {
   const { tokens, folded } = analyzeQuestion(question);
-  let riskClass = pickRiskClass(tokens, folded);
+  const masked = applyNegationMask(tokens);
+  const maskedFolded = masked.map((token) => token.folded).join(" ");
+  let riskClass = pickRiskClass(masked, maskedFolded);
 
   if (riskClass && riskClass !== "self_harm" && isEducation(folded)) riskClass = null;
   if (

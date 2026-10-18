@@ -109,6 +109,13 @@ const POSITIVE: Array<{ q: string; cls: RiskClass }> = [
   { q: "Ông mất nhiều máu, mặt trắng bệch", cls: "bleeding" },
   { q: "Không thở được, môi tím tái", cls: "breathing" },
   { q: "Máu chảy không cầm từ sáng", cls: "bleeding" },
+  { q: "Tôi thực sự muốn chết đêm nay", cls: "self_harm" },
+  { q: "Tôi không còn sức chịu đựng, muốn chết", cls: "self_harm" },
+  { q: "Em định uống thuốc chuột", cls: "self_harm" },
+  { q: "Anh ấy tự đầu độc bằng thuốc ngủ để không dậy", cls: "self_harm" },
+  { q: "ong toi uong thuoc diet chuot", cls: "poisoning" },
+  { q: "Cháu dính nước sôi, phồng rộp khắp đùi", cls: "burn" },
+  { q: "Ông bị bỏng lửa nặng ở lưng", cls: "burn" },
 ];
 
 const BENIGN = [
@@ -198,6 +205,16 @@ const BENIGN = [
   "No chest pain khi đi bộ chậm",
   "Tôi từng muốn tự tử, bây giờ ổn",
   "Dấu hiệu đột quỵ ở người già là gì?",
+  "Sẽ từ từ đi dạo cho đỡ mệt",
+  "Em đang nghĩ từ từ thôi",
+  "Bé không bị sốc phản vệ",
+  "Chẳng nói khó hay yếu một bên",
+  "Chẳng méo miệng hay yếu tay",
+  "Bé hết co giật rồi",
+  "Làm sao phòng bỏng khi đun nước",
+  "tôi sẽ uống thuốc ngủ cho dễ ngủ",
+  "Bỏng nhẹ ở ngón tay, rửa nước mát được không?",
+  "Tôi không còn muốn tự tử",
 ];
 
 describe("fresh emergency set, not taken from QA", () => {
