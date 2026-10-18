@@ -1,11 +1,14 @@
 /**
  * Workers AI chat model for blog drafts and grounded answers.
  *
- * The unversioned Llama 3.1 8B instruct id was removed from the catalog on
- * 2026-05-30 and now fails with error 5028. The `-fast` variant stayed active:
- * https://developers.cloudflare.com/changelog/post/2026-05-08-planned-model-deprecations/
+ * The unversioned Llama 3.1 8B instruct id was removed on 2026-05-30 and now
+ * fails with error 5028. The `-fast` variant was left active in that changelog,
+ * but its model page now redirects to the catalog as unavailable. The fp8
+ * model is in the live catalog and accepts the same messages input.
+ *
+ * @see https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fp8/
  */
-export const WORKERS_AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+export const WORKERS_AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
 
 /** Model ids Cloudflare retired on 2026-05-30 (Workers AI error 5028). */
 export const RETIRED_WORKERS_AI_MODELS = [

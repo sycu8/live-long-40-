@@ -38,8 +38,8 @@ function retiredIdPattern(id: string): RegExp {
 }
 
 describe("Workers AI model catalog", () => {
-  it("uses the active llama 3.1 8B fast model", () => {
-    expect(WORKERS_AI_TEXT_MODEL).toBe("@cf/meta/llama-3.1-8b-instruct-fast");
+  it("uses the live llama 3.1 8B fp8 catalog model", () => {
+    expect(WORKERS_AI_TEXT_MODEL).toBe("@cf/meta/llama-3.1-8b-instruct-fp8");
     expect(isRetiredWorkersAiModel(WORKERS_AI_TEXT_MODEL)).toBe(false);
     expect(RETIRED_WORKERS_AI_MODELS).toContain(retiredModel);
   });
