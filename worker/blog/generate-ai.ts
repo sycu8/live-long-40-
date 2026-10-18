@@ -11,7 +11,7 @@ import {
 } from "@shared/content/blog-theme-sources";
 import { OFFICIAL_SOURCES } from "@shared/content/official-sources";
 import { createId, nowIso } from "@shared/utils/id";
-import { WORKERS_AI_TEXT_MODEL } from "../ai/models";
+import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "../ai/models";
 import { formatWorkersAiError, readWorkersAiText, runWorkersAi } from "../ai/run";
 import type { Env } from "../env";
 import { generateAndStoreBlogCover } from "./images";
@@ -121,7 +121,7 @@ Trả về ĐÚNG một JSON (không markdown ngoài JSON):
         { role: "user", content: prompt },
       ],
       stream: false,
-      max_tokens: 3200,
+      max_tokens: WORKERS_AI_MAX_TOKENS,
     });
     const read = readWorkersAiText(response);
     if (!read.ok) {

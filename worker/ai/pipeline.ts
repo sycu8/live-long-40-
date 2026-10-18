@@ -7,7 +7,7 @@ import {
   sourceLooksOfficial,
 } from "@shared/rules/sources";
 import type { Env } from "../env";
-import { WORKERS_AI_TEXT_MODEL } from "./models";
+import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "./models";
 import {
   formatWorkersAiError,
   isAsyncIterable,
@@ -361,6 +361,7 @@ export async function runChatPipeline(
         const response = await runWorkersAi(env, model, {
           messages,
           stream: true,
+          max_tokens: WORKERS_AI_MAX_TOKENS,
         });
 
         let full = "";

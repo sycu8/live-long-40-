@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   isRetiredWorkersAiModel,
   RETIRED_WORKERS_AI_MODELS,
+  WORKERS_AI_MAX_TOKENS,
   WORKERS_AI_TEXT_MODEL,
 } from "../../worker/ai/models";
 import {
@@ -18,6 +19,7 @@ import type { Env } from "../../worker/env";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const retiredModel = "@cf/meta/llama-3.1-8b-instruct";
+const retiredFastModel = "@cf/meta/llama-3.1-8b-instruct-fast";
 
 function walkTs(dir: string): string[] {
   const out: string[] = [];
@@ -41,7 +43,14 @@ describe("Workers AI model catalog", () => {
   it("uses the live llama 3.1 8B fp8 catalog model", () => {
     expect(WORKERS_AI_TEXT_MODEL).toBe("@cf/meta/llama-3.1-8b-instruct-fp8");
     expect(isRetiredWorkersAiModel(WORKERS_AI_TEXT_MODEL)).toBe(false);
+    expect(isRetiredWorkersAiModel(retiredFastModel)).toBe(true);
     expect(RETIRED_WORKERS_AI_MODELS).toContain(retiredModel);
+    expect(RETIRED_WORKERS_AI_MODELS).toContain(retiredFastModel);
+    expect(WORKERS_AI_MAX_TOKENS).toBeGreaterThan(256);
+    for (const rel of ["worker/blog/generate-ai.ts", "worker/ai/pipeline.ts"]) {
+      const src = readFileSync(path.join(root, rel), "utf8");
+      expect(src, rel).toContain("max_tokens: WORKERS_AI_MAX_TOKENS");
+    }
   });
 
   it("fails if a known retired model id is used", () => {

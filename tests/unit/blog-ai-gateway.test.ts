@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
+import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
 import { readAiText, runWorkersAi, workersAiRunOptions } from "../../worker/ai/run";
 import { generateEditorialPostWithAi } from "../../worker/blog/generate-ai";
 import { generateAndStoreBlogCover } from "../../worker/blog/images";
@@ -96,6 +96,8 @@ describe("workers AI gateway routing", () => {
     expect(gatewayCalled).toBe(false);
     expect(calls).toHaveLength(1);
     expect(calls[0]?.[0]).toBe(MODEL);
+    const inputs = calls[0]?.[1] as { max_tokens?: number } | undefined;
+    expect(inputs?.max_tokens).toBe(WORKERS_AI_MAX_TOKENS);
     expect(calls[0]?.[2]).toEqual({ gateway: { id: "song-an-40" } });
     expect(post?.title).toBe("Một việc nhỏ cho tuần này");
     expect(post?.sourceIds).toContain("who-ageing");

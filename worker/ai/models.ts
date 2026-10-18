@@ -10,6 +10,12 @@
  */
 export const WORKERS_AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
 
+/**
+ * Output token cap. The FP8 model default is 256, which truncates a full
+ * blog draft and a grounded chat answer. 8192 stays inside the 32k context.
+ */
+export const WORKERS_AI_MAX_TOKENS = 8192;
+
 /** Model ids Cloudflare retired on 2026-05-30 (Workers AI error 5028). */
 export const RETIRED_WORKERS_AI_MODELS = [
   "@cf/moonshotai/kimi-k2.5",
@@ -17,6 +23,7 @@ export const RETIRED_WORKERS_AI_MODELS = [
   "@cf/meta/llama-3-8b-instruct",
   "@cf/meta/llama-3-8b-instruct-awq",
   "@cf/meta/llama-3.1-8b-instruct",
+  "@cf/meta/llama-3.1-8b-instruct-fast",
   "@cf/meta/llama-3.1-8b-instruct-awq",
   "@cf/meta/llama-3.1-70b-instruct",
   "@cf/meta/llama-2-7b-chat-int8",
