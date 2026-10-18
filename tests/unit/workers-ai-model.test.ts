@@ -167,7 +167,6 @@ describe("Workers AI response parsing", () => {
       logged.push(String(message));
     });
     const env = {
-      AI_GATEWAY_ID: "song-an-40",
       AI: {
         async run() {
           return {

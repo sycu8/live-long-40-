@@ -13,9 +13,9 @@ Worker kiểm tra header `Cf-Access-Jwt-Assertion`. Staging local dùng `Authori
 
 Tạo instance tên khớp `AI_SEARCH_INSTANCE` (`song-an-40-knowledge`). Khi admin approve, Worker gọi `items.upload` với metadata (`status`, `review_status`, `source_id`, …).
 
-## AI Gateway
+## Workers AI
 
-Đặt `AI_GATEWAY_ID`. Inference đi qua `env.AI.run(model, inputs, { gateway: { id } })` để có rate/cost controls. `env.AI.gateway(id)` chỉ dùng cho log/URL (`patchLog`, `getLog`, `getUrl`); `gateway.run()` là universal endpoint và nhận `{ provider, endpoint, headers, query }`. Tắt full prompt logging cho chat cá nhân hóa trên dashboard Gateway.
+Chat và blog gọi `env.AI.run(model, inputs)` trực tiếp trên binding `AI`. Không đặt `AI_GATEWAY_ID`: gateway `song-an-40` chưa được cấu hình và trả lỗi 2001.
 
 ## Blog — lịch hàng ngày & crawl
 

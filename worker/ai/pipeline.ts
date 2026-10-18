@@ -2,24 +2,18 @@ import { ABSTENTION_MESSAGE } from "@shared/constants/product";
 import { classifyQuestion, normalizeQuery } from "@shared/rules/classification";
 import { evaluateHighRisk } from "@shared/rules/safety";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@shared/rules/prompt";
-import {
-  answerHasCitations,
-  sourceLooksOfficial,
-} from "@shared/rules/sources";
+import { answerHasCitations, sourceLooksOfficial } from "@shared/rules/sources";
 import type { Env } from "../env";
 import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "./models";
 import {
+  createAiStreamReader,
   formatWorkersAiError,
   isAsyncIterable,
-  readAiChunk,
   readWorkersAiText,
   runWorkersAi,
 } from "./run";
 import { filterRetrievedCandidates } from "./retrieval-filter";
-import {
-  rankLocalKnowledge,
-  type LocalChunkRow,
-} from "./local-retrieve";
+import { rankLocalKnowledge, type LocalChunkRow } from "./local-retrieve";
 import {
   resolvePreparedAnswer,
   writeAnswerCache,
@@ -66,10 +60,7 @@ function buildExtractiveAnswer(sources: RetrievedSource[]): string {
   ].join("\n");
 }
 
-async function retrieveFromD1(
-  env: Env,
-  query: string,
-): Promise<RetrievedSource[]> {
+async function retrieveFromD1(env: Env, query: string): Promise<RetrievedSource[]> {
   if (!env.DB) return [];
 
   // Evidence = approved official sources only (not editorial library lessons).
@@ -237,10 +228,7 @@ export type ChatPipelineResult =
       fullTextPromise: Promise<string>;
     };
 
-function finalizeGroundedAnswer(
-  full: string,
-  sources: RetrievedSource[],
-): string {
+function finalizeGroundedAnswer(full: string, sources: RetrievedSource[]): string {
   let text = full;
   const citationCheck = validateCitations(text, sources);
   if (citationCheck.invalid.length) {
@@ -254,9 +242,75 @@ function finalizeGroundedAnswer(
   return text;
 }
 
+/** Chat Workers AI deadline. A hung stream must not sit until the Worker is killed. */
+export const CHAT_AI_TIMEOUT_MS = 30_000;
+
+const PARTIAL_FALLBACK_SEPARATOR = "\n\n---\n";
+
+export type ChatPipelineOptions = {
+  /** Test override. Production uses {@link CHAT_AI_TIMEOUT_MS}. */
+  aiTimeoutMs?: number;
+};
+
+function chatTimeoutError(timeoutMs: number): Error {
+  return new Error(`Workers AI chat timed out after ${timeoutMs}ms`);
+}
+
+function withDeadline<T>(
+  promise: Promise<T>,
+  deadline: number,
+  timeoutMs: number,
+): Promise<T> {
+  const remaining = Math.max(0, deadline - Date.now());
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  // A late rejection must not surface as unhandled after the deadline wins.
+  void promise.catch(() => undefined);
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(chatTimeoutError(timeoutMs)), remaining);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
+}
+
+async function readAiStream(
+  source: AsyncIterable<unknown>,
+  deadline: number,
+  timeoutMs: number,
+  onChunk: (chunk: unknown) => void,
+): Promise<void> {
+  const iterator = source[Symbol.asyncIterator]();
+  try {
+    while (true) {
+      const next = await withDeadline(iterator.next(), deadline, timeoutMs);
+      if (next.done) return;
+      onChunk(next.value);
+    }
+  } finally {
+    // Do not await cancel: a hung pull() would keep return() pending past the deadline.
+    void Promise.resolve()
+      .then(() => iterator.return?.())
+      .catch(() => {});
+  }
+}
+
+function enqueueFallback(
+  controller: ReadableStreamDefaultController<string>,
+  resolveFull: (value: string) => void,
+  partial: string,
+  fallback: string,
+): void {
+  const separator = partial ? PARTIAL_FALLBACK_SEPARATOR : "";
+  if (separator) controller.enqueue(separator);
+  controller.enqueue(fallback);
+  resolveFull(`${partial}${separator}${fallback}`);
+  controller.close();
+}
+
 export async function runChatPipeline(
   env: Env,
   question: string,
+  options?: ChatPipelineOptions,
 ): Promise<ChatPipelineResult> {
   const risk = evaluateHighRisk(question);
   if (risk.matched) {
@@ -282,10 +336,7 @@ export async function runChatPipeline(
 
   const prepared = await resolvePreparedAnswer(env, question);
   if (prepared) {
-    return streamPreparedAnswer(
-      prepared,
-      prepared.classification || classification,
-    );
+    return streamPreparedAnswer(prepared, prepared.classification || classification);
   }
 
   const { sources, mode } = await retrieveSources(env, question);
@@ -335,7 +386,6 @@ export async function runChatPipeline(
         controller.enqueue(fallback);
         controller.close();
         resolveFull(fallback);
-        cacheGenerated(fallback);
       },
     });
     return {
@@ -357,49 +407,56 @@ export async function runChatPipeline(
 
   const stream = new ReadableStream<string>({
     async start(controller) {
+      let modelText = "";
       try {
-        const response = await runWorkersAi(env, model, {
-          messages,
-          stream: true,
-          max_tokens: WORKERS_AI_MAX_TOKENS,
-        });
+        const timeoutMs = options?.aiTimeoutMs ?? CHAT_AI_TIMEOUT_MS;
+        const deadline = Date.now() + timeoutMs;
+        const response = await withDeadline(
+          runWorkersAi(env, model, {
+            messages,
+            stream: true,
+            max_tokens: WORKERS_AI_MAX_TOKENS,
+          }),
+          deadline,
+          timeoutMs,
+        );
 
-        let full = "";
+        const pushText = (text: string) => {
+          if (!text) return;
+          modelText += text;
+          controller.enqueue(text);
+        };
+
         if (isAsyncIterable(response)) {
-          for await (const chunk of response) {
-            const text = readAiChunk(chunk);
-            if (text) {
-              full += text;
-              controller.enqueue(text);
-            }
-          }
+          const reader = createAiStreamReader();
+          await readAiStream(response, deadline, timeoutMs, (chunk) => {
+            for (const text of reader.push(chunk)) pushText(text);
+          });
+          for (const text of reader.flush()) pushText(text);
         } else {
           const read = readWorkersAiText(response);
-          if (read.ok && read.text) {
-            full = read.text;
-            controller.enqueue(full);
-          }
-        }
-        if (!full) {
-          full = buildExtractiveAnswer(sources);
-          controller.enqueue(full);
+          if (read.ok && read.text) pushText(read.text);
         }
 
-        const grounded = finalizeGroundedAnswer(full, sources);
-        if (grounded !== full) {
-          // Replace stream content for persistence; UI already saw tokens —
-          // append a short correction note with citations if model omitted them.
-          if (!answerHasCitations(full)) {
-            controller.enqueue(`\n\n---\n${grounded}`);
-            full = `${full}\n\n---\n${grounded}`;
-          } else {
-            full = grounded;
-          }
-        } else {
-          full = grounded;
+        const fallback = buildExtractiveAnswer(sources);
+        if (!modelText.trim()) {
+          enqueueFallback(controller, resolveFull, "", fallback);
+          return;
         }
-        cacheGenerated(full);
-        resolveFull(full);
+
+        const grounded = finalizeGroundedAnswer(modelText, sources);
+        const replacedWithExtractive = grounded === fallback && modelText !== fallback;
+        if (
+          !answerHasCitations(modelText) ||
+          replacedWithExtractive ||
+          !answerHasCitations(grounded)
+        ) {
+          enqueueFallback(controller, resolveFull, modelText, fallback);
+          return;
+        }
+
+        cacheGenerated(grounded);
+        resolveFull(grounded);
         controller.close();
       } catch (err) {
         console.error(
@@ -410,11 +467,12 @@ export async function runChatPipeline(
             error: formatWorkersAiError(err),
           }),
         );
-        const msg =
-          "Hệ thống trả lời tạm thời gặp sự cố. Vui lòng thử lại sau.";
-        controller.enqueue(msg);
-        resolveFull(msg);
-        controller.close();
+        enqueueFallback(
+          controller,
+          resolveFull,
+          modelText,
+          buildExtractiveAnswer(sources),
+        );
       }
     },
   });

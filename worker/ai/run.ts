@@ -2,24 +2,10 @@ import type { Env } from "../env";
 import { isRetiredWorkersAiModel, WORKERS_AI_TEXT_MODEL } from "./models";
 
 /**
- * Options for `env.AI.run()` that send the request through AI Gateway.
- *
- * Workers AI inference uses `env.AI.run(model, inputs, { gateway: { id } })`.
- * `env.AI.gateway(id).run()` is the universal-endpoint client. It expects
- * `{ provider, endpoint, headers, query }` and reads `request.headers` with
- * `Object.entries`. Calling it as `run(model, inputs)` therefore throws
- * `TypeError: Cannot convert undefined or null to object`.
- *
- * @see https://developers.cloudflare.com/ai-gateway/usage/worker-binding-methods/
+ * Workers AI inference calls the binding directly: `env.AI.run(model, inputs)`.
+ * Do not pass `{ gateway }` — the `song-an-40` gateway is not configured and
+ * returns error 2001 ("Please configure AI Gateway").
  */
-export function workersAiRunOptions(
-  gatewayId: string | undefined | null,
-): { gateway: { id: string } } | undefined {
-  const id = gatewayId?.trim();
-  if (!id) return undefined;
-  return { gateway: { id } };
-}
-
 export const WORKERS_AI_EMPTY_RESPONSE = "Workers AI returned an empty response";
 
 export async function runWorkersAi(
@@ -38,7 +24,7 @@ export async function runWorkersAi(
   if (inputs == null || typeof inputs !== "object" || Array.isArray(inputs)) {
     throw new Error("Workers AI inputs must be an object");
   }
-  return env.AI.run(model, inputs, workersAiRunOptions(env.AI_GATEWAY_ID));
+  return env.AI.run(model, inputs);
 }
 
 export function formatWorkersAiError(err: unknown): string {
@@ -154,7 +140,7 @@ export function readWorkersAiText(response: unknown): WorkersAiTextResult {
   }
 }
 
-export function readAiChunk(chunk: unknown): string {
+function readAiObject(chunk: unknown): string {
   if (typeof chunk === "string") return chunk;
   if (!chunk || typeof chunk !== "object") return "";
   const record = chunk as {
@@ -164,6 +150,113 @@ export function readAiChunk(chunk: unknown): string {
   if (typeof record.response === "string") return record.response;
   if (typeof record.delta?.content === "string") return record.delta.content;
   return "";
+}
+
+function sseDataPayload(line: string): string | null {
+  if (!line.startsWith("data:")) return null;
+  const rest = line.slice(5);
+  return rest.startsWith(" ") ? rest.slice(1) : rest;
+}
+
+/** Text from one SSE event. `[DONE]` and unreadable payloads contribute nothing. */
+function textFromSsePayload(payload: string): string {
+  const data = payload.trim();
+  if (!data || data === "[DONE]") return "";
+  try {
+    return readAiObject(JSON.parse(data));
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Incremental decoder for a Workers AI `stream: true` body.
+ * The binding returns a ReadableStream of Uint8Array SSE frames
+ * (`data: {"response":"..."}`, then `data: [DONE]`), and a frame can
+ * be split across chunks.
+ */
+export function createAiStreamReader() {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let pendingData: string[] = [];
+  let sse = false;
+
+  function flushEvent(): string {
+    if (pendingData.length === 0) return "";
+    const payload = pendingData.join("\n");
+    pendingData = [];
+    return textFromSsePayload(payload);
+  }
+
+  function consume(final: boolean): string[] {
+    const out: string[] = [];
+    while (true) {
+      const newline = buffer.indexOf("\n");
+      if (newline === -1) break;
+      const line = buffer.slice(0, newline).replace(/\r$/, "");
+      buffer = buffer.slice(newline + 1);
+      if (line.trim() === "") {
+        const text = flushEvent();
+        if (text) out.push(text);
+        continue;
+      }
+      const payload = sseDataPayload(line);
+      if (payload != null) {
+        sse = true;
+        pendingData.push(payload);
+      }
+    }
+    if (final) {
+      const tail = buffer.replace(/\r$/, "");
+      buffer = "";
+      const payload = sseDataPayload(tail);
+      if (payload != null) pendingData.push(payload);
+      const text = flushEvent();
+      if (text) out.push(text);
+    }
+    return out;
+  }
+
+  return {
+    push(chunk: unknown): string[] {
+      if (chunk instanceof Uint8Array) {
+        sse = true;
+        buffer += decoder.decode(chunk, { stream: true });
+        return consume(false);
+      }
+      if (chunk instanceof ArrayBuffer) {
+        sse = true;
+        buffer += decoder.decode(new Uint8Array(chunk), { stream: true });
+        return consume(false);
+      }
+      if (typeof chunk === "string") {
+        if (sse || buffer.length > 0 || /^\s*data:/.test(chunk)) {
+          sse = true;
+          buffer += chunk;
+          return consume(false);
+        }
+        return chunk ? [chunk] : [];
+      }
+      const text = readAiObject(chunk);
+      return text ? [text] : [];
+    },
+    flush(): string[] {
+      buffer += decoder.decode();
+      return consume(true);
+    },
+  };
+}
+
+export function readAiChunk(chunk: unknown): string {
+  if (chunk instanceof Uint8Array || chunk instanceof ArrayBuffer) {
+    const reader = createAiStreamReader();
+    return [...reader.push(chunk), ...reader.flush()].join("");
+  }
+  if (typeof chunk === "string" && /^\s*data:/m.test(chunk)) {
+    const reader = createAiStreamReader();
+    return [...reader.push(chunk), ...reader.flush()].join("");
+  }
+  return readAiObject(chunk);
 }
 
 export function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
