@@ -58,7 +58,7 @@ pnpm db:seed:blog       # local D1
 pnpm db:seed:blog:remote
 ```
 
-- Intro `gioi-thieu-vivaage` và **advisor batch** (6 bài): `INSERT OR REPLACE`, publish ngay
+- Intro `gioi-thieu-vivaage` và **advisor batch** (10 bài): `INSERT OR REPLACE`, publish ngay
 - Bài khác: `INSERT OR IGNORE` (không ghi đè bài cron đã publish)
 
 ## Admin

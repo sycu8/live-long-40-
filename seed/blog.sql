@@ -1648,6 +1648,271 @@ VivaAge không soạn di chúc, không phân chia tài sản, không đại di�
   100
 );
 
+INSERT OR REPLACE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at,
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
+) VALUES (
+  'blog_adv_an-uong-don-gian-tuoi-ngoai-40',
+  'an-uong-don-gian-tuoi-ngoai-40',
+  'Ăn uống đơn giản tuổi ngoài 40: bữa quen, đủ rau và đạm, không kiêng theo lời đồn',
+  'Tư vấn giáo dục giúp bạn giữ nhịp bữa ăn vừa sức — không phải thực đơn sao chép từ mạng, không thay lời bác sĩ.',
+  'suc-khoe',
+  10,
+  '## Bữa ăn không phải cuộc thi
+
+Ngoài 40, nhiều người nghe cùng lúc nhiều lời khuyên: kiêng tinh bột, nhịn bữa tối, uống nước ép thay cơm, mua thực phẩm chức năng “thanh lọc”. Trong góc tư vấn giáo dục, câu hỏi thường gặp không phải “món nào thần kỳ”. Câu hỏi là: *Mình ăn thế nào cho đỡ hoang mang, mà vẫn nấu được với bếp nhà?*
+
+Tờ thông tin về già hóa và sức khỏe của Tổ chức Y tế Thế giới khuyến khích chuẩn bị sớm từ tuổi ngoài 40: khám bệnh đều, vận động vừa sức, ăn uống hợp lý, và đi khám khi cần. “Hợp lý” ở đây không phải một thực đơn chép sẵn cho mọi người. Đó là hướng đi: bữa ăn đều, thức ăn quen thuộc, và biết lúc nào cần hỏi bác sĩ thay vì tự đoán.
+
+## Ba nguyên tắc vừa sức
+
+### 1. Giữ nhịp bữa, đừng phạt mình bằng cách nhịn
+
+Bỏ bữa rồi ăn bù lúc khuya thường làm bạn mệt và khó ngủ hơn. Hãy giữ số bữa bạn đang ăn được — hai hoặc ba — vào khung giờ gần nhau mỗi ngày. Không cần đếm calo nếu bác sĩ chưa yêu cầu việc đó.
+
+### 2. Thêm thứ đã có, trước khi bỏ thứ đang ăn
+
+Trong bữa cơm nhà, thử thêm rau mua được ở chợ gần, và một phần đạm quen: trứng, đậu, cá hoặc thịt nạc — tùy bữa và tùy túi tiền. Không cần thực phẩm đắt. Việc nhỏ là để đĩa có rau và có chất đạm, thay vì chỉ cơm trắng với nước chấm.
+
+### 3. Uống nước trong ngày, đừng chờ đến lúc khát nhiều
+
+Nhiều người ngồi làm việc quên uống. Để một cốc nước ở chỗ ngồi. Nếu bác sĩ đã dặn hạn chế nước — ví dụ một số bệnh thận hoặc suy tim — hãy theo đúng lời đó. Đoạn này không áp cho người đã có chỉ định riêng.
+
+## Muối, đồ ngọt và lời đồn
+
+Nếu bạn đang theo dõi huyết áp, hãy hỏi bác sĩ về muối trong ăn uống. Đừng tự cắt hoặc tự thêm theo một bài trên mạng. Đừng tin câu “nước chanh mỗi sáng chữa bệnh” hay “nhịn vài ngày để trẻ lại”. Những câu đó không thay buổi khám.
+
+Thực phẩm chức năng không phải thuốc. Nếu bạn đang uống thuốc kê đơn, hãy ghi cả vitamin vào danh sách mang theo khi khám. Bài của Bộ Y tế về chăm sóc người cao tuổi nhắc khám sức khỏe định kỳ, có sổ theo dõi bệnh, và dùng thuốc đúng lời bác sĩ.
+
+## Khi nào cần gặp bác sĩ?
+
+Hãy ưu tiên gặp cơ sở y tế gần nhà nếu:
+
+- Cân nặng tăng hoặc giảm rõ trong vài tuần mà bạn không cố ý
+- Nuốt khó, đau bụng kéo dài, hoặc đi ngoài ra máu
+- Bạn đang có bệnh cần chế độ ăn riêng — như đái tháo đường, bệnh thận, gout — hoặc bác sĩ đã kê thực đơn. Đừng đổi theo bài viết phổ thông
+- Bạn mệt nhiều, chóng mặt khi đứng, hoặc ăn rất ít trong nhiều ngày
+
+VivaAge không chẩn đoán thiếu chất, không kê thực đơn bệnh lý, và không khuyên mua sản phẩm.
+
+## Việc nhỏ tuần này
+
+1. Chọn **một** bữa và thêm một phần rau bạn đã mua được.
+2. Ghi ba dòng: bữa đó ăn gì, lúc mấy giờ, cảm giác sau ăn. Không cần cân thức ăn.
+3. Đọc thêm trong [thư viện sức khỏe tuổi ngoài 40](/thu-vien?category=suc-khoe-trung-nien), rồi [Hỏi VivaAge](/hoi) nếu còn một khái niệm chưa rõ. Câu liên quan đến bệnh của bạn thì mang đến phòng khám.
+4. [Kiểm tra mức độ sẵn sàng](/danh-gia) để thấy trụ sức khỏe đang rõ hay còn mơ hồ.
+
+## Giới hạn
+
+Bài viết là giáo dục và động viên. Không thay bác sĩ, không thay người có chuyên môn về dinh dưỡng, không phải thực đơn cá nhân. Ăn kiêng vì bệnh phải theo người đang theo dõi sức khỏe của bạn.',
+  'published',
+  '2026-08-16',
+  '2026-08-16T02:00:00.000Z',
+  'Biên tập VivaAge',
+  '2026-08-16T01:00:00.000Z',
+  '2026-08-16T01:00:00.000Z',
+  '["who-ageing","byt-elderly-checkup"]',
+  NULL,
+  NULL,
+  0,
+  100
+);
+
+INSERT OR REPLACE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at,
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
+) VALUES (
+  'blog_adv_bot-ngoi-lau-trong-ngay-lam-viec',
+  'bot-ngoi-lau-trong-ngay-lam-viec',
+  'Bớt ngồi lâu trong ngày làm việc: đứng dậy vài phút, không cần phòng tập',
+  'Tư vấn thói quen cho người đang ngồi bàn giấy: cắt khoảng ngồi dài bằng vận động nhẹ, theo khung của Tổ chức Y tế Thế giới — vừa sức, không đua thành tích.',
+  'thoi-quen',
+  9,
+  '## Ngồi cả buổi không có nghĩa là bạn “chưa biết tập”
+
+Nhiều người ngoài 40 tự trách vì không đến phòng tập. Trong khi đó, phần lớn ngày của họ là ngồi: bàn làm việc, xe, bữa cơm, rồi điện thoại buổi tối. Việc tư vấn thói quen không bắt đầu bằng huy chương. Việc bắt đầu bằng câu: *Hôm nay mình có thể đứng dậy mấy lần?*
+
+Hướng dẫn về vận động thể chất và hành vi ít vận động của Tổ chức Y tế Thế giới khuyến khích người lớn vận động đều và bớt thời gian ngồi lâu. Thay thời gian ngồi bằng vận động — kể cả mức nhẹ — mang lại lợi ích. Mức độ phải vừa với sức mình. Nếu đang có bệnh, hãy hỏi bác sĩ trước khi tập nặng hơn.
+
+Cùng tài liệu đó, khuyến nghị cho người lớn là khoảng **150–300 phút** vận động mức vừa mỗi tuần, hoặc cách kết hợp tương đương với vận động mạnh hơn. Mức vừa nghĩa là vẫn nói chuyện được, chưa phải chạy hết sức. Đây là khung trong hướng dẫn, không phải chỉ tiêu phải đạt ngay tuần đầu, và không phải bài tập được kê riêng cho bạn.
+
+## Cắt một ngày ngồi mà không đổi việc
+
+Bạn không cần nghỉ việc để vận động. Chỉ cần cắt những khoảng ngồi dài:
+
+- Sau khoảng một giờ ngồi, đứng dậy đi lại vài phút: rót nước, ra chỗ sáng, đi vòng hành lang nếu lối đi an toàn.
+- Khi gọi điện thoại, đứng nếu khớp và thăng bằng cho phép.
+- Buổi tối, đặt điện thoại xa tay khoảng 20 phút trước giờ ngủ. Vừa đỡ nằm lướt lâu, vừa dễ vào giấc hơn. Nếu mất ngủ kéo dài nhiều đêm, đó là chuyện nên khám, không phải chuyện “cố thêm ý chí”.
+
+Tờ thông tin về già hóa và sức khỏe của Tổ chức Y tế Thế giới cũng nhắc chuẩn bị sớm từ tuổi ngoài 40 bằng vận động vừa sức, bên cạnh khám đều và ăn uống hợp lý.
+
+## Đừng biến việc nhỏ thành cuộc đua
+
+Ba lỗi hay gặp khi người đi làm muốn “sửa thân” trong một tuần:
+
+1. Ngồi cả tuần rồi cố một buổi rất nặng vào ngày nghỉ.
+2. Đau gối, đau ngực hoặc chóng mặt mà vẫn cố cho đủ số phút.
+3. So với người khoe thành tích trên mạng rồi bỏ luôn.
+
+Bỏ một ngày không xóa những lần đã đứng dậy. Ngày hôm sau quay lại nhịp cũ là đủ.
+
+Nếu khi đi lại bạn đau ngực, khó thở bất thường, chóng mặt nhiều, hoặc đau khớp tăng rõ — dừng lại và gặp cơ sở y tế. Đừng tự tăng cường độ để “bù cho đủ”.
+
+## Việc nhỏ đưa vào nhịp tuần
+
+Chọn một mốc có sẵn trong ngày làm việc: sau mỗi lần họp, hoặc mỗi lần rót nước. Đứng và đi chậm vài phút. Ghi vào [kế hoạch 30 ngày](/ke-hoach) như một việc nền, không phải lịch tập hoàn hảo.
+
+Nếu chưa biết trụ nào đang mơ hồ, hãy [kiểm tra mức độ sẵn sàng](/danh-gia). Khi cần lời nhắc dịu về thói quen khác, đọc thêm [Góc động viên](/blog).
+
+## Giới hạn
+
+Bài này là giáo dục thói quen. Không phải giáo án tập luyện cá nhân, không phải phác đồ phục hồi chức năng. Người đang đau ngực, vừa phẫu thuật, đang chóng mặt thường xuyên, hoặc được bác sĩ hạn chế vận động — hãy hỏi bác sĩ trước khi đổi cách vận động.',
+  'published',
+  '2026-08-17',
+  '2026-08-17T02:00:00.000Z',
+  'Biên tập VivaAge',
+  '2026-08-17T01:00:00.000Z',
+  '2026-08-17T01:00:00.000Z',
+  '["who-physical-activity","who-ageing"]',
+  NULL,
+  NULL,
+  0,
+  100
+);
+
+INSERT OR REPLACE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at,
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
+) VALUES (
+  'blog_adv_ngan-sach-thang-va-tranh-vay-nong',
+  'ngan-sach-thang-va-tranh-vay-nong',
+  'Ngân sách tháng và vay nóng: nhìn rõ tiền ra trước khi ký',
+  'Một trang thu chi giúp bạn bớt ký vay lúc hoảng. Giáo dục tài chính theo hướng Ngân hàng Nhà nước — không phải lời khuyên mua sản phẩm hay vay một khoản cụ thể.',
+  'tai-chinh',
+  9,
+  '## Lo về tiền khác với ký lúc đang hoảng
+
+Tuổi ngoài 40, tiền thường có nhiều cửa ra cùng lúc: nhà cửa, con cái, thuốc men, bố mẹ, và khoản để dành khi có việc đột xuất. Lo là hợp lý. Ký vay đúng lúc đang hoảng thì dễ trả nhiều hơn bạn tưởng — không phải vì bạn kém tính, mà vì lúc đó bạn chưa thấy tổng số phải trả.
+
+Ngân hàng Nhà nước nhấn mạnh giáo dục tài chính giúp người dân nâng cao kiến thức quản lý chi tiêu, tiết kiệm và giảm rủi ro. Đây là thông tin để học. Không phải lời khuyên mua chứng khoán, vàng hay bảo hiểm nhân thọ, và cũng không phải lời khuyên bạn nên vay hay không vay một khoản cụ thể.
+
+## Một trang ngân sách, không cần phần mềm
+
+Dành khoảng 30 phút. Viết tay cũng được.
+
+1. **Tiền vào** tháng này: lương, trợ cấp, khoản ổn định khác. Ghi số bạn chắc chắn, đừng ghi số bạn hy vọng.
+2. **Chi cần thiết**: ăn ở, điện nước, đi lại, thuốc đang dùng, học phí nếu có.
+3. **Chi có thể dời**: quần áo mới, tiệc tùng, mua sắm không gấp.
+4. **Phần còn lại**: tiền để dành khi có việc đột xuất, dù chỉ một số nhỏ. Nếu tháng này là số 0, hãy ghi 0. Nhìn thấy số 0 vẫn hơn là tránh sổ.
+
+Không cần đúng đến từng nghìn đồng. Cần thấy khoản nào đang chiếm phần lớn.
+
+## Trước khi vay, hỏi ba câu trên giấy
+
+“Vay nóng” — vay ngoài kênh chính thức, thường lãi cao và đòi nhanh — hay xuất hiện đúng lúc nhà có việc gấp. Bài này không nêu một mức lãi điển hình, vì con số đó thay đổi và VivaAge không khảo sát thị trường cho vay. Việc bạn làm được là hỏi cho rõ, viết ra giấy:
+
+- Tổng số mình phải trả, gồm cả lãi và phí, là bao nhiêu?
+- Trả trong bao lâu, mỗi kỳ bao nhiêu?
+- Nếu trả khoản này, khoản nào trong nhà bị cắt: thuốc, ăn, hay tiền điện?
+
+Nếu người cho vay không chịu viết tổng số phải trả, đó là tín hiệu để dừng và hỏi thêm người nhà tin cậy. Bạn chưa cần tự kết luận “cấm vay”. Quyết định thuộc về bạn, sau khi thấy con số và — nếu cần — sau khi hỏi người có chuyên môn hoặc tổ chức tín dụng chính thức.
+
+## Đừng để thẻ bảo hiểm y tế hết hạn đẩy bạn vào vay gấp
+
+Một lần khám lúc thẻ hết hạn dễ thành hóa đơn bất ngờ. Hãy kiểm tra thời hạn thẻ trên trang tra cứu giá trị sử dụng thẻ bảo hiểm y tế của Bảo hiểm xã hội Việt Nam. Tiền để dành không thay thẻ. Thẻ còn hạn giúp bạn bớt phải vay chỉ vì quyền lợi khám chữa bệnh bị gián đoạn.
+
+## Việc nhỏ trên VivaAge
+
+- Đưa “viết một trang ngân sách” vào [kế hoạch 30 ngày](/ke-hoach).
+- Đọc [thư viện chuẩn bị tài chính](/thu-vien?category=chuan-bi-tai-chinh) để hiểu khái niệm, không phải để chọn sản phẩm.
+- [Kiểm tra mức độ sẵn sàng](/danh-gia) ở trụ tiền bạc, xem chỗ nào còn mơ hồ.
+
+## Giới hạn
+
+VivaAge không tư vấn đầu tư, không tính hộ lãi một hợp đồng, không đứng ra thương lượng nợ, và không thay tổ chức tín dụng hay cơ quan bảo hiểm. Nếu bạn đang bị đòi nợ theo cách đe dọa, hãy nói với người nhà và cơ quan có thẩm quyền ở địa phương. Đừng xử lý một mình trong im lặng.',
+  'published',
+  '2026-08-17',
+  '2026-08-17T02:00:00.000Z',
+  'Biên tập VivaAge',
+  '2026-08-17T01:00:00.000Z',
+  '2026-08-17T01:00:00.000Z',
+  '["sbv-financial-education","bhxh-bhyt-card-lookup"]',
+  NULL,
+  NULL,
+  0,
+  100
+);
+
+INSERT OR REPLACE INTO blog_posts (
+  id, slug, title, excerpt, theme, reading_minutes, body_markdown,
+  status, scheduled_for, published_at, author_name, created_at, updated_at,
+  sources_json, cover_image_key, cover_alt, is_featured, featured_rank
+) VALUES (
+  'blog_adv_chia-viec-cham-soc-va-lien-he-khan',
+  'chia-viec-cham-soc-va-lien-he-khan',
+  'Chia việc chăm sóc: một tờ liên hệ khẩn và phần việc mỗi người nhận',
+  'Khi một người ôm hết việc nhà, cả thuốc lẫn lịch khám đều dễ sót. Bài này giúp gia đình chia tên việc, giữ sổ thuốc và biết gọi ai — không thay cấp cứu.',
+  'cham-soc',
+  10,
+  '## Một người ôm hết sẽ không đi đường dài
+
+Khi bố hoặc mẹ cần hỗ trợ nhiều hơn, cả nhà hay rơi vào hai cực. Một người làm tất cả. Hoặc ai cũng “để ý” nhưng không ai giữ sổ. Cả hai cực đều dễ sót việc: thuốc, lịch khám, và số điện thoại lúc đêm.
+
+Bài này không bảo bạn phải nhận thêm việc. Bài giúp cả nhà **chia tên việc**, để người đang chăm còn sức, và người lớn tuổi không bị bỏ giữa các tin nhắn.
+
+## Một tờ giấy, bốn dòng
+
+Viết một trang. Để chỗ cả nhà tìm được, và giữ một bản trong ví:
+
+1. Tên người cần hỗ trợ, dị ứng đã biết, bệnh đang theo dõi — ghi theo sổ khám, không đoán thêm.
+2. Số gọi theo thứ tự: con hoặc cháu ở gần, hàng xóm tin, trạm y tế hoặc bệnh viện đã từng khám.
+3. Chỗ để thẻ bảo hiểm y tế, căn cước, sổ thuốc.
+4. Việc lặp lại trong tuần: ai đưa đi khám, ai nhắc thuốc, ai gọi thăm nếu người trực chính bận.
+
+Bộ Y tế nhấn mạnh người cao tuổi nên khám sức khỏe định kỳ, có sổ theo dõi bệnh, và dùng thuốc đúng lời bác sĩ. Tờ giấy này không thay sổ khám. Nó giúp người trực đêm không phải lục điện thoại trong lúc rối.
+
+## Thuốc: một người giữ danh sách
+
+Chọn một người cập nhật danh sách thuốc: tên, liều bác sĩ đã dặn, giờ uống. Khi đi khám, mang danh sách đó theo. Đừng thêm thuốc vì hàng xóm khen là lành. Khi mua, xem nhãn, hạn dùng và nguồn gốc. Cục Quản lý Dược (Bộ Y tế) có hướng dẫn tra cứu giấy đăng ký lưu hành thuốc. Thuốc kê đơn thì mua theo đơn.
+
+## Nhà cửa và lúc ngã
+
+Tổ chức Y tế Thế giới cho biết ngã là nguyên nhân chấn thương phổ biến ở người lớn tuổi. Giữ lối đi thông thoáng và đủ sáng, nhất là đường ra nhà vệ sinh ban đêm.
+
+Nếu người thân ngã mà không tự đứng dậy được, đau nhiều, đập đầu, khó thở, yếu một bên người hoặc nói khó — hãy gọi cấp cứu. Đừng kéo mạnh khi bạn nghi có chấn thương nặng.
+
+Chia ca không có nghĩa ai cũng phải biết sơ cứu chuyên sâu. Nghĩa là ai cũng biết **gọi ai**, và biết việc nào không được làm liều.
+
+## Giữ một nhịp gặp người, không chỉ việc nhà
+
+Chăm sóc không chỉ là thuốc và cơm. Mỗi tuần, một cuộc gọi hoặc một lúc ngồi nói chuyện — do một người trong danh sách nhận, không dồn hết cho người đang mệt nhất. Nếu người thân bỏ ăn, ít nói hẳn, hoặc buồn kéo dài nhiều ngày, hãy đưa đi khám. Đừng kết luận “tuổi già thì vậy”.
+
+## Việc nhỏ tuần này
+
+- Viết tờ liên hệ và gửi ảnh cho ít nhất một người trong nhà.
+- Giao **một** việc lặp lại — nhắc thuốc hoặc gọi thăm — cho người chưa nhận việc.
+- Đọc [thư viện chăm sóc cha mẹ](/thu-vien?category=cham-soc-cha-me) và đưa “viết tờ liên hệ” vào [kế hoạch 30 ngày](/ke-hoach).
+- Câu hỏi giáo dục có thể đưa vào [Hỏi VivaAge](/hoi). Tình huống đang cấp cứu thì gọi cơ sở y tế, đừng chờ một câu trả lời trên mạng.
+
+## Giới hạn
+
+Bài viết không thay điều dưỡng, không thay bác sĩ, không phân chia pháp lý việc chăm sóc. Khi tình trạng nặng — đau ngực dữ dội, khó thở nặng, yếu nửa người, nói khó, hoặc ngã mà không đứng dậy được — hãy đến cơ sở y tế ngay.',
+  'published',
+  '2026-08-18',
+  '2026-08-18T02:00:00.000Z',
+  'Biên tập VivaAge',
+  '2026-08-18T01:00:00.000Z',
+  '2026-08-18T01:00:00.000Z',
+  '["who-falls","byt-elderly-checkup","byt-drug-registration-lookup"]',
+  NULL,
+  NULL,
+  0,
+  100
+);
+
 UPDATE blog_posts SET is_featured = 1, featured_rank = 1, updated_at = datetime('now') WHERE slug = 'gioi-thieu-vivaage';
 
 UPDATE blog_posts SET is_featured = 1, featured_rank = 2, updated_at = datetime('now') WHERE slug = 'on-dinh-tinh-than-tuoi-trung-nien-co-nguon';
