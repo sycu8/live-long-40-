@@ -27,7 +27,7 @@ const chestVerdict = {
 
 describe("emergency rules r7", () => {
   it("bumps the ruleset", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.3");
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.4");
   });
 
   it("treats a spoken muốn chết plan as self-harm, including across a comma", () => {

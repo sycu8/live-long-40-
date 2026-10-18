@@ -2,6 +2,7 @@ import { ABSTENTION_MESSAGE } from "@shared/constants/product";
 import { classifyQuestion, normalizeQuery } from "@shared/rules/classification";
 import {
   decide,
+  isMostSevere,
   ruleViewFor,
   type ClassifierView,
   type Decision,
@@ -26,6 +27,7 @@ import {
   riskFromAcuteVerdict,
   verifyCrisisWording,
   type AcuteLayerResult,
+  type VerifierAnswer,
 } from "./acute-classifier";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@shared/rules/prompt";
 import { answerHasCitations, sourceLooksOfficial } from "@shared/rules/sources";
@@ -327,7 +329,7 @@ export type ChatPipelineOptions = {
   /** Test override. Production calls Workers AI. */
   classifyAcute?: (question: string) => Promise<AcuteLayerResult>;
   /** Test override for the idiom verifier. Production calls Workers AI. */
-  verifyCrisis?: (question: string) => Promise<boolean>;
+  verifyCrisis?: (question: string) => Promise<VerifierAnswer>;
 };
 
 function chatTimeoutError(timeoutMs: number): Error {
@@ -402,9 +404,8 @@ export function appendAcuteSafetyNet(
   const category = layer?.status === "ok" ? layer.verdict.category : "none";
   const unsure = pending || failed;
   const past = selfHarmLooksPastStable(question);
-  const timeoutGentle =
+  const failureGentle =
     layer?.status === "fail" &&
-    layer.reason === "timeout" &&
     !hasAcuteCue(question) &&
     !evaluateHighRisk(question).matched;
   let out = text;
@@ -412,7 +413,7 @@ export function appendAcuteSafetyNet(
     !out.includes(GENTLE_SUPPORT_LINE) &&
     (past ||
       checkIn ||
-      timeoutGentle ||
+      failureGentle ||
       (!figurative && selfHarmLooksInformational(question)) ||
       (unsure && !figurative && selfHarmLooksAmbiguous(question)))
   ) {
@@ -457,30 +458,39 @@ function classifierView(question: string, layer: AcuteLayerResult): ClassifierVi
  * Full screen from the precedence table, or null when the table asks for
  * the gentle line, a verifier, or no screen. The pipeline runs the verifier.
  */
+function classifierFailed(layer: AcuteLayerResult | null): boolean {
+  return layer?.status === "fail";
+}
+
 export function resolveAcuteScreen(
   question: string,
   layer: AcuteLayerResult | null,
 ): Exclude<RiskClass, "none"> | null {
   const rules = ruleViewFor(question);
-  const timeout = layer?.status === "fail" && layer.reason === "timeout";
-  const view =
-    !layer || layer.status !== "ok" || timeout ? null : classifierView(question, layer);
-  const decision = decide(rules, view, timeout);
+  const failed = classifierFailed(layer);
+  const view = !layer || layer.status !== "ok" ? null : classifierView(question, layer);
+  const decision = decide(rules, view, failed);
   return decision.kind === "screen" ? decision.riskClass : null;
 }
 
 async function finishDecision(
   question: string,
   layer: AcuteLayerResult | null,
-  verify: (question: string) => Promise<boolean>,
+  verify: (question: string) => Promise<VerifierAnswer>,
 ): Promise<Decision> {
   const rules = ruleViewFor(question);
-  const timeout = layer?.status === "fail" && layer.reason === "timeout";
-  const view =
-    !layer || layer.status !== "ok" || timeout ? null : classifierView(question, layer);
-  const decision = decide(rules, view, timeout);
+  const failed = classifierFailed(layer);
+  const view = !layer || layer.status !== "ok" ? null : classifierView(question, layer);
+  const decision = decide(rules, view, failed);
   if (decision.kind !== "verify" || !view) return decision;
-  const verified = await verify(question);
+  let verified: boolean | "failed" = "failed";
+  try {
+    const answer = await verify(question);
+    if (answer === true) verified = true;
+    else if (answer === false) verified = false;
+  } catch {
+    verified = "failed";
+  }
   return decide(rules, { ...view, verified }, false);
 }
 
@@ -577,9 +587,10 @@ export async function runChatPipeline(
   question: string,
   options?: ChatPipelineOptions,
 ): Promise<ChatPipelineResult> {
-  // A specific rule screen is shown before the classifier starts.
+  // decide() is the only chooser. A rule class is an input, not an early return.
+  // Only the most severe class can render before the classifier result exists.
   const rules = ruleViewFor(question);
-  if (rules.class) {
+  if (rules.class && isMostSevere(rules.class)) {
     const decision = decide(rules, null, false);
     const riskClass = decision.kind === "screen" ? decision.riskClass : rules.class;
     return {
@@ -591,7 +602,8 @@ export async function runChatPipeline(
   }
 
   const classification = classifyQuestion(question);
-  const routed = shouldRunAcuteClassifier(question, classification);
+  const routed =
+    rules.class !== null || shouldRunAcuteClassifier(question, classification);
   const box = startClassifier(env, question, routed, options);
   const verify = (text: string) =>
     options?.verifyCrisis ? options.verifyCrisis(text) : verifyCrisisWording(env, text);
@@ -604,6 +616,18 @@ export async function runChatPipeline(
     return box.settled;
   };
   let checkIn = false;
+
+  if (rules.class) {
+    const decision = await decisionFor();
+    if (decision.kind === "screen") {
+      return {
+        kind: "high_risk",
+        riskClass: decision.riskClass,
+        message: emergencyMessage(decision.riskClass),
+        classification: "high_risk_health",
+      };
+    }
+  }
 
   const highRisk = (riskClass: Exclude<RiskClass, "none">): ChatPipelineResult => ({
     kind: "high_risk",
@@ -643,13 +667,15 @@ export async function runChatPipeline(
   const early = await consider();
   if (early) return early;
 
-  const abstain = (
+  const abstain = async (
     messageBody: string,
     abstainClass: string,
     sources: RetrievedSource[],
     mode: string,
-  ): ChatPipelineResult => {
+  ): Promise<ChatPipelineResult> => {
     if (box.saw || !box.promise) {
+      const decision = await decisionFor();
+      if (decision.kind === "screen") return highRisk(decision.riskClass);
       return {
         kind: "abstain",
         message: appendAcuteSafetyNet(
@@ -658,7 +684,7 @@ export async function runChatPipeline(
           box.layer,
           routed,
           false,
-          checkIn,
+          checkIn || decision.kind === "gentle",
         ),
         classification: abstainClass,
         sources,

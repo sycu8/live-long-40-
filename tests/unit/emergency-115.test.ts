@@ -304,7 +304,9 @@ describe("emergency 115 routing", () => {
     expect(result.message).toMatch(/gọi 115/i);
     expect(result.message).not.toContain(ABSTENTION_MESSAGE);
     expect(result.message).not.toContain(SYMPTOM_SAFETY_LINE);
-    expect(cacheKeys).toEqual([]);
+    expect(cacheKeys.length).toBeGreaterThan(0);
+    expect(cacheKeys.every((key) => key.startsWith("acute_clf:"))).toBe(true);
+    expect(cacheKeys.some((key) => key.startsWith("ans_cache:"))).toBe(false);
   });
 
   it("still abstains on an ordinary question when nothing is retrieved", async () => {

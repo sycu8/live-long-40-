@@ -16,7 +16,7 @@ import type { Env } from "../../worker/env";
 
 describe("emergency rules r8", () => {
   it("bumps the ruleset", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.3");
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.4");
   });
 
   it("routes intent, a plan, a means, and a farewell as self-harm", () => {

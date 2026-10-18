@@ -28,9 +28,11 @@ export type ClassifierView = {
   crisis: boolean;
   /**
    * Second verifier. Omitted until that call returns.
-   * True keeps the crisis screen. False is the gentle line.
+   * True escalates to the crisis screen. False is a clean idiom rejection.
+   * "failed" is a timeout, an error, or bad output, and never becomes the gentle line
+   * while a severe signal is already in hand.
    */
-  verified?: boolean;
+  verified?: boolean | "failed";
 } | null;
 
 export type Decision =
@@ -78,6 +80,29 @@ export function strictlyMoreSevere(next: ScreenClass, current: ScreenClass): boo
   return (OUTRANKS[next] ?? []).includes(current);
 }
 
+const SCREEN_CLASSES: readonly ScreenClass[] = [
+  "self_harm",
+  "choking",
+  "breathing",
+  "severe_allergy",
+  "seizure",
+  "low_blood_sugar",
+  "chest_pain",
+  "stroke",
+  "bleeding",
+  "unconscious",
+  "poisoning",
+  "head_injury",
+  "burn",
+  "fall_emergency",
+  "urgent",
+];
+
+/** Nothing in the table can replace this class, so the screen can render at once. */
+export function isMostSevere(riskClass: ScreenClass): boolean {
+  return !SCREEN_CLASSES.some((next) => strictlyMoreSevere(next, riskClass));
+}
+
 function corroborated(rules: RuleView, next: ScreenClass): boolean {
   if (next === "self_harm") return rules.selfHarmLexicon;
   if (next === "urgent") return false;
@@ -85,11 +110,14 @@ function corroborated(rules: RuleView, next: ScreenClass): boolean {
 }
 
 /**
- * One precedence table.
- * A rule screen is the answer when the classifier is still unknown.
- * A known classifier may replace that screen only when its class is strictly
+ * One precedence table. This function is the only place an outcome is chosen.
+ * `timeout` is any classifier failure: a timeout, an error, or bad output.
+ * A known classifier may replace a rule screen only when its class is strictly
  * more severe and a lexicon or rule cue of that class is in the text.
  * A self-harm verdict with no lexicon cue never replaces a rule class.
+ * The verifier may escalate an uncorroborated crisis. It never suppresses a
+ * rule class, an acute cue, or a corroborated class. A failed verifier with a
+ * crisis signal shows the urgent screen.
  */
 export function decide(
   rules: RuleView,
@@ -121,7 +149,13 @@ export function decide(
   if (crisis) {
     if (rules.firstPersonHarmIntent || rules.selfHarmLexicon) return screen("self_harm");
     if (classifier?.verified === true) return screen("self_harm");
-    if (classifier?.verified === false) return { kind: "gentle" };
+    if (classifier?.verified === "failed") return screen("urgent");
+    if (classifier?.verified === false) {
+      if (rules.acuteCue) return screen("urgent");
+      if (classifier.class && classifier.class !== "self_harm")
+        return screen(classifier.class);
+      return { kind: "gentle" };
+    }
     return { kind: "verify" };
   }
 

@@ -144,6 +144,8 @@ crisis=true only when the speaker has a real wish or plan to die.
 crisis=true chỉ khi người nói thật sự muốn chết hoặc có kế hoạch.
 crisis=false for idioms and venting: mệt muốn chết, cười muốn chết, nóng muốn chết, rét muốn chết, than vãn, nói quá về việc làm, nóng, hoặc cười.
 Do not treat an idiom as a crisis. Do not treat a real plan as an idiom.
+A method, a time, a farewell, or a written note makes crisis true.
+When you are not sure, answer crisis true. You may escalate. You may not dismiss a real plan.
 
 Examples:
 
@@ -161,4 +163,25 @@ Message: Khổ quá, muốn than với ai đó cho đỡ
 
 Message: Tôi muốn chết đêm nay và đã viết thư
 {"crisis":true}
+
+Message: Em sẽ kết liễu đời mình đêm nay
+{"crisis":true}
+
+Message: Mình định uống thuốc ngủ để không tỉnh lại
+{"crisis":true}
+
+Message: Tôi muốn chết và đã cất dao trong phòng
+{"crisis":true}
+
+Message: Em tính kết thúc bài tập về nhà
+{"crisis":false}
+
+Message: Tôi không muốn chết, tôi chỉ mệt
+{"crisis":false}
+
+Message: Hôm qua tôi từng nghĩ quẩn, giờ đã ổn và ở cạnh gia đình
+{"crisis":false}
+
+Message: Rét muốn chết, mặc thêm áo
+{"crisis":false}
 `;

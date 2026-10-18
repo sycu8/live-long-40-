@@ -31,7 +31,7 @@ function rules(partial: Partial<RuleView> = {}): RuleView {
   };
 }
 
-function crisis(verified?: boolean): ClassifierView {
+function crisis(verified?: boolean | "failed"): ClassifierView {
   return verified === undefined
     ? { class: "self_harm", crisis: true }
     : { class: "self_harm", crisis: true, verified };
@@ -204,6 +204,45 @@ const TABLE: Array<{
     timeout: false,
     expect: screen("self_harm"),
   },
+  ...(["timeout", "parse", "empty", "unavailable", "unsupported"] as const).flatMap(
+    (reason) => [
+      {
+        id: `F17-${reason}-rule`,
+        rules: rules({ class: "chest_pain" as const, cues: ["chest_pain" as const] }),
+        classifier: null,
+        timeout: true,
+        expect: screen("chest_pain"),
+      },
+      {
+        id: `F17-${reason}-cue`,
+        rules: rules({ acuteCue: true }),
+        classifier: null,
+        timeout: true,
+        expect: screen("urgent"),
+      },
+      {
+        id: `F17-${reason}-calm`,
+        rules: rules(),
+        classifier: null,
+        timeout: true,
+        expect: { kind: "gentle" } as Decision,
+      },
+    ],
+  ),
+  {
+    id: "F18",
+    rules: rules(),
+    classifier: crisis("failed"),
+    timeout: false,
+    expect: screen("urgent"),
+  },
+  {
+    id: "F18-cue",
+    rules: rules({ acuteCue: true }),
+    classifier: crisis("failed"),
+    timeout: false,
+    expect: screen("urgent"),
+  },
 ];
 
 const crisisVerdict = {
@@ -218,8 +257,8 @@ const crisisVerdict = {
 };
 
 describe("emergency precedence r10", () => {
-  it("is ruleset v1.8.3", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.3");
+  it("is ruleset v1.8.4", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.4");
   });
 
   it("follows the precedence table for every r9 and r10 id", () => {
@@ -253,25 +292,20 @@ describe("emergency precedence r10", () => {
     expect(evaluateHighRisk("Đã hết co giật").matched).toBe(false);
   });
 
-  it("returns a chest screen before the classifier starts", async () => {
+  it("asks the classifier before a chest screen and keeps chest when that call fails", async () => {
     let calls = 0;
     const started = performance.now();
-    const result = await runChatPipeline(
-      {
-        AI: {
-          async run() {
-            calls += 1;
-            return new Promise(() => undefined);
-          },
-        },
-      } as unknown as Env,
-      "Ông tôi bị nhói ngực dữ dội",
-    );
+    const result = await runChatPipeline({} as Env, "Ông tôi bị nhói ngực dữ dội", {
+      classifyAcute: async () => {
+        calls += 1;
+        return { status: "fail", reason: "parse" };
+      },
+    });
     expect(result.kind).toBe("high_risk");
     if (result.kind !== "high_risk") return;
     expect(result.riskClass).toBe("chest_pain");
     expect(result.message).toMatch(/gọi 115/i);
-    expect(calls).toBe(0);
+    expect(calls).toBe(1);
     expect(performance.now() - started).toBeLessThan(400);
   });
 

@@ -139,6 +139,7 @@ describe("acute classifier JSON", () => {
           figurative: true,
         }),
       }),
+      verifyCrisis: async () => false,
     });
     expect(result.kind).toBe("abstain");
     if (result.kind !== "abstain") return;
@@ -536,6 +537,7 @@ describe("acute classifier JSON", () => {
           figurative: false,
         }),
       }),
+      verifyCrisis: async () => false,
     });
     expect(idiomResult.kind).not.toBe("high_risk");
     if (idiomResult.kind === "abstain") {

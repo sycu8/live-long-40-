@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.8.3";
+export const SAFETY_RULESET_VERSION = "v1.8.4";
 
 export type RiskClass =
   | "chest_pain"
@@ -2282,10 +2282,13 @@ export function hasSelfHarmCue(question: string): boolean {
   if (isHypothetical(folded) && !/\b(dang|vua|toi nay|dem nay)\b/.test(folded))
     return false;
   if (hasExplicitFigurativeMarker(question)) return false;
-  if (matchSelfHarm(tokens)) return true;
+  const masked = applyNegationMask(tokens);
+  const maskedFolded = masked.map((token) => token.folded).join(" ");
+  if (matchSelfHarm(masked)) return true;
   return (
-    /\b(tu sat|quyen sinh|tuyet menh|khong muon song|khong song noi)\b/.test(folded) ||
-    hasRealSuicidePair(tokens)
+    /\b(tu sat|quyen sinh|tuyet menh|khong muon song|khong song noi)\b/.test(
+      maskedFolded,
+    ) || hasRealSuicidePair(masked)
   );
 }
 
@@ -2299,8 +2302,12 @@ export function hasAcuteCue(question: string): boolean {
   const masked = applyNegationMask(tokens);
   const maskedFolded = masked.map((token) => token.folded).join(" ");
   if (pickRiskClass(masked, maskedFolded)) return true;
+  let picture = maskedFolded;
+  if (seizureLooksResolved(question)) {
+    picture = picture.replace(/\b(co giat|dong kinh)\b/g, " ");
+  }
   return /\b(tim dap|mo hoi lanh|do mo hoi|tuc nguc|dau nguc|kho tho|co giat|bat tinh|chay mau|uong nham|meo mieng)\b/.test(
-    maskedFolded,
+    picture,
   );
 }
 

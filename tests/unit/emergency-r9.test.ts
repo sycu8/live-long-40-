@@ -25,8 +25,8 @@ const figurativeIntent = {
 };
 
 describe("emergency rules r9", () => {
-  it("bumps the ruleset to v1.8.3", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.3");
+  it("bumps the ruleset to v1.8.4", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.4");
     expect(ACUTE_CLASSIFIER_TIMEOUT_MS).toBe(3500);
   });
 

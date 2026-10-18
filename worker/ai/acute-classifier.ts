@@ -313,8 +313,11 @@ export async function classifyAcuteRisk(
   return { status: "ok", verdict: parsed, cached: false };
 }
 
-/** One short call. A failure means the crisis was not confirmed. */
+/** One short call. A failure is not a clean rejection. */
 export const ACUTE_VERIFIER_TIMEOUT_MS = 2_000;
+
+/** True confirms a crisis. False is a clean idiom. "failed" is timeout, error, or bad output. */
+export type VerifierAnswer = boolean | "failed";
 
 /** True only when the verifier returns crisis=true. Anything else is false. */
 export function parseCrisisVerifierOutput(raw: string): boolean | null {
@@ -336,8 +339,8 @@ export async function verifyCrisisWording(
   env: Env,
   question: string,
   options?: { timeoutMs?: number },
-): Promise<boolean> {
-  if (!env.AI) return false;
+): Promise<VerifierAnswer> {
+  if (!env.AI) return "failed";
   const timeoutMs = Math.min(
     ACUTE_VERIFIER_TIMEOUT_MS,
     options?.timeoutMs ?? ACUTE_VERIFIER_TIMEOUT_MS,
@@ -363,9 +366,12 @@ export async function verifyCrisisWording(
       abort,
     );
     const read = readWorkersAiText(response);
-    if (!read.ok || !read.text.trim()) return false;
-    return parseCrisisVerifierOutput(read.text) === true;
+    if (!read.ok || !read.text.trim()) return "failed";
+    const parsed = parseCrisisVerifierOutput(read.text);
+    if (parsed === true) return true;
+    if (parsed === false) return false;
+    return "failed";
   } catch {
-    return false;
+    return "failed";
   }
 }
