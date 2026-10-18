@@ -156,7 +156,7 @@ Dùng temporary preview account (`wrangler deploy --temporary`). Hỗ trợ D1/K
 
 1. Tạo D1, R2, KV, Queues trên account Cloudflare.
 2. Cập nhật `database_id` / KV `id` trong `wrangler.jsonc` (hoặc dùng auto-provision Wrangler nếu bật).
-3. Tạo AI Gateway id `song-an-40` và AI Search instance `song-an-40-knowledge` trong namespace `default`.
+3. Tạo AI Search instance `song-an-40-knowledge` trong namespace `default`.
 4. Cấu hình Cloudflare Access application bảo vệ đường dẫn `/admin*`.
 5. Đặt secrets.
 6. Chạy:

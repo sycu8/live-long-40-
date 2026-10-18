@@ -151,15 +151,25 @@ export default {
   },
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(
-      runBlogDailyJob(env).then((result) => {
-        console.log(
-          JSON.stringify({
-            level: "info",
-            message: "blog_daily_job",
-            ...result,
-          }),
-        );
-      }),
+      runBlogDailyJob(env)
+        .then((result) => {
+          console.log(
+            JSON.stringify({
+              level: "info",
+              message: "blog_daily_job",
+              ...result,
+            }),
+          );
+        })
+        .catch((err: unknown) => {
+          console.error(
+            JSON.stringify({
+              level: "error",
+              message: "blog_daily_job_failed",
+              error: err instanceof Error ? err.message : String(err),
+            }),
+          );
+        }),
     );
   },
 };

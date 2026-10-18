@@ -17,6 +17,7 @@ import {
   isGroundedOfficialAnswer,
   matchAnswerBank,
 } from "../../worker/ai/answer-cache";
+import { WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
 
 describe("answer bank official sources", () => {
   it("covers all example questions with detailed answers", () => {
@@ -35,9 +36,9 @@ describe("answer bank official sources", () => {
         expect(s.url.startsWith("https://")).toBe(true);
         expect(isGenericHomepageUrl(s.url), s.url).toBe(false);
         expect(isOfficialIssuer(s.issuer)).toBe(true);
-        expect(
-          s.trustTier === "official_vn" || s.trustTier === "intl_guideline",
-        ).toBe(true);
+        expect(s.trustTier === "official_vn" || s.trustTier === "intl_guideline").toBe(
+          true,
+        );
         expect(s.title.length).toBeGreaterThan(12);
       }
       const cached = bankEntryToCached(entry);
@@ -65,7 +66,11 @@ describe("answer bank official sources", () => {
   it("builds stable cache keys for equivalent folded questions", () => {
     const a = cacheKeyForQuestion("Quỹ dự phòng là gì?");
     const b = cacheKeyForQuestion("quy du phong la gi?");
+    const prefix = `ans_cache:v3:${WORKERS_AI_TEXT_MODEL}:`;
+    expect(a.startsWith(prefix)).toBe(true);
+    expect(b.startsWith(prefix)).toBe(true);
     expect(a.split("_")[0]).toBe(b.split("_")[0]);
+    expect(a).not.toContain("ans_cache:v2:");
   });
 });
 
