@@ -2,24 +2,10 @@ import type { Env } from "../env";
 import { isRetiredWorkersAiModel, WORKERS_AI_TEXT_MODEL } from "./models";
 
 /**
- * Options for `env.AI.run()` that send the request through AI Gateway.
- *
- * Workers AI inference uses `env.AI.run(model, inputs, { gateway: { id } })`.
- * `env.AI.gateway(id).run()` is the universal-endpoint client. It expects
- * `{ provider, endpoint, headers, query }` and reads `request.headers` with
- * `Object.entries`. Calling it as `run(model, inputs)` therefore throws
- * `TypeError: Cannot convert undefined or null to object`.
- *
- * @see https://developers.cloudflare.com/ai-gateway/usage/worker-binding-methods/
+ * Workers AI inference calls the binding directly: `env.AI.run(model, inputs)`.
+ * Do not pass `{ gateway }` — the `song-an-40` gateway is not configured and
+ * returns error 2001 ("Please configure AI Gateway").
  */
-export function workersAiRunOptions(
-  gatewayId: string | undefined | null,
-): { gateway: { id: string } } | undefined {
-  const id = gatewayId?.trim();
-  if (!id) return undefined;
-  return { gateway: { id } };
-}
-
 export const WORKERS_AI_EMPTY_RESPONSE = "Workers AI returned an empty response";
 
 export async function runWorkersAi(
@@ -38,7 +24,7 @@ export async function runWorkersAi(
   if (inputs == null || typeof inputs !== "object" || Array.isArray(inputs)) {
     throw new Error("Workers AI inputs must be an object");
   }
-  return env.AI.run(model, inputs, workersAiRunOptions(env.AI_GATEWAY_ID));
+  return env.AI.run(model, inputs);
 }
 
 export function formatWorkersAiError(err: unknown): string {

@@ -1,39 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
-import { readAiText, runWorkersAi, workersAiRunOptions } from "../../worker/ai/run";
+import { readAiText, runWorkersAi } from "../../worker/ai/run";
 import { generateEditorialPostWithAi } from "../../worker/blog/generate-ai";
 import { generateAndStoreBlogCover } from "../../worker/blog/images";
 import type { Env } from "../../worker/env";
 
 const MODEL = WORKERS_AI_TEXT_MODEL;
 
-/**
- * workerd `AiGateway.run` (universal endpoint) does `Object.entries(req.headers)`.
- * `run(model, inputs)` passes a string, so `headers` is undefined and throws.
- */
-function universalGatewayRun(data: unknown): void {
-  const input = Array.isArray(data) ? data : [data];
-  for (const req of input) {
-    const headers = (req as { headers?: object }).headers;
-    for (const [, value] of Object.entries(headers as object)) {
-      void value;
-    }
-  }
-}
-
 function aiBinding(run: Ai["run"]): Ai {
-  return {
-    run,
-    gateway(id: string) {
-      return {
-        run(data: unknown) {
-          void id;
-          universalGatewayRun(data);
-          return Promise.resolve(new Response("universal"));
-        },
-      };
-    },
-  } as unknown as Ai;
+  return { run } as unknown as Ai;
 }
 
 function editorialJson(): string {
@@ -50,64 +25,10 @@ function editorialJson(): string {
   });
 }
 
-describe("workers AI gateway routing", () => {
-  it("builds gateway options only when an id is set", () => {
-    expect(workersAiRunOptions("song-an-40")).toEqual({
-      gateway: { id: "song-an-40" },
-    });
-    expect(workersAiRunOptions("  song-an-40  ")).toEqual({
-      gateway: { id: "song-an-40" },
-    });
-    expect(workersAiRunOptions("")).toBeUndefined();
-    expect(workersAiRunOptions("   ")).toBeUndefined();
-    expect(workersAiRunOptions(undefined)).toBeUndefined();
-  });
-
-  it("throws the production TypeError when gateway.run receives (model, inputs)", () => {
-    expect(() => universalGatewayRun(MODEL)).toThrow(TypeError);
-    expect(() => universalGatewayRun(MODEL)).toThrow(
-      /Cannot convert undefined or null to object/,
-    );
-  });
-
-  it("routes a scheduled editorial draft through env.AI.run gateway options", async () => {
-    const calls: unknown[][] = [];
-    let gatewayCalled = false;
-    const env = {
-      AI_GATEWAY_ID: "song-an-40",
-      AI: {
-        async run(...args: unknown[]) {
-          calls.push(args);
-          return { response: editorialJson() };
-        },
-        gateway() {
-          gatewayCalled = true;
-          return {
-            run(data: unknown) {
-              universalGatewayRun(data);
-            },
-          };
-        },
-      },
-    } as unknown as Env;
-
-    const post = await generateEditorialPostWithAi(env, "2026-10-18", 0);
-
-    expect(gatewayCalled).toBe(false);
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.[0]).toBe(MODEL);
-    const inputs = calls[0]?.[1] as { max_tokens?: number } | undefined;
-    expect(inputs?.max_tokens).toBe(WORKERS_AI_MAX_TOKENS);
-    expect(calls[0]?.[2]).toEqual({ gateway: { id: "song-an-40" } });
-    expect(post?.title).toBe("Một việc nhỏ cho tuần này");
-    expect(post?.sourceIds).toContain("who-ageing");
-    expect(post?.body).toContain("/thu-vien");
-  });
-
-  it("calls env.AI.run without gateway options when AI_GATEWAY_ID is empty", async () => {
+describe("workers AI direct binding", () => {
+  it("drafts a post with env.AI.run(model, inputs) and no gateway options", async () => {
     const calls: unknown[][] = [];
     const env = {
-      AI_GATEWAY_ID: "",
       AI: aiBinding(async (...args) => {
         calls.push(args);
         return { response: editorialJson() };
@@ -116,16 +37,21 @@ describe("workers AI gateway routing", () => {
 
     const post = await generateEditorialPostWithAi(env, "2026-10-18", 0);
 
-    expect(post).not.toBeNull();
-    expect(calls[0]?.[2]).toBeUndefined();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toHaveLength(2);
+    expect(calls[0]?.[0]).toBe(MODEL);
+    const inputs = calls[0]?.[1] as { max_tokens?: number } | undefined;
+    expect(inputs?.max_tokens).toBe(WORKERS_AI_MAX_TOKENS);
+    expect(post?.title).toBe("Một việc nhỏ cho tuần này");
+    expect(post?.sourceIds).toContain("who-ageing");
+    expect(post?.body).toContain("/thu-vien");
   });
 
-  it("stores a blog cover using the same gateway options", async () => {
+  it("stores a blog cover with a direct Workers AI call", async () => {
     const calls: unknown[][] = [];
     const image = Buffer.from("A".repeat(300)).toString("base64");
     let storedKey = "";
     const env = {
-      AI_GATEWAY_ID: "song-an-40",
       AI: aiBinding(async (...args) => {
         calls.push(args);
         return { image };
@@ -147,14 +73,13 @@ describe("workers AI gateway routing", () => {
     expect(cover?.key).toBe("blog-covers/mot-viec-nho.png");
     expect(storedKey).toBe("blog-covers/mot-viec-nho.png");
     expect(calls[0]?.[0]).toBe("@cf/black-forest-labs/flux-1-schnell");
-    expect(calls[0]?.[2]).toEqual({ gateway: { id: "song-an-40" } });
+    expect(calls[0]).toHaveLength(2);
     expect(calls).toHaveLength(1);
   });
 
-  it("runWorkersAi forwards model, inputs, and gateway id", async () => {
+  it("runWorkersAi forwards model and inputs without gateway options", async () => {
     const calls: unknown[][] = [];
     const env = {
-      AI_GATEWAY_ID: "song-an-40",
       AI: aiBinding(async (...args) => {
         calls.push(args);
         return { response: "ok" };
@@ -164,14 +89,16 @@ describe("workers AI gateway routing", () => {
     const response = await runWorkersAi(env, MODEL, {
       messages: [{ role: "user", content: "xin chào" }],
       stream: false,
+      max_tokens: WORKERS_AI_MAX_TOKENS,
     });
 
     expect(readAiText(response)).toBe("ok");
+    expect(calls[0]).toHaveLength(2);
     expect(calls[0]?.[0]).toBe(MODEL);
     expect(calls[0]?.[1]).toEqual({
       messages: [{ role: "user", content: "xin chào" }],
       stream: false,
+      max_tokens: WORKERS_AI_MAX_TOKENS,
     });
-    expect(calls[0]?.[2]).toEqual({ gateway: { id: "song-an-40" } });
   });
 });

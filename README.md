@@ -104,7 +104,7 @@ Trong `wrangler.jsonc`:
 - `TURNSTILE_SECRET_KEY`
 - `ADMIN_SHARED_SECRET` (chỉ cho local/staging khi chưa có Access)
 
-Biến công khai: `TURNSTILE_SITE_KEY`, `AI_GATEWAY_ID`, `AI_SEARCH_INSTANCE`, versions (`PROMPT_VERSION`, `SCORING_RULESET_VERSION`, …).
+Biến công khai: `TURNSTILE_SITE_KEY`, `AI_SEARCH_INSTANCE`, versions (`PROMPT_VERSION`, `SCORING_RULESET_VERSION`, …). Inference dùng binding `AI` trực tiếp, không qua AI Gateway.
 
 ## Deploy lên Cloudflare
 

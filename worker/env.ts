@@ -43,7 +43,6 @@ export type Env = {
   ENVIRONMENT: string;
   APP_NAME: string;
   AI_SEARCH_INSTANCE: string;
-  AI_GATEWAY_ID: string;
   SESSION_COOKIE_NAME: string;
   CSRF_COOKIE_NAME: string;
   TURNSTILE_SITE_KEY: string;

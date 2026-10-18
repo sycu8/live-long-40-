@@ -410,10 +410,9 @@ export async function runChatPipeline(
             error: formatWorkersAiError(err),
           }),
         );
-        const msg =
-          "Hệ thống trả lời tạm thời gặp sự cố. Vui lòng thử lại sau.";
-        controller.enqueue(msg);
-        resolveFull(msg);
+        const fallback = buildExtractiveAnswer(sources);
+        controller.enqueue(fallback);
+        resolveFull(fallback);
         controller.close();
       }
     },
