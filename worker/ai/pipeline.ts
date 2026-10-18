@@ -56,6 +56,7 @@ import {
 } from "./local-retrieve";
 import {
   answerHasInvalidCitations,
+  consumeModelLine,
   groundedSentence,
   isCitationOnly,
   answerFailsCache,
@@ -1176,6 +1177,7 @@ export async function runChatPipeline(
       let modelWrote115 = false;
       let modelAvoidedCare = false;
       let quietFinish = false;
+      let scopeLabel: string | null = null;
       try {
         const timeoutMs = options?.aiTimeoutMs ?? CHAT_AI_TIMEOUT_MS;
         const deadline = Date.now() + timeoutMs;
@@ -1199,7 +1201,21 @@ export async function runChatPipeline(
         let firstKeptAt = 0;
         const dropRatioExceeded = () => kept === 0 && dropped >= 2;
         const emitSentence = (sentence: string) => {
-          const grounded = groundedSentence(sentence, sources, question);
+          const consumed = consumeModelLine(sentence, { label: scopeLabel });
+          scopeLabel = consumed.label;
+          if (!consumed.emit) {
+            if (sentence.trim()) {
+              droppedAny = true;
+              dropped += 1;
+              if (firstDropAt === 0) firstDropAt = Date.now();
+            }
+            if (dropRatioExceeded()) {
+              stopEarly = true;
+              if (!abort.signal.aborted) abort.abort(new Error("drop_ratio"));
+            }
+            return;
+          }
+          const grounded = groundedSentence(consumed.emit, sources, question);
           if (!grounded || isCitationOnly(grounded)) {
             if (sentence.trim()) {
               droppedAny = true;
@@ -1239,7 +1255,6 @@ export async function runChatPipeline(
         const pushText = (text: string) => {
           if (!text) return;
           if (mentionsEmergencyNumber(text)) modelWrote115 = true;
-          if (answerFailsCache(text)) modelAvoidedCare = true;
           modelText += text;
           pending += text;
           release(false);
@@ -1280,7 +1295,12 @@ export async function runChatPipeline(
         const cleaned = emitted.trim();
         const hadInvalid = answerHasInvalidCitations(modelText, sources);
         if (mentionsEmergencyNumber(modelText)) modelWrote115 = true;
-        if (answerFailsCache(modelText) || answerFailsCache(cleaned)) modelAvoidedCare = true;
+        if (
+          answerFailsCache(modelText, sources) ||
+          answerFailsCache(cleaned, sources)
+        ) {
+          modelAvoidedCare = true;
+        }
         const fallback = buildExtractiveAnswer(sources);
         const canCache = !hadInvalid && !droppedAny && !modelWrote115 && !modelAvoidedCare;
         const usable =

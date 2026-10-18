@@ -44,9 +44,8 @@ export type CachedAnswer = {
   cachedAt: string;
 };
 
-// v8 does not read v7. Care-downgrade answers were stored for 7 days under v7.
-// Those keys stay until TTL and are never replayed.
-const CACHE_PREFIX = "ans_cache:v8:";
+// v9 does not read v8. Care-downgrade answers stored under v8 stay until TTL.
+const CACHE_PREFIX = "ans_cache:v9:";
 /** New writes expire in 7 days. Older keys are never read. */
 export const CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
 
@@ -334,12 +333,13 @@ const HAS_ACCENT =
   /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/i;
 
 /**
- * Care, as a class. The property test crosses these with every operator token.
- * Whole sentences are not listed here.
+ * Care, as a sentence-level class. A comma does not split this decision.
+ * The property test crosses these with every operator token.
  */
 export const CARE_TERMS = [
   "hospital",
   "doctor",
+  "physician",
   "clinic",
   "kham",
   "di vien",
@@ -351,16 +351,35 @@ export const CARE_TERMS = [
   "checkup",
   "checked",
   "emergency",
+  "emergency room",
   "ambulance",
+  "er",
   "benh vien",
+  "nhap vien",
+  "admission",
   "phong kham",
   "xe cap cuu",
+  "co so y te",
+  "health facility",
+  "thuoc",
+  "medicine",
+  "medicines",
+  "drug",
+  "drugs",
+  "antibiotic",
+  "antibiotics",
+  "khang sinh",
+  "tu dieu chinh",
+  "self adjust",
   "tro giup",
   "kiem tra",
   "medical help",
 ] as const;
 
-/** Negators. "shouldn't" is one token after the apostrophe is removed. */
+/**
+ * Negators. "shouldn't" / "isn't" / "doesn't" / "needn't" are one token
+ * after the apostrophe is removed. A modal does not cancel one of these.
+ */
 export const NEGATOR_TOKENS = [
   "khong",
   "chua",
@@ -372,6 +391,9 @@ export const NEGATOR_TOKENS = [
   "never",
   "dont",
   "shouldnt",
+  "isnt",
+  "doesnt",
+  "neednt",
   "without",
 ] as const;
 
@@ -416,7 +438,10 @@ const LIMITER_PHRASE_SET = new Set<string>(LIMITER_TOKENS.filter((term) => term.
 function careAt(words: string[], index: number): boolean {
   const pair = `${words[index] ?? ""} ${words[index + 1] ?? ""}`;
   const triple = `${pair} ${words[index + 2] ?? ""}`;
-  if (CARE_PHRASE_SET.has(triple) || CARE_PHRASE_SET.has(pair)) return true;
+  const quad = `${triple} ${words[index + 3] ?? ""}`;
+  if (CARE_PHRASE_SET.has(quad) || CARE_PHRASE_SET.has(triple) || CARE_PHRASE_SET.has(pair)) {
+    return true;
+  }
   return CARE_WORDS.has(words[index] ?? "");
 }
 
@@ -443,95 +468,141 @@ function hasCare(words: string[]): boolean {
   return words.some((_, index) => careAt(words, index));
 }
 
-function hasLimiter(words: string[]): boolean {
-  for (let i = 0; i < words.length; i += 1) {
-    if (LIMITER_WORDS.has(words[i] ?? "")) return true;
-    const pair = `${words[i] ?? ""} ${words[i + 1] ?? ""}`;
-    if (LIMITER_PHRASE_SET.has(pair)) return true;
-  }
-  return false;
+/** Care is decided on the whole sentence. A comma does not open a new decision. */
+export function isCareSentence(sentence: string): boolean {
+  if (isSystemSafetyLine(sentence)) return false;
+  return hasCare(clauseWords(sentence));
 }
 
-function hasTime(words: string[]): boolean {
+/**
+ * Lower case, diacritics kept, chips and bold markers removed, whitespace collapsed.
+ * This is the extractive comparison, not the folded operator scan.
+ */
+function extractiveNormalize(text: string): string {
+  return text
+    .normalize("NFC")
+    .toLowerCase()
+    .replace(/\[s\d+\]/gi, " ")
+    .replace(/\*\*/g, " ")
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractiveTokens(text: string): string[] {
+  return extractiveNormalize(text)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+}
+
+function multisetOverlap(model: string[], source: string[]): number {
+  if (model.length === 0 || source.length === 0) return 0;
+  const counts = new Map<string, number>();
+  for (const token of source) counts.set(token, (counts.get(token) ?? 0) + 1);
+  let hits = 0;
+  for (const token of model) {
+    const left = counts.get(token) ?? 0;
+    if (left <= 0) continue;
+    hits += 1;
+    counts.set(token, left - 1);
+  }
+  return hits / Math.max(model.length, source.length);
+}
+
+/** Operator tokens in order, so an inserted copy of a token the source already has still counts. */
+function operatorTokens(text: string): string[] {
+  const words = clauseWords(text);
+  const found: string[] = [];
   for (let i = 0; i < words.length; i += 1) {
     const word = words[i] ?? "";
-    // "theo dõi" is monitoring, not "đợi".
-    if (word === "doi" && words[i - 1] === "theo") continue;
-    if (TIME_SET.has(word)) return true;
-    if (words[i] === "put" && words[i + 1] === "off") return true;
+    if (isNegator(words, i, text)) found.push(word === "dung" ? "dung" : word);
+    if (MODAL_SET.has(word)) found.push(word);
+    if (word === "doi" && words[i - 1] === "theo") {
+      /* "theo dõi" is not "đợi". */
+    } else if (TIME_SET.has(word)) {
+      found.push(word);
+    }
+    if (word === "put" && words[i + 1] === "off") found.push("put off");
+    if (LIMITER_WORDS.has(word)) found.push(word);
+    const pair = `${word} ${words[i + 1] ?? ""}`;
+    if (LIMITER_PHRASE_SET.has(pair)) found.push(pair);
+  }
+  return found;
+}
+
+/**
+ * v1.9 operator rule, kept on top of the overlap test.
+ * A negator, modal, time word, or limiter that the source sentence does not
+ * already contain makes the care sentence non-extractive.
+ */
+function operatorsAdded(model: string, source: string): boolean {
+  const counts = new Map<string, number>();
+  for (const token of operatorTokens(source)) {
+    counts.set(token, (counts.get(token) ?? 0) + 1);
+  }
+  for (const token of operatorTokens(model)) {
+    const left = counts.get(token) ?? 0;
+    if (left <= 0) return true;
+    counts.set(token, left - 1);
   }
   return false;
 }
 
-/** Negator, limiter, modal, or time word. A modal does not cancel a negator. */
-function hasOperator(words: string[], clause: string): boolean {
-  if (hasTime(words) || hasLimiter(words)) return true;
-  return words.some((word, index) => MODAL_SET.has(word) || isNegator(words, index, clause));
-}
-
-/** Care shares the clause with any operator. Position inside the clause does not matter. */
-function clauseFailsCache(clause: string): boolean {
-  const words = clauseWords(clause);
-  return hasCare(words) && hasOperator(words, clause);
-}
+type ExtractiveSource = { key?: string; title: string; snippet: string };
 
 /**
- * The only sentence that may be shown: a negator governs wait, delay, skip,
- * hesitate, or stop, and the clause still points toward help.
+ * A care sentence may be shown and cached only when it is one cited source
+ * sentence: token overlap at least 0.9, and no added operator token.
  */
-function isPositiveUrgency(sentence: string): boolean {
-  const words = clauseWords(sentence);
-  for (let i = 0; i < words.length; i += 1) {
-    if (!isNegator(words, i, sentence)) continue;
-    const next = words[i + 1] ?? "";
-    const pair = `${next} ${words[i + 2] ?? ""}`;
-    const governsDeferral =
-      next === "wait" ||
-      next === "delay" ||
-      next === "postpone" ||
-      next === "skip" ||
-      next === "hesitate" ||
-      next === "stop" ||
-      next === "cho" ||
-      next === "doi" ||
-      next === "hoan" ||
-      pair === "bo qua" ||
-      pair === "tri hoan";
-    if (!governsDeferral) continue;
-    if (hasCare(words)) return true;
-    if (/\b(?:call|calling|go|now|checked|medicine|medicines)\b/.test(words.join(" ")))
+export function isExtractiveCareSentence(
+  sentence: string,
+  sources: ExtractiveSource[],
+): boolean {
+  if (!isCareSentence(sentence)) return false;
+  const citedKeys = [...sentence.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
+  const pool =
+    citedKeys.length > 0
+      ? sources.filter((source) => source.key && citedKeys.includes(source.key))
+      : sources;
+  const modelTokens = extractiveTokens(sentence);
+  if (modelTokens.length === 0 || pool.length === 0) return false;
+  for (const source of pool) {
+    const blob = `${source.title}. ${source.snippet}`;
+    for (const part of answerSentences(blob)) {
+      const sourceTokens = extractiveTokens(part);
+      if (multisetOverlap(modelTokens, sourceTokens) < 0.9) continue;
+      if (operatorsAdded(sentence, part)) continue;
       return true;
+    }
   }
   return false;
 }
 
-function clauseParts(sentence: string): string[] {
-  const parts = sentence
-    .split(/[,;]|(?:\s+nhưng\s+)/i)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return parts.length > 0 ? parts : [sentence];
-}
-
 /**
- * Drop the sentence. Positive urgency stays on screen and is still refused by
- * {@link answerFailsCache}.
+ * Drop a care sentence that is not an extractive copy of a cited sentence.
+ * The system 115 line is not a care sentence.
  */
-export function postponesSeekingCare(sentence: string): boolean {
-  if (isPositiveUrgency(sentence)) return false;
-  return clauseParts(sentence).some(clauseFailsCache);
+export function postponesSeekingCare(
+  sentence: string,
+  sources: ExtractiveSource[] = [],
+): boolean {
+  if (!isCareSentence(sentence)) return false;
+  return !isExtractiveCareSentence(sentence, sources);
 }
 
-/** Never cache care paired with an operator. The system 115 line does not count. */
-export function answerFailsCache(answer: string): boolean {
-  return answerSentences(answer).some((sentence) => {
-    if (isSystemSafetyLine(sentence)) return false;
-    return clauseParts(sentence).some(clauseFailsCache);
-  });
+/** Never cache a care sentence unless it is extractive against the cited sources. */
+export function answerFailsCache(
+  answer: string,
+  sources: ExtractiveSource[] = [],
+): boolean {
+  return answerSentences(answer).some((sentence) => postponesSeekingCare(sentence, sources));
 }
 
-export function answerPostponesCare(answer: string): boolean {
-  return answerFailsCache(answer);
+export function answerPostponesCare(
+  answer: string,
+  sources: ExtractiveSource[] = [],
+): boolean {
+  return answerFailsCache(answer, sources);
 }
 
 function isSystemSafetyLine(sentence: string): boolean {
@@ -711,16 +782,30 @@ function mentionsOutsideSource(
   for (const url of urls) {
     const clean = url.replace(/[.,;:!?)]+$/g, "");
     if (!isCompleteHttpUrl(clean)) return true;
-    if (!blob.includes(clean) && !isHostOnlyUrl(clean)) return true;
-    if (isHostOnlyUrl(clean)) {
+    const host = httpHostname(clean);
+    const sameDocument = cited.some((source) => {
+      if (!source.url || !host) return false;
+      const citedHost = httpHostname(source.url);
+      if (!citedHost || !hostMatchesCited(host, citedHost)) return false;
       try {
-        const host = new URL(clean).hostname;
-        if (!blob.includes(host)) return true;
+        const path = new URL(clean).pathname.replace(/\/$/, "");
+        const citedPath = new URL(source.url).pathname.replace(/\/$/, "");
+        return path === citedPath || path === "";
       } catch {
-        return true;
+        return false;
       }
+    });
+    if (!blob.includes(clean) && !isHostOnlyUrl(clean) && !sameDocument) return true;
+    if (isHostOnlyUrl(clean)) {
+      if (!host) return true;
+      const hostKnown = cited.some((source) => {
+        const citedHost = source.url ? httpHostname(source.url) : null;
+        return citedHost ? hostMatchesCited(host, citedHost) : blob.includes(host);
+      });
+      if (!hostKnown && !blob.includes(host)) return true;
       continue;
     }
+    if (sameDocument) continue;
     const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     if (new RegExp(`${escaped}\\S`).test(blob)) return true;
   }
@@ -775,13 +860,14 @@ function repairUrls(
     }
     return url;
   });
-  return {
-    text: text
-      .replace(/[ \t]{2,}/g, " ")
-      .replace(/\(\s*\)/g, "")
-      .trim(),
-    droppedUrl,
-  };
+  const cleaned = text
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\(\s*\)/g, "")
+    .replace(/(?:^|\s)(?:tại|at)\s+(?=\[S\d+\]|[.!?…]|$)/gi, " ")
+    .replace(/\s+([.!?…])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+  return { text: cleaned, droppedUrl };
 }
 
 function supportFailure(
@@ -897,43 +983,116 @@ function isHeaderLine(line: string): boolean {
   return false;
 }
 
+/** Allow-list of non-claim headers. Nothing else is peeled. */
+const ALLOW_HEADERS = ["tóm tắt", "trả lời", "câu trả lời", "summary", "answer"];
+
+const SCOPE_LABELS = [
+  "không nên",
+  "tránh",
+  "do not",
+  "avoid",
+  "common mistake",
+  "things to avoid",
+  "sai lầm",
+];
+
+const ISSUER_TAIL =
+  /(?:\s*[—–-]\s*|\s+)(?:tổ chức y tế thế giới(?:\s*\(who\))?|bộ y tế(?: việt nam)?|bảo hiểm xã hội(?: việt nam)?|ngân hàng nhà nước(?: việt nam)?|who|cdc)\.?\s*(?:\[S\d+\]\s*)*$/i;
+
 function stripTrailingIssuer(text: string): string {
-  return text
-    .replace(
-      /(?:\s*[,;–—-]\s*|\s+)(?:tổ chức y tế thế giới(?:\s*\(who\))?|bộ y tế(?: việt nam)?|bảo hiểm xã hội(?: việt nam)?|ngân hàng nhà nước(?: việt nam)?|who|cdc)\.?\s*$/i,
-      "",
-    )
+  return text.replace(ISSUER_TAIL, "").trim();
+}
+
+/** "First," / "Đầu tiên," only, and only as the lead-in. */
+function stripOrdinalLeadIn(text: string): string {
+  return text.replace(/^(?:first|đầu tiên)\s*,\s+/i, "").trim();
+}
+
+/** A closed [Theo …] tag stays. A stray unclosed "[" does not. */
+function stripStrayLead(text: string): string {
+  if (/^\s*\[[^\]\n]{1,40}\]/.test(text)) return text;
+  return text.replace(/^\s*\[(?!S\d+\])/i, "");
+}
+
+function headerCore(line: string): string {
+  return line
+    .replace(/(\s*\[S\d+\])+\s*$/gi, "")
+    .replace(/\*\*/g, "")
+    .trim()
+    .replace(/[:：]\s*$/, "")
+    .trim()
+    .toLowerCase();
+}
+
+function isAllowHeaderOnly(line: string): boolean {
+  return ALLOW_HEADERS.includes(headerCore(line));
+}
+
+/** Peel an allow-list header only when it is the whole line or a "Header:" prefix. */
+function peelAllowPrefix(line: string): string {
+  if (isAllowHeaderOnly(line)) return "";
+  const match =
+    /^\s*(?:\*\*)?(câu trả lời|tóm tắt|trả lời|summary|answer)(?:\*\*)?\s*:\s*/i.exec(line);
+  if (!match) return line;
+  return line.slice(match[0].length).trim();
+}
+
+function isBareScopeLabel(line: string): boolean {
+  const stripped = line
+    .replace(/(\s*\[S\d+\])+\s*$/gi, "")
+    .replace(/\*\*/g, "")
+    .trim();
+  if (!stripped || /https?:\/\//i.test(stripped)) return false;
+  const core = stripped.replace(/[:：]\s*$/, "").trim();
+  const folded = foldVietnamese(core);
+  if (SCOPE_LABELS.some((label) => foldVietnamese(label) === folded)) return true;
+  return /^[^:\n]{1,80}:\s*$/.test(stripped) && !ALLOW_HEADERS.includes(core.toLowerCase());
+}
+
+function normalizeScopeLabel(line: string): string {
+  return line
+    .replace(/(\s*\[S\d+\])+\s*$/gi, "")
+    .replace(/\*\*/g, "")
+    .trim()
+    .replace(/[:：]\s*$/, "")
     .trim();
 }
 
-/** Drop a leading label, bold header, or [Theo …] tag before the claim is grounded. */
-function peelHeader(text: string): { body: string; droppedHeader: boolean } {
-  const kept: string[] = [];
-  let droppedHeader = false;
-  for (const line of text.split(/\n+/)) {
-    let trimmed = line.trim().replace(/^\s*\[(?!S\d+\])[^\]\n]{1,40}\]\s*/, "");
-    trimmed = trimmed.replace(/^\s*\[(?!S\d+\])/i, "");
-    if (!trimmed) continue;
-    if (isHeaderLine(trimmed) || isIssuerOnly(trimmed.replace(/(\s*\[S\d+\])+\s*$/gi, ""))) {
-      droppedHeader = true;
-      continue;
-    }
-    let body = trimmed
-      .replace(/^\s*\*\*[^*]+\*\*:?\s*(?:\[S\d+\]\s*)?/, "")
-      .replace(/^\s*\[[^\]\n]{1,40}\]\s*(?:\[S\d+\]\s*)?/, "")
-      .replace(/^\s*#{1,6}\s+[^:\n]{0,60}:?\s*(?:\[S\d+\]\s*)?/, "");
-    if (!/https?:\/\//i.test(body)) {
-      body = body.replace(/^\s*[^:\n]{1,40}:\s*(?:\[S\d+\]\s*)?/, "");
-    }
-    const peeled = stripTrailingIssuer(body.trim());
-    if (peeled !== trimmed) droppedHeader = true;
-    if (!peeled) {
-      droppedHeader = true;
-      continue;
-    }
-    kept.push(peeled);
+function stripListMarker(line: string): string {
+  return line.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "").trim();
+}
+
+export type ModelLineState = { label: string | null };
+
+/**
+ * One model line. Allow-list headers are removed. A scope label on its own
+ * line binds to each following item. Other labels stay on their content.
+ */
+export function consumeModelLine(
+  line: string,
+  state: ModelLineState,
+): { emit: string | null; label: string | null } {
+  let trimmed = stripStrayLead(stripUnclosedBold(line.trim()));
+  if (!trimmed) return { emit: null, label: state.label };
+  if (isAllowHeaderOnly(trimmed)) return { emit: null, label: null };
+  const peeled = peelAllowPrefix(trimmed);
+  if (!peeled) return { emit: null, label: null };
+  if (isBareScopeLabel(peeled)) {
+    return { emit: null, label: normalizeScopeLabel(peeled) };
   }
-  return { body: kept.join(" ").trim(), droppedHeader };
+  let body = stripOrdinalLeadIn(stripTrailingIssuer(peeled));
+  if (!body) return { emit: null, label: state.label };
+  if (state.label) body = `${state.label}: ${stripListMarker(body)}`;
+  return { emit: body, label: state.label };
+}
+
+function prepareSentence(text: string): { body: string; droppedHeader: boolean } {
+  const opened = stripStrayLead(stripUnclosedBold(text.trim()));
+  const peeled = stripOrdinalLeadIn(stripTrailingIssuer(peelAllowPrefix(opened)));
+  return {
+    body: peeled,
+    droppedHeader: peeled !== opened.trim() || isAllowHeaderOnly(opened),
+  };
 }
 
 function isIssuerOnly(text: string): boolean {
@@ -1027,27 +1186,17 @@ function assessSentence(
 ): { text: string; reason: SentenceDropReason | null } {
   const trimmed = sentence.trim();
   if (!trimmed || JUNK_TEXT.test(trimmed)) return { text: "", reason: "junk" };
-  const openedBold = stripUnclosedBold(trimmed);
-  const peeled = peelHeader(openedBold);
+  const peeled = prepareSentence(trimmed);
   const opened = peeled.body;
   if (!opened) {
     return { text: "", reason: peeled.droppedHeader ? "header" : "junk" };
   }
-  const showIfUrgent = (
-    reason: SentenceDropReason,
-  ): { text: string; reason: SentenceDropReason | null } => {
-    if (!isPositiveUrgency(opened)) return { text: "", reason };
-    const plain = opened
-      .replace(/\s*\[S\d+\]/gi, "")
-      .replace(/\*\*/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    return plain ? { text: plain, reason: null } : { text: "", reason };
-  };
   // A model phone instruction is removed. A factual 115 in a reading can stay.
   if (mentionsEmergencyNumber(opened)) return { text: "", reason: "model_115" };
-  // Short care words ("bác sĩ") are not a citation-only line.
-  if (postponesSeekingCare(opened)) return showIfUrgent("care_avoidance");
+  // Care is shown only as an extractive copy of a cited sentence. Nothing else.
+  if (isCareSentence(opened) && !isExtractiveCareSentence(opened, sources)) {
+    return { text: "", reason: "care_avoidance" };
+  }
   if (isCitationOnly(opened)) {
     return { text: "", reason: peeled.droppedHeader ? "header" : "citation_only" };
   }
@@ -1072,7 +1221,7 @@ function assessSentence(
   }
   if (/\[S\d+\]/.test(working)) {
     const reason = supportFailure(working, sources, question);
-    return reason ? showIfUrgent(reason) : { text: working, reason: null };
+    return reason ? { text: "", reason } : { text: working, reason: null };
   }
   let best: { key: string; ratio: number } | null = null;
   let fallback: SentenceDropReason = "uncited";
@@ -1090,7 +1239,7 @@ function assessSentence(
     }
     if (!best || ratio > best.ratio) best = { key: source.key, ratio };
   }
-  if (!best) return showIfUrgent(fallback);
+  if (!best) return { text: "", reason: fallback };
   return { text: `${normalizeSpace(working)} [${best.key}]`, reason: null };
 }
 
@@ -1118,7 +1267,7 @@ export function sentenceIsSupported(
   question: string,
 ): boolean {
   if (isAffirmativeSafetyTemplate(sentence, sources)) return true;
-  if (postponesSeekingCare(sentence)) return false;
+  if (postponesSeekingCare(sentence, sources)) return false;
   if (mentionsEmergencyNumber(sentence)) return false;
   if (nonAnswerReason(sentence, question, sources)) return false;
   const grounded = groundedSentence(sentence, sources, question);
@@ -1132,12 +1281,16 @@ export function supportedAnswerText(
   sources: SupportSource[],
   question: string,
 ): string {
-  return answerSentences(answer)
-    .map((sentence) => groundedSentence(sentence, sources, question))
-    .filter((sentence) => sentence && !isCitationOnly(sentence))
-    .join(" ")
-    .replace(/[ \t]{2,}/g, " ")
-    .trim();
+  const state: ModelLineState = { label: null };
+  const kept: string[] = [];
+  for (const sentence of answerSentences(answer)) {
+    const consumed = consumeModelLine(sentence, state);
+    state.label = consumed.label;
+    if (!consumed.emit) continue;
+    const grounded = groundedSentence(consumed.emit, sources, question);
+    if (grounded && !isCitationOnly(grounded)) kept.push(grounded);
+  }
+  return kept.join(" ").replace(/[ \t]{2,}/g, " ").trim();
 }
 
 /** Every sentence must be supported, including numbers that name no organisation. */
@@ -1227,7 +1380,7 @@ export async function readAnswerCache(
     if (!parsed?.answer || !Array.isArray(parsed.sources)) return null;
     if (!isGroundedOfficialAnswer(parsed)) return null;
     if (answerHasModelEmergency(parsed.answer)) return null;
-    if (answerPostponesCare(parsed.answer)) return null;
+    if (answerPostponesCare(parsed.answer, parsed.sources)) return null;
     if (answerHasCutUrl(parsed.answer, parsed.sources)) return null;
     if (answerEchoesQuestion(parsed.answer, question, parsed.sources)) return null;
     const mode = parsed.mode === "answer_bank" ? "answer_bank" : "kv_cache";
@@ -1251,7 +1404,7 @@ export async function writeAnswerCache(
   if (payload.answer.includes("chưa tìm thấy đủ nguồn")) return;
   if (!isGroundedOfficialAnswer(payload)) return;
   if (answerHasModelEmergency(payload.answer)) return;
-  if (answerPostponesCare(payload.answer)) return;
+  if (answerPostponesCare(payload.answer, payload.sources)) return;
   if (answerHasCutUrl(payload.answer, payload.sources)) return;
   if (answerEchoesQuestion(payload.answer, question, payload.sources)) return;
   if (answerHasInvalidCitations(payload.answer, payload.sources)) return;

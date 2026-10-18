@@ -107,15 +107,31 @@ export function httpHostname(raw: string): string | null {
   }
 }
 
+/** eTLD+1. who.int and www.who.int share a registrable domain; moh.gov and moh.gov.vn do not. */
+export function registrableDomain(hostname: string): string {
+  const host = hostname.toLowerCase().replace(/\.$/, "");
+  const labels = host.split(".").filter(Boolean);
+  if (labels.length < 2) return host;
+  const lastTwo = labels.slice(-2).join(".");
+  if (MULTI_SUFFIX.includes(lastTwo)) {
+    return labels.length >= 3 ? labels.slice(-3).join(".") : host;
+  }
+  return labels.slice(-2).join(".");
+}
+
 /**
- * The URL host must be the cited host or a subdomain of it.
- * https://baohiemxahoi.gov is not a subdomain of baohiemxahoi.gov.vn.
+ * Same registrable domain, or either host is a subdomain of the other.
+ * https://who.int matches a citation on www.who.int.
+ * https://baohiemxahoi.gov does not match baohiemxahoi.gov.vn.
  */
 export function hostMatchesCited(urlHost: string, citedHost: string): boolean {
   const host = urlHost.toLowerCase().replace(/\.$/, "");
   const cited = citedHost.toLowerCase().replace(/\.$/, "");
   if (!host || !cited) return false;
-  return host === cited || host.endsWith(`.${cited}`);
+  if (host === cited || host.endsWith(`.${cited}`) || cited.endsWith(`.${host}`)) return true;
+  const left = registrableDomain(host);
+  const right = registrableDomain(cited);
+  return Boolean(left) && left === right;
 }
 
 /** Scheme and host only, such as https://www.who.int, with no document path. */

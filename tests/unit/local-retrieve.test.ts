@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   completeHttpUrl,
   foldVietnamese,
+  hostMatchesCited,
   isCompleteHttpUrl,
   MIN_RETRIEVAL_SCORE,
   OFFICIAL_TOPIC_FLOOR,
@@ -191,6 +192,10 @@ describe("isCompleteHttpUrl", () => {
     expect(isCompleteHttpUrl("https://www.who.int.")).toBe(false);
     expect(completeHttpUrl("https://www.who.int.")).toBe("https://www.who.int");
     expect(completeHttpUrl("https://www.who.")).toBeNull();
+    expect(hostMatchesCited("who.int", "www.who.int")).toBe(true);
+    expect(hostMatchesCited("www.who.int", "who.int")).toBe(true);
+    expect(hostMatchesCited("baohiemxahoi.gov", "baohiemxahoi.gov.vn")).toBe(false);
+    expect(hostMatchesCited("moh.gov", "moh.gov.vn")).toBe(false);
     expect(isCompleteHttpUrl("https://www.salute.gov.it/page")).toBe(true);
     expect(isCompleteHttpUrl("https://www.canada.ca/en/health")).toBe(true);
   });
