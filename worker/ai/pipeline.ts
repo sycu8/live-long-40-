@@ -2,10 +2,11 @@ import { ABSTENTION_MESSAGE } from "@shared/constants/product";
 import { classifyQuestion, normalizeQuery } from "@shared/rules/classification";
 import {
   decide,
-  isMostSevere,
+  mayUpgrade,
   ruleViewFor,
   type ClassifierView,
   type Decision,
+  type RuleView,
 } from "@shared/rules/precedence";
 import {
   emergencyMessage,
@@ -272,6 +273,11 @@ export type ChatPipelineResult =
       riskClass: string;
       message: string;
       classification: string;
+      /**
+       * A later crisis screen for unconscious or urgent. The first screen does not wait.
+       * Null when the classifier does not upgrade.
+       */
+      upgrade?: Promise<{ message: string; riskClass: string } | null>;
     }
   | {
       kind: "abstain";
@@ -574,6 +580,34 @@ function riskPromiseFor(
   );
 }
 
+/** Text in `full` that the opening does not already show. A gentle line survives a mismatched prefix. */
+function retainedSuffix(opening: string, full: string): string {
+  const trimmed = opening.replace(/\s+$/, "");
+  if (full.startsWith(trimmed)) {
+    const extra = full.slice(trimmed.length);
+    return extra.trim() ? extra : "";
+  }
+  const parts: string[] = [];
+  if (full.includes(GENTLE_SUPPORT_LINE) && !opening.includes(GENTLE_SUPPORT_LINE)) {
+    parts.push(GENTLE_SUPPORT_LINE);
+  }
+  if (
+    full.includes(POST_SEIZURE_CHECK_LINE) &&
+    !opening.includes(POST_SEIZURE_CHECK_LINE)
+  ) {
+    parts.push(POST_SEIZURE_CHECK_LINE);
+  }
+  if (
+    full.includes(SYMPTOM_SAFETY_LINE) &&
+    !opening.includes(SYMPTOM_SAFETY_LINE) &&
+    !/gọi\s+(?:ngay\s+)?115/i.test(opening)
+  ) {
+    parts.push(SYMPTOM_SAFETY_LINE);
+  }
+  if (!parts.length) return "";
+  return `\n\n${parts.join("\n\n")}`;
+}
+
 function shouldRunAcuteClassifier(question: string, classification: string): boolean {
   if (classification === "health_education" || classification === "caregiving")
     return true;
@@ -582,28 +616,64 @@ function shouldRunAcuteClassifier(question: string, classification: string): boo
   return false;
 }
 
+function startRuleUpgrade(
+  env: Env,
+  question: string,
+  rules: RuleView,
+  options: ChatPipelineOptions | undefined,
+): Promise<{ message: string; riskClass: string } | null> {
+  const box = startClassifier(env, question, true, options);
+  const verify = (text: string) =>
+    options?.verifyCrisis ? options.verifyCrisis(text) : verifyCrisisWording(env, text);
+  return resolvedLayer(box)
+    .then(async (layer) => {
+      const view =
+        !layer || layer.status !== "ok" ? null : classifierView(question, layer);
+      if (!view || (view.class !== "self_harm" && !view.crisis)) return null;
+      let verified: boolean | "failed" = "failed";
+      try {
+        const answer = await verify(question);
+        if (answer === true) verified = true;
+        else if (answer === false) verified = false;
+      } catch {
+        verified = "failed";
+      }
+      const upgraded = mayUpgrade(rules, { ...view, verified });
+      if (!upgraded || upgraded.kind !== "screen") return null;
+      return {
+        message: `\n\n${emergencyMessage(upgraded.riskClass, question)}`,
+        riskClass: upgraded.riskClass,
+      };
+    })
+    .catch(() => null);
+}
+
 export async function runChatPipeline(
   env: Env,
   question: string,
   options?: ChatPipelineOptions,
 ): Promise<ChatPipelineResult> {
-  // decide() is the only chooser. A rule class is an input, not an early return.
-  // Only the most severe class can render before the classifier result exists.
+  // A rule hit is on screen before the classifier. Only unconscious or urgent
+  // may upgrade to the crisis screen, and that happens after the first paint.
   const rules = ruleViewFor(question);
-  if (rules.class && isMostSevere(rules.class)) {
+  if (rules.class) {
     const decision = decide(rules, null, false);
     const riskClass = decision.kind === "screen" ? decision.riskClass : rules.class;
+    const upgrade =
+      riskClass === "unconscious" || riskClass === "urgent"
+        ? startRuleUpgrade(env, question, rules, options)
+        : undefined;
     return {
       kind: "high_risk",
       riskClass,
-      message: emergencyMessage(riskClass),
+      message: emergencyMessage(riskClass, question),
       classification: "high_risk_health",
+      upgrade,
     };
   }
 
   const classification = classifyQuestion(question);
-  const routed =
-    rules.class !== null || shouldRunAcuteClassifier(question, classification);
+  const routed = shouldRunAcuteClassifier(question, classification);
   const box = startClassifier(env, question, routed, options);
   const verify = (text: string) =>
     options?.verifyCrisis ? options.verifyCrisis(text) : verifyCrisisWording(env, text);
@@ -617,22 +687,10 @@ export async function runChatPipeline(
   };
   let checkIn = false;
 
-  if (rules.class) {
-    const decision = await decisionFor();
-    if (decision.kind === "screen") {
-      return {
-        kind: "high_risk",
-        riskClass: decision.riskClass,
-        message: emergencyMessage(decision.riskClass),
-        classification: "high_risk_health",
-      };
-    }
-  }
-
   const highRisk = (riskClass: Exclude<RiskClass, "none">): ChatPipelineResult => ({
     kind: "high_risk",
     riskClass,
-    message: emergencyMessage(riskClass),
+    message: emergencyMessage(riskClass, question),
     classification: "high_risk_health",
   });
 
@@ -650,9 +708,7 @@ export async function runChatPipeline(
       false,
       decision.kind === "gentle",
     );
-    const trimmed = base.replace(/\s+$/, "");
-    if (!full.startsWith(trimmed) || full.length === trimmed.length) return "";
-    return full.slice(trimmed.length);
+    return retainedSuffix(base, full);
   };
 
   const consider = async (): Promise<ChatPipelineResult | null> => {
@@ -691,11 +747,19 @@ export async function runChatPipeline(
         mode,
       };
     }
-    const message = appendAcuteSafetyNet(question, messageBody, null, routed, true);
+    const gentleWhilePending = !hasAcuteCue(question);
+    const message = appendAcuteSafetyNet(
+      question,
+      messageBody,
+      null,
+      routed,
+      true,
+      gentleWhilePending,
+    );
     const followUp = decisionFor().then((decision) => {
       if (decision.kind === "screen" && !message.includes("Nên làm:")) {
         return {
-          extra: `\n\n${emergencyMessage(decision.riskClass)}`,
+          extra: `\n\n${emergencyMessage(decision.riskClass, question)}`,
           riskClass: decision.riskClass,
         };
       }
@@ -705,13 +769,9 @@ export async function runChatPipeline(
         box.layer,
         routed,
         false,
-        decision.kind === "gentle",
+        decision.kind === "gentle" || message.includes(GENTLE_SUPPORT_LINE),
       );
-      const trimmed = message.replace(/\s+$/, "");
-      if (!full.startsWith(trimmed) || full.length === trimmed.length) {
-        return { extra: "", riskClass: null };
-      }
-      return { extra: full.slice(trimmed.length), riskClass: null };
+      return { extra: retainedSuffix(message, full), riskClass: null };
     });
     return {
       kind: "abstain",

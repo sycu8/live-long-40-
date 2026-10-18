@@ -103,21 +103,14 @@ export function isMostSevere(riskClass: ScreenClass): boolean {
   return !SCREEN_CLASSES.some((next) => strictlyMoreSevere(next, riskClass));
 }
 
-function corroborated(rules: RuleView, next: ScreenClass): boolean {
-  if (next === "self_harm") return rules.selfHarmLexicon;
-  if (next === "urgent") return false;
-  return rules.cues.includes(next);
-}
-
 /**
  * One precedence table. This function is the only place an outcome is chosen.
- * `timeout` is any classifier failure: a timeout, an error, or bad output.
- * A known classifier may replace a rule screen only when its class is strictly
- * more severe and a lexicon or rule cue of that class is in the text.
- * A self-harm verdict with no lexicon cue never replaces a rule class.
- * The verifier may escalate an uncorroborated crisis. It never suppresses a
- * rule class, an acute cue, or a corroborated class. A failed verifier with a
- * crisis signal shows the urgent screen.
+ * A rule class is shown as itself. A later upgrade is {@link mayUpgrade}, and
+ * it never downgrades that screen.
+ * `timeout` is any classifier failure. A self-harm lexicon or intent with no
+ * rule screen becomes urgent. Anything else with no cue is the gentle line.
+ * Classifier self-harm with an unreadable verifier is the crisis screen.
+ * An explicit verifier "no" is the gentle line.
  */
 export function decide(
   rules: RuleView,
@@ -126,42 +119,41 @@ export function decide(
 ): Decision {
   if (timeout) {
     if (rules.class) return screen(rules.class);
+    if (rules.selfHarmLexicon || rules.firstPersonHarmIntent) return screen("urgent");
     if (rules.acuteCue) return screen("urgent");
     return { kind: "gentle" };
   }
 
   if (rules.pastStable && !rules.class) return { kind: "gentle" };
 
-  if (rules.class) {
-    const next = classifier?.class ?? null;
-    if (
-      next &&
-      next !== rules.class &&
-      strictlyMoreSevere(next, rules.class) &&
-      corroborated(rules, next)
-    ) {
-      return screen(next);
-    }
-    return screen(rules.class);
-  }
+  if (rules.class) return screen(rules.class);
 
   const crisis = classifier?.crisis === true || classifier?.class === "self_harm";
   if (crisis) {
     if (rules.firstPersonHarmIntent || rules.selfHarmLexicon) return screen("self_harm");
-    if (classifier?.verified === true) return screen("self_harm");
-    if (classifier?.verified === "failed") return screen("urgent");
-    if (classifier?.verified === false) {
-      if (rules.acuteCue) return screen("urgent");
-      if (classifier.class && classifier.class !== "self_harm")
-        return screen(classifier.class);
-      return { kind: "gentle" };
+    if (classifier?.verified === true || classifier?.verified === "failed") {
+      return screen("self_harm");
     }
+    if (classifier?.verified === false) return { kind: "gentle" };
     return { kind: "verify" };
   }
 
   const model = classifier?.class ?? null;
   if (model && model !== "urgent") return screen(model);
   return { kind: "none" };
+}
+
+/**
+ * The only post-screen upgrade. Urgent or unconscious becomes the crisis
+ * screen when the classifier says self-harm and the verifier says yes.
+ * A missing lexicon cue does not block this. A verifier no or failure does
+ * not change the rule screen.
+ */
+export function mayUpgrade(rules: RuleView, classifier: ClassifierView): Decision | null {
+  if (rules.class !== "unconscious" && rules.class !== "urgent") return null;
+  const crisis = classifier?.crisis === true || classifier?.class === "self_harm";
+  if (!crisis || classifier?.verified !== true) return null;
+  return screen("self_harm");
 }
 
 export function ruleViewFor(question: string): RuleView {

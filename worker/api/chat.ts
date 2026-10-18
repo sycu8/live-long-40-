@@ -192,7 +192,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
     const encoder = new TextEncoder();
     const parts = pipeline.message.split(/\n\n/);
     const stream = new ReadableStream({
-      start(controller) {
+      async start(controller) {
         const send = (obj: unknown) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
         };
@@ -206,6 +206,40 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           if (!part) return;
           send({ type: "token", text: index === 0 ? part : `\n\n${part}` });
         });
+        if (pipeline.upgrade) {
+          try {
+            const upgraded = await pipeline.upgrade;
+            if (upgraded && upgraded.riskClass !== pipeline.riskClass) {
+              send({
+                type: "meta",
+                classification: "high_risk_health",
+                riskClass: upgraded.riskClass,
+                messagePublicId: assistantPublicId,
+              });
+              send({ type: "token", text: upgraded.message });
+              try {
+                await c.env.DB.prepare(
+                  `UPDATE chat_messages SET classification = ?, risk_class = ? WHERE id = ?`,
+                )
+                  .bind("high_risk_health", upgraded.riskClass, assistantMsgId)
+                  .run();
+              } catch {
+                /* the tokens were already sent */
+              }
+              try {
+                await c.env.ANALYTICS_QUEUE?.send({
+                  type: "risk_routed",
+                  riskClass: upgraded.riskClass,
+                  at: nowIso(),
+                });
+              } catch {
+                /* optional binding */
+              }
+            }
+          } catch {
+            /* the first screen already went out */
+          }
+        }
         send({ type: "done", abstained: false });
         controller.close();
       },

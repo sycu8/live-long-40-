@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { decide, isMostSevere, ruleViewFor } from "../../shared/rules/precedence";
+import {
+  decide,
+  isMostSevere,
+  mayUpgrade,
+  ruleViewFor,
+} from "../../shared/rules/precedence";
 import {
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
@@ -82,7 +87,11 @@ describe("emergency precedence r11", () => {
           return crisisVerdict;
         },
       });
-      expect(calls, id).toBe(1);
+      if (rules.class === "unconscious" || rules.class === "urgent") {
+        expect(calls, id).toBe(1);
+      } else {
+        expect(calls, id).toBe(0);
+      }
       expect(result.kind, id).toBe("high_risk");
       if (result.kind !== "high_risk") continue;
       expect(result.riskClass, id).toBe(rules.class);
@@ -160,7 +169,7 @@ describe("emergency precedence r11", () => {
           };
         },
       });
-      expect(calls, id).toBe(1);
+      expect(calls, id).toBe(0);
       expect(result.kind, id).toBe("high_risk");
       if (result.kind !== "high_risk") continue;
       expect(result.riskClass, id).toBe(riskClass);
@@ -249,7 +258,7 @@ describe("emergency precedence r11", () => {
         return { status: "fail", reason: "timeout" };
       },
     });
-    expect(calls).toBe(1);
+    expect(calls).toBe(0);
     expect(result.kind).toBe("high_risk");
     if (result.kind !== "high_risk") return;
     expect(result.riskClass).toBe("chest_pain");
@@ -284,14 +293,14 @@ describe("emergency precedence r11", () => {
       });
       expect(result.kind, id).toBe("high_risk");
       if (result.kind !== "high_risk") continue;
-      expect(result.riskClass, id).toBe("urgent");
+      expect(result.riskClass, id).toBe("self_harm");
       expect(result.message, id).toMatch(/gọi 115/i);
       expect(result.message, id).toContain("Nên làm");
       expect(result.message, id).not.toContain("1900");
     }
   });
 
-  it("upgrades a lower rule class only when the classifier class is corroborated", () => {
+  it("keeps a rule screen and upgrades only unconscious or urgent after a verified yes", () => {
     const poisoning = {
       class: "poisoning" as const,
       acuteCue: true,
@@ -300,14 +309,26 @@ describe("emergency precedence r11", () => {
       pastStable: false,
       cues: ["poisoning" as const, "self_harm" as const],
     };
-    expect(decide(poisoning, { class: "self_harm", crisis: true }, false)).toEqual({
-      kind: "screen",
-      riskClass: "self_harm",
-    });
-    const bare = { ...poisoning, selfHarmLexicon: false, cues: ["poisoning" as const] };
-    expect(decide(bare, { class: "self_harm", crisis: true }, false)).toEqual({
+    const crisis = {
+      class: "self_harm" as const,
+      crisis: true,
+      verified: true as const,
+    };
+    expect(decide(poisoning, crisis, false)).toEqual({
       kind: "screen",
       riskClass: "poisoning",
     });
+    expect(mayUpgrade(poisoning, crisis)).toBeNull();
+    const unconscious = { ...poisoning, class: "unconscious" as const };
+    expect(decide(unconscious, crisis, false)).toEqual({
+      kind: "screen",
+      riskClass: "unconscious",
+    });
+    expect(mayUpgrade(unconscious, crisis)).toEqual({
+      kind: "screen",
+      riskClass: "self_harm",
+    });
+    expect(mayUpgrade(unconscious, { ...crisis, verified: false })).toBeNull();
+    expect(mayUpgrade(unconscious, { ...crisis, verified: "failed" })).toBeNull();
   });
 });

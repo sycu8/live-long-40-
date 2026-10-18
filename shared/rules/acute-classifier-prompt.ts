@@ -140,12 +140,13 @@ Chỉ trả về MỘT object JSON, không thêm chữ, không markdown.
 
 Schema: {"crisis":false}
 
-crisis=true only when the speaker has a real wish or plan to die.
-crisis=true chỉ khi người nói thật sự muốn chết hoặc có kế hoạch.
-crisis=false for idioms and venting: mệt muốn chết, cười muốn chết, nóng muốn chết, rét muốn chết, than vãn, nói quá về việc làm, nóng, hoặc cười.
-Do not treat an idiom as a crisis. Do not treat a real plan as an idiom.
-A method, a time, a farewell, or a written note makes crisis true.
-When you are not sure, answer crisis true. You may escalate. You may not dismiss a real plan.
+crisis=true only for a first-person present intent, a plan, or self-harm happening now.
+crisis=true chỉ khi chính người nói, ở thì hiện tại, có ý định, có kế hoạch, hoặc đang tự hại.
+crisis=false for an idiom, hyperbole, third-party news, or a past event that has resolved.
+crisis=false với thành ngữ, nói quá, tin về người khác, hoặc chuyện đã qua và đã ổn.
+Idioms and venting stay false: mệt muốn chết, cười muốn chết, nóng muốn chết, rét muốn chết, than vãn, nói quá về việc làm, nóng, hoặc cười.
+A method, a time, a farewell, or a written note from the speaker makes crisis true.
+When you are not sure, answer crisis true.
 
 Examples:
 

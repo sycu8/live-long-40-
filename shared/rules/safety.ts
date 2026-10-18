@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.8.4";
+export const SAFETY_RULESET_VERSION = "v1.8.5";
 
 export type RiskClass =
   | "chest_pain"
@@ -627,6 +627,8 @@ function negationScope(tokens: SafetyToken[]): Set<number> {
       if (i >= 2 && !tokens[i - 1]?.clauseStart) add(i - 2);
     } else if (w === "het") {
       const next = foldedAt(tokens, i + 1);
+      // A seizure that restarted, or is still dangerous, stays visible.
+      const seizureKept = seizureStillAcute(tokens.map((item) => item.folded).join(" "));
       // "hết co giật" negates the symptom a couple of tokens ahead. "uống hết vỉ" does not.
       for (let k = 1; k <= 3; k++) {
         const ahead = tokens[i + k];
@@ -634,6 +636,7 @@ function negationScope(tokens: SafetyToken[]): Set<number> {
         const word = ahead.folded;
         if (word === "roi") break;
         if (word === "co" || word === "bi" || word === "con" || word === "cai") continue;
+        if (seizureKept && (word === "giat" || word === "kinh")) continue;
         if (HET_SYMPTOM.has(word)) add(i + k);
         else break;
       }
@@ -856,6 +859,12 @@ const INTENSIFIER_BEFORE_DIE = new Set([
   "tay",
   "sot",
   "ho",
+  "thuong",
+  "nan",
+  "buc",
+  "tuoi",
+  "que",
+  "nguong",
 ]);
 
 function speakerBefore(tokens: SafetyToken[], index: number): boolean {
@@ -1064,6 +1073,25 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
     /* living together is not suicidal ideation */
   } else if (hasAnyPhrase(tokens, ["không muốn sống", "không thiết sống", "chán sống"])) {
     return true;
+  }
+  if (
+    hasAnyPhrase(tokens, ["không chịu nổi"]) &&
+    tokens.some((token) => FIRST_PERSON.has(token.folded))
+  ) {
+    return true;
+  }
+  if (
+    /\b(hay|hoac|or)\b/.test(joined) &&
+    /\b(chet|tu tu|tu sat)\b/.test(joined) &&
+    tokens.some((token) => FIRST_PERSON.has(token.folded) || SPEECH.has(token.folded))
+  ) {
+    return true;
+  }
+  if (
+    !tokens.some((token) => FIRST_PERSON.has(token.folded) || SPEECH.has(token.folded)) &&
+    /\b(tin tuc|bao dua|tren bao|mot vu)\b/.test(joined)
+  ) {
+    return false;
   }
   if (
     tokens.some((token, index) => {
@@ -1387,7 +1415,39 @@ function foreignBetween(tokens: SafetyToken[], from: number, to: number): boolea
  * A stopped seizure in either order: "hết co giật" and "co giật đã hết".
  * An ongoing cue still blocks this. A different symptom sitting on "hết" does not.
  */
+/** A stopped seizure that restarted, is still dangerous, or never really ended. */
+function seizureStillAcute(folded: string): boolean {
+  if (
+    /\b(lai co giat|lai giat|giat lai|co giat lai|bat dau lai|len con lai|started again)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(chua tinh|khong tinh|chua day|khong day|khong dap ung|khong phan ung|bat tinh|chua mo mat)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(hon 5 phut|qua 5 phut|tren 5 phut|lau hon 5|keo dai hon 5|hon nam phut|hon 5p)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  if (/\b(mang thai|co thai|dang mang bau)\b/.test(folded)) return true;
+  if (/\b(chan thuong|dap dau|chay mau|thuong tich|bi thuong)\b/.test(folded))
+    return true;
+  if (/\b(kho tho|khong tho|tho yeu|tho nong|ngung tho|tho khong ra)\b/.test(folded))
+    return true;
+  return false;
+}
+
 function seizureHasResolved(tokens: SafetyToken[], folded: string): boolean {
+  if (seizureStillAcute(folded)) return false;
   if (
     /\b(dang giat|dang co giat|giat khong ngung|giat khong dung|giat lien|sui bot|co cung|cung nguoi|len con)\b/.test(
       folded,
@@ -2171,11 +2231,63 @@ function pickRiskClass(
   return null;
 }
 
+function isDistressNegator(tokens: SafetyToken[], index: number): boolean {
+  const next = foldedAt(tokens, index + 1);
+  const third = foldedAt(tokens, index + 2);
+  if (next === "con") return true;
+  if (next === "muon" && third === "song") return true;
+  if (next === "thiet") return true;
+  if (next === "chiu" && (third === "noi" || third === "dung")) return true;
+  if (next === "song" && third === "noi") return true;
+  return false;
+}
+
+/**
+ * A negator hides a self-harm cue only when it directly denies that cue's verb:
+ * first person, same clause, at most two tokens away. Distress phrases,
+ * "không còn", "chưa", and hay/hoặc ambivalence stay visible.
+ */
+function applySelfHarmDenial(tokens: SafetyToken[]): SafetyToken[] {
+  const hide = new Set<number>();
+  for (const cue of selfHarmEvidence(tokens)) {
+    for (let back = 1; back <= 2; back++) {
+      const at = cue - back;
+      const token = tokens[at];
+      if (!token) break;
+      if (back > 1 && tokens[at + 1]?.clauseStart) break;
+      if (!isSimpleNegator(token) || token.folded === "chua") continue;
+      if (isDistressNegator(tokens, at)) continue;
+      let blocked = false;
+      for (let k = at + 1; k <= cue; k++) {
+        if (k !== cue && tokens[k]?.clauseStart) blocked = true;
+        const word = tokens[k]?.folded;
+        if (word === "hay" || word === "hoac" || word === "or") blocked = true;
+      }
+      if (blocked) continue;
+      let person = false;
+      for (let j = at; j >= 0; j--) {
+        if (j !== at && tokens[j + 1]?.clauseStart) break;
+        if (FIRST_PERSON.has(tokens[j]!.folded)) person = true;
+      }
+      if (!person) continue;
+      hide.add(cue);
+    }
+  }
+  if (hide.size === 0) return tokens;
+  return tokens.map((token, index) => {
+    if (!hide.has(index)) return token;
+    return { accented: "zz", folded: "zz", toned: false, clauseStart: token.clauseStart };
+  });
+}
+
 export function evaluateHighRisk(question: string): SafetyMatch {
   const { tokens, folded } = analyzeQuestion(question);
+  const forHarm = applySelfHarmDenial(tokens);
   const masked = applyNegationMask(tokens);
   const maskedFolded = masked.map((token) => token.folded).join(" ");
-  let riskClass = pickRiskClass(masked, maskedFolded);
+  let riskClass = matchSelfHarm(forHarm)
+    ? "self_harm"
+    : pickRiskClass(masked, maskedFolded);
 
   if (riskClass && riskClass !== "self_harm" && isEducation(folded)) riskClass = null;
   if (
@@ -2194,6 +2306,11 @@ export function evaluateHighRisk(question: string): SafetyMatch {
   ) {
     riskClass = null;
   }
+  // "hết" can hide the seizure word, and "chưa tỉnh" can be masked as a negator.
+  // A restart, a long seizure, or someone still not awake stays on the acute screen.
+  if (!riskClass && seizureStillAcute(folded) && /\b(co giat|dong kinh)\b/.test(folded)) {
+    riskClass = "seizure";
+  }
 
   if (!riskClass) {
     return {
@@ -2207,13 +2324,31 @@ export function evaluateHighRisk(question: string): SafetyMatch {
   return {
     matched: true,
     riskClass,
-    message: MESSAGES[riskClass],
+    message: emergencyMessage(riskClass, question),
     rulesetVersion: SAFETY_RULESET_VERSION,
   };
 }
 
-export function emergencyMessage(riskClass: Exclude<RiskClass, "none">): string {
-  return MESSAGES[riskClass];
+export function emergencyMessage(
+  riskClass: Exclude<RiskClass, "none">,
+  question?: string,
+): string {
+  const base = MESSAGES[riskClass];
+  if (riskClass !== "self_harm" || !question) return base;
+  const { folded } = analyzeQuestion(question);
+  const ingested =
+    matchPoison(folded) ||
+    /\b(uong het|ca vi|nuot thuoc|uong thuoc|dau doc|tu dau doc|thuoc doc|thuoc ngu|chat doc)\b/.test(
+      folded,
+    );
+  if (!ingested) return base;
+  if (
+    /\buong nham\b/.test(folded) &&
+    !/\b(muon chet|de chet|cho chet|tu sat|khong muon song)\b/.test(folded)
+  ) {
+    return base;
+  }
+  return `${base}\n\nGiữ vỏ thuốc hoặc chất đã nuốt nếu an toàn. Không tự gây nôn. Làm theo tổng đài 115.`;
 }
 
 /**

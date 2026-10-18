@@ -191,7 +191,7 @@ const TABLE: Array<{
     rules: rules({ class: "poisoning", cues: ["poisoning", "seizure"] }),
     classifier: { class: "seizure", crisis: false },
     timeout: false,
-    expect: screen("seizure"),
+    expect: screen("poisoning"),
   },
   {
     id: "upgrade-self-harm",
@@ -202,7 +202,7 @@ const TABLE: Array<{
     }),
     classifier: crisis(),
     timeout: false,
-    expect: screen("self_harm"),
+    expect: screen("poisoning"),
   },
   ...(["timeout", "parse", "empty", "unavailable", "unsupported"] as const).flatMap(
     (reason) => [
@@ -234,14 +234,14 @@ const TABLE: Array<{
     rules: rules(),
     classifier: crisis("failed"),
     timeout: false,
-    expect: screen("urgent"),
+    expect: screen("self_harm"),
   },
   {
     id: "F18-cue",
     rules: rules({ acuteCue: true }),
     classifier: crisis("failed"),
     timeout: false,
-    expect: screen("urgent"),
+    expect: screen("self_harm"),
   },
 ];
 
@@ -257,8 +257,8 @@ const crisisVerdict = {
 };
 
 describe("emergency precedence r10", () => {
-  it("is ruleset v1.8.4", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.4");
+  it("is ruleset v1.8.5", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.5");
   });
 
   it("follows the precedence table for every r9 and r10 id", () => {
@@ -292,21 +292,26 @@ describe("emergency precedence r10", () => {
     expect(evaluateHighRisk("Đã hết co giật").matched).toBe(false);
   });
 
-  it("asks the classifier before a chest screen and keeps chest when that call fails", async () => {
+  it("shows a chest screen before the classifier, including when that call would stall", async () => {
     let calls = 0;
     const started = performance.now();
-    const result = await runChatPipeline({} as Env, "Ông tôi bị nhói ngực dữ dội", {
-      classifyAcute: async () => {
-        calls += 1;
-        return { status: "fail", reason: "parse" };
-      },
-    });
+    const result = await runChatPipeline(
+      {
+        AI: {
+          async run() {
+            calls += 1;
+            return new Promise(() => undefined);
+          },
+        },
+      } as unknown as Env,
+      "Ông tôi bị nhói ngực dữ dội",
+    );
     expect(result.kind).toBe("high_risk");
     if (result.kind !== "high_risk") return;
     expect(result.riskClass).toBe("chest_pain");
     expect(result.message).toMatch(/gọi 115/i);
-    expect(calls).toBe(1);
-    expect(performance.now() - started).toBeLessThan(400);
+    expect(calls).toBe(0);
+    expect(performance.now() - started).toBeLessThan(100);
   });
 
   it("uses urgent on a timed-out acute cue and the gentle line when there is no cue", async () => {

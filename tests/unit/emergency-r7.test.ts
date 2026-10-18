@@ -27,7 +27,7 @@ const chestVerdict = {
 
 describe("emergency rules r7", () => {
   it("bumps the ruleset", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.4");
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.5");
   });
 
   it("treats a spoken muốn chết plan as self-harm, including across a comma", () => {
@@ -81,7 +81,7 @@ describe("emergency rules r7", () => {
       expect(result.riskClass, question).toBe("self_harm");
       expect(result.message, question).toMatch(/gọi 115/i);
       expect(result.message, question).not.toContain("1900");
-      expect(result.message, question).not.toContain("Không tự gây nôn");
+      expect(result.message, question).toContain("Không tự gây nôn");
       expect(refineClassifierRisk(question, "poisoning"), question).toBe("self_harm");
     }
     expect(evaluateHighRisk("ong toi uong thuoc diet chuot").riskClass).toBe("poisoning");
