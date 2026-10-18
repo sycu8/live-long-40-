@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.3.0";
+export const SAFETY_RULESET_VERSION = "v1.4.0";
 
 export type RiskClass =
   | "chest_pain"
@@ -111,6 +111,19 @@ function hasPhrase(tokens: SafetyToken[], accentedPhrase: string): boolean {
 
 function hasAnyPhrase(tokens: SafetyToken[], phrases: string[]): boolean {
   return phrases.some((phrase) => hasPhrase(tokens, phrase));
+}
+
+/**
+ * Exact accent, missing tone, or a wrong tone on the same stem.
+ * "từ" is the gradual word, not a mistyped "tự" or "tử".
+ */
+function matchesTarget(token: SafetyToken, accented: string): boolean {
+  const folded = foldVietnamese(accented);
+  if (token.folded !== folded) return false;
+  if (!token.toned) return true;
+  if (token.accented === accented) return true;
+  if ((accented === "tự" || accented === "tử") && token.accented === "từ") return false;
+  return true;
 }
 
 function nearFolded(
@@ -236,21 +249,70 @@ const MESSAGES: Record<Exclude<RiskClass, "none">, string> = {
   ),
 };
 
-const HYPERBOLE = new Set([
+/** Feeling immediately before "muốn chết". Body parts count only after đau/nhức/mỏi. */
+const FEELING = new Set([
+  "gian",
+  "ret",
+  "lanh",
   "nong",
   "met",
-  "cuoi",
   "doi",
+  "cuoi",
   "so",
-  "buon",
   "khat",
   "vui",
-  "lung",
-  "bung",
-  "vai",
-  "chan",
+  "nang",
+  "nhuc",
+  "moi",
+  "ngot",
   "dau",
 ]);
+const BODY = new Set([
+  "lung",
+  "bung",
+  "chan",
+  "vai",
+  "co",
+  "hong",
+  "tay",
+  "rang",
+  "dau",
+  "mat",
+  "nguc",
+]);
+
+const INTENT = new Set(["toi", "em", "minh", "muon", "dinh", "tinh", "toan"]);
+const SPEECH = new Set(["noi", "bao", "ke", "than", "hoi"]);
+
+function hasIntentFrame(tokens: SafetyToken[], index: number): boolean {
+  return nearFolded(tokens, index, [...INTENT, ...SPEECH], 4);
+}
+
+/** "đau lưng muốn chết" / "giận muốn chết": the words before muốn are the feeling. */
+function isHyperboleWantDie(tokens: SafetyToken[], wantIndex: number): boolean {
+  const prev = tokens[wantIndex - 1];
+  const prev2 = tokens[wantIndex - 2];
+  if (!prev) return false;
+  if (FEELING.has(prev.folded)) return true;
+  if (prev2?.folded === "buon" && prev.folded === "cuoi") return true;
+  if (
+    prev2 &&
+    (prev2.folded === "dau" || prev2.folded === "nhuc" || prev2.folded === "moi") &&
+    BODY.has(prev.folded)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function restContext(tokens: SafetyToken[], index: number): boolean {
+  return nearFolded(
+    tokens,
+    index,
+    ["nghi", "ngoi", "tap", "the", "duc", "an", "nhai", "cai", "tang", "cham", "dan"],
+    3,
+  );
+}
 
 function matchSelfHarm(tokens: SafetyToken[]): boolean {
   const joined = tokens.map((token) => token.folded).join(" ");
@@ -266,14 +328,14 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
   if (/\bdi cho roi\b/.test(joined) && /\b(muon|bao|noi|chi)\b/.test(joined)) return true;
 
   for (let i = 0; i < tokens.length - 1; i++) {
-    const tu = tokens[i]!;
-    const tu2 = tokens[i + 1]!;
-    const pairIsTuTu =
-      (!tu.toned && tu.folded === "tu" && !tu2.toned && tu2.folded === "tu") ||
-      (tu.toned && tu.accented === "tự" && tu2.toned && tu2.accented === "tử");
-    if (!pairIsTuTu) continue;
-    if (nearFolded(tokens, i, ["toi", "em", "minh", "muon", "dinh", "tinh"], 5))
-      return true;
+    const first = tokens[i]!;
+    const second = tokens[i + 1]!;
+    const pair =
+      (matchesTarget(first, "tự") && matchesTarget(second, "tử")) ||
+      (matchesTarget(first, "tử") && matchesTarget(second, "tự"));
+    if (!pair) continue;
+    if (restContext(tokens, i)) continue;
+    if (hasIntentFrame(tokens, i)) return true;
   }
 
   if (hasPhrase(tokens, "tự sát") || hasPhrase(tokens, "tự làm hại")) return true;
@@ -281,26 +343,10 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
   for (let i = 0; i < tokens.length - 1; i++) {
     const want = tokens[i]!;
     const die = tokens[i + 1]!;
-    const isWantDie =
-      ((want.toned && want.accented === "muốn") ||
-        (!want.toned && want.folded === "muon")) &&
-      ((die.toned && die.accented === "chết") || (!die.toned && die.folded === "chet"));
-    if (!isWantDie) continue;
-    const prev = tokens[i - 1];
-    const prev2 = tokens[i - 2];
-    if (prev && HYPERBOLE.has(prev.folded)) continue;
-    if (prev2 && prev && prev.folded === "lung" && prev2.folded === "dau") continue;
+    if (!matchesTarget(want, "muốn") || !matchesTarget(die, "chết")) continue;
+    if (isHyperboleWantDie(tokens, i)) continue;
     if (hasPhrase(tokens, "muốn chết cho xong")) return true;
-    if (
-      nearFolded(
-        tokens,
-        i,
-        ["toi", "em", "minh", "ong", "ba", "bo", "me", "noi", "bao"],
-        6,
-      )
-    ) {
-      return true;
-    }
+    if (hasIntentFrame(tokens, i)) return true;
   }
 
   if (hasPhrase(tokens, "đi theo") && /\bcho xong\b/.test(joined)) return true;
@@ -309,18 +355,49 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
     const at = joined.indexOf("ket thuc tat ca");
     const after = joined.slice(at + "ket thuc tat ca".length).trim();
     const next = after.split(" ")[0] ?? "";
+    const debt = [
+      "cac",
+      "khoan",
+      "no",
+      "cong",
+      "viec",
+      "thoi",
+      "quen",
+      "du",
+      "an",
+      "bai",
+    ];
+    const rests = /\b(nghi|ngoi)\b/.test(after);
     if (
-      !["cac", "khoan", "no", "cong", "viec", "thoi", "quen", "du", "an", "bai"].includes(
-        next,
-      )
+      !debt.includes(next) &&
+      !rests &&
+      /\b(muon|dinh|tinh|chet|song|thuoc ngu)\b/.test(joined)
     ) {
       return true;
     }
   }
 
   if (
-    /\b(uong het thuoc ngu|dinh uong het thuoc)\b/.test(joined) &&
-    /\b(khong day|ngu luon|tu tu|ket thuc|muon chet)\b/.test(joined)
+    /\bthuoc ngu\b/.test(joined) &&
+    /\b(khong day|ngu luon|tu tu|ket thuc|muon chet|ca vi|het vien|uong het)\b/.test(
+      joined,
+    )
+  ) {
+    return true;
+  }
+
+  // Methods need a first-person or reported-intent frame, not a nearby relative.
+  if (
+    /\b(treo co|nhay lau|nhay cau|nhay xuong cau|nhay xuong lau|nhay tu ban cong|nhay ban cong|cat co tay|rach co tay|rach tay|tu cat|tu rach)\b/.test(
+      joined,
+    ) &&
+    /\b(muon|dinh|tinh|toan|se|toi|em|minh|noi|bao)\b/.test(joined)
+  ) {
+    return true;
+  }
+  if (
+    /\b(uong thuoc chuot|uong thuoc diet chuot|uong thuoc diet)\b/.test(joined) &&
+    /\b(muon|dinh|tinh|tu tu|tu sat|chet)\b/.test(joined)
   ) {
     return true;
   }
@@ -328,7 +405,9 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
   // "chán đời" alone is an idiom. A self-harm hint beside it still counts.
   if (
     hasPhrase(tokens, "chán đời") &&
-    /\b(muon chet|tu tu|khong muon song|bien mat|ket thuc|thuoc ngu)\b/.test(joined)
+    /\b(muon chet|tu tu|khong muon song|bien mat|ket thuc|thuoc ngu|treo co)\b/.test(
+      joined,
+    )
   ) {
     return true;
   }
@@ -380,7 +459,7 @@ function sugarContext(folded: string): boolean {
 }
 
 function sugarSevere(folded: string): boolean {
-  return /\b(lo mo|lu lan|noi lan|noi lap|run|va mo hoi|khong tinh|met la|hon me|bat tinh|mo hoi)\b/.test(
+  return /\b(lo mo|lu lan|noi lan|noi lap|run|va mo hoi|toat mo hoi|khong tinh|met la|hon me|bat tinh|mo hoi|hoa mat|tay run|bung doi)\b/.test(
     folded,
   );
 }
@@ -395,10 +474,12 @@ function matchGlucose(folded: string): boolean {
 function matchAllergy(folded: string): boolean {
   if (/\b(soc phan ve|phan ve|di ung nang)\b/.test(folded)) return true;
   const swelling =
-    /\b(sung moi|sung luoi|sung hong|sung mat|mat sung|sung phu|phu mat|phu moi|noi man|me day|sung to)\b/.test(
+    /\b(sung moi|sung luoi|sung hong|sung co|co sung|sung mat|mat sung|moi sung|sung phu|phu mat|phu moi|phu ne|noi man|me day|sung to)\b/.test(
       folded,
     );
-  const airway = /\b(kho tho|tho kho khe|khong tho|choang|mat tim)\b/.test(folded);
+  const airway = /\b(kho tho|tho kho khe|kho khe|khong tho|choang|mat tim)\b/.test(
+    folded,
+  );
   const trigger = /\b(ong dot|an tom|uong thuoc|thuoc xong|hai san|an xong)\b/.test(
     folded,
   );
@@ -410,20 +491,27 @@ function matchAllergy(folded: string): boolean {
 }
 
 function matchChest(folded: string): boolean {
-  return /\b(dau|tuc|that|nhoi|nang|siet)\s+nguc\b/.test(folded);
+  if (/\b(dau|tuc|that|nhoi|nang|siet|de)\s+(?:\w+\s+){0,2}nguc\b/.test(folded))
+    return true;
+  if (/\bnguc\s+(?:\w+\s+){0,2}(dau|tuc|that|nhoi|nang|de|siet)\b/.test(folded))
+    return true;
+  if (/\b(con dau tim|dau tim|nhoi mau|dau that nguc)\b/.test(folded)) return true;
+  return false;
 }
 
 function matchBreathing(folded: string): boolean {
   if (
-    /\b(tho khong noi|khong tho noi|khong tho duoc|tho khong ra hoi|tho rit|tho hon hen|con hen nang|hen nang|ngat tho|moi tim|tim tai|moi tai xanh|mat tim)\b/.test(
+    /\b(tho khong noi|khong tho noi|khong tho duoc|tho khong ra hoi|tho rit|tho hon hen|tho gap|tho doc|con hen nang|hen nang|len con hen|ngat tho|hut hoi|ngop tho|khong lay duoc hoi|ngung tho|suy ho hap|moi tim|tim tai|moi tai xanh|mat tim|tho ret)\b/.test(
       folded,
     )
   ) {
     return true;
   }
   if (
-    /\bkho tho\b/.test(folded) &&
-    /\b(nang|du doi|rit|hon hen|khong do|dot nhien|dang|nua tieng)\b/.test(folded)
+    /\b(kho tho|tho kho khe)\b/.test(folded) &&
+    /\b(nang|du doi|rit|hon hen|khong do|dot nhien|dang|nua tieng|qua|khong noi|tim)\b/.test(
+      folded,
+    )
   ) {
     return true;
   }
@@ -431,10 +519,28 @@ function matchBreathing(folded: string): boolean {
 }
 
 function matchSeizure(folded: string): boolean {
-  if (/\bhay co giat\b/.test(folded)) return false;
-  return /\b(dang co giat|bi co giat|len con co giat|len con dong kinh|sui bot mep|co giat)\b/.test(
-    folded,
-  );
+  if (
+    /\b(hay co giat|hay bi co giat|hay giat)\b/.test(folded) &&
+    !/\b(dang|lien tuc|khong dung|sui bot|cung nguoi|co cung)\b/.test(folded)
+  ) {
+    return false;
+  }
+  if (
+    /\b(sui bot mep|co cung|cung nguoi|cung do|giat lien tuc|giat khong dung|dang giat)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  if (/\b(len con dong kinh|len con co giat|len con giat)\b/.test(folded)) return true;
+  if (/\bco giat\b/.test(folded)) return true;
+  if (
+    /\bdong kinh\b/.test(folded) &&
+    /\b(dang|len con|giat|sui bot|co cung|cung nguoi|bat tinh|lien tuc)\b/.test(folded)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function matchPoison(folded: string): boolean {
@@ -452,7 +558,7 @@ function matchBleeding(folded: string): boolean {
   ) {
     return false;
   }
-  return /\b(chay mau nhieu|chay mau khong cam|chay mau o at|chay mau khong dung|non ra mau|oi ra mau|di ngoai ra mau|ho ra mau|dai tien ra mau|xuat huyet nang|mau chay nhieu)\b/.test(
+  return /\b(chay mau nhieu|chay mau khong cam|chay mau khong ngung|chay mau o at|chay mau khong dung|mau khong ngung|mau khong cam|cam mau khong|non ra mau|non mau|oi ra mau|di ngoai ra mau|di cau ra mau|ia ra mau|ho ra mau|dai tien ra mau|xuat huyet nang|mau chay nhieu|mau chay khong|mau tuoi|mau thanh dong|chay thanh dong)\b/.test(
     folded,
   );
 }
@@ -504,14 +610,14 @@ function matchStroke(folded: string): boolean {
     return true;
   }
   if (
-    /\b(meo mieng|mieng meo|meo mom|noi ngong|noi khong ro|mat lech|lech mieng|meo mat|mieng lech|noi lap|xe mot ben mat|xe mat|noi dot|noi do|noi u o|te nua mat|nhin mo dot|cuoi meo|liet mat|yeu mot ben|yeu nua|liet nua|liet mot ben)\b/.test(
+    /\b(meo mieng|mieng meo|meo mom|meo mep|noi ngong|noi khong ra|noi khong ro|mat lech|lech mieng|meo mat|mieng lech|noi lap|xe mot ben mat|xe mat|noi dot|noi u o|te nua mat|nhin mo dot|cuoi meo|liet mat|yeu mot ben|yeu nua|yeu han|liet nua|liet mot ben)\b/.test(
       folded,
     )
   ) {
     return true;
   }
   if (
-    /\b(yeu|liet)\s+(nua|mot ben|nua nguoi)\b/.test(folded) ||
+    /\b(yeu|liet)\s+(han\s+|het\s+)?(nua|mot ben|nua nguoi|tay|chan)\b/.test(folded) ||
     /\bte liet\b/.test(folded)
   ) {
     return true;
@@ -544,7 +650,12 @@ function matchStroke(folded: string): boolean {
 
 function fell(tokens: SafetyToken[], folded: string): boolean {
   if (tokens.some((token) => token.toned && token.accented === "té")) return true;
-  if (/\b(bi nga|vua nga|nga cau|nga xuong|nga trong|nga)\b/.test(folded)) return true;
+  if (
+    /\b(bi nga|vua nga|nga cau|nga xuong|nga trong|truot chan|truot nga|nga)\b/.test(
+      folded,
+    )
+  )
+    return true;
   // Unaccented "te" may be "té". It counts only with a separate injury, so "tê tay" stays quiet.
   const bareTe = tokens.some((token) => !token.toned && token.folded === "te");
   if (!bareTe) return false;
@@ -556,11 +667,27 @@ function fell(tokens: SafetyToken[], folded: string): boolean {
 function matchFall(tokens: SafetyToken[], folded: string): boolean {
   const down = fell(tokens, folded);
   const mild = /\bnga nhe\b/.test(folded) && /\b(van tinh|tinh tao)\b/.test(folded);
+  const numb = tokens.some(
+    (token) =>
+      (token.toned && token.accented === "tê") ||
+      (!token.toned &&
+        token.folded === "te" &&
+        !tokens.some((other) => other.toned && other.accented === "té")),
+  );
   const red =
-    /\b(khong dung|khong cu dong|khong di duoc|chan lech|dau hang|dau hong|dau khop hang|te|liet|lech|khong nhac)\b/.test(
+    numb ||
+    /\b(khong dung|khong cu dong|khong di duoc|chan lech|dau hang|dau hong|dau lung|dau khop hang|liet|lech|khong nhac|gay xuong|dap dau)\b/.test(
       folded,
     );
-  if (!down || /\bphong nga\b/.test(folded)) return false;
+  const prevention =
+    /\b(phong te|phong nga|phong ngua|de phong|ngan ngua|tranh te|tranh nga|lam sao phong)\b/.test(
+      folded,
+    );
+  const fallEvent =
+    /\b(vua|dang|roi|khong dung|dap dau|chan lech|dau hang|dau hong|gay|chay mau)\b/.test(
+      folded,
+    );
+  if (!down || (prevention && !fallEvent)) return false;
   if (mild && !/\b(khong dung|khong cu dong|dap dau|chay mau)\b/.test(folded))
     return false;
   if (/\bkhong\s+(?:tu\s+|the\s+)?dung\s+(?:day|len)(?:\s+duoc)?\b/.test(folded))
@@ -569,28 +696,75 @@ function matchFall(tokens: SafetyToken[], folded: string): boolean {
   return false;
 }
 
-/** Advice about prevention or a stable condition, with no event happening now. */
-function isEducation(folded: string): boolean {
-  const happening =
-    /\b(tu nhien|bong dung|bong|dot nhien|dot ngot|vua nga|vua bi|tu sang|nua tieng|du doi|va mo hoi|khong tho duoc|khong dung|bat tinh|lo mo|khong tinh|chay mau|non ra mau|oi ra|mac nghen|bi nghen|bi hoc|uong nham|qua lieu|ca vi|thuoc tru sau|thuoc diet|meo mieng|mieng meo|noi ngong|mat lech|mieng lech|co giat|ngat|xiu|lim di|khong phan ung|tuc nguc|dau nguc|that nguc|nhoi nguc|kho tho|noi lap|yeu nua|yeu mot|dap dau)\b/.test(
-      folded,
-    );
-  const manage =
-    /\b(nen tap|nen an|cham soc|vat ly tri lieu|phong nga|phong dot|phong ngua|de phong|ngan ngua|tranh bi|tranh hoc|cach so cuu|co nen|khi gang suc|dinh ky|hay kho tho|hay co giat|hay bi te|hay bi chong|co nguy hiem khong|co de bi|co sao khong|co tot khong|de khong gay|uong thuoc deu|ngay xua|nam truoc|co phai)\b/.test(
-      folded,
-    );
-  if (happening && !manage) return false;
-  return (
-    manage || /\b(dau hieu\b.*\bla gi\b|on dinh nen|lau nam\b.*\bcham soc)\b/.test(folded)
+function hasSpecificPerson(folded: string): boolean {
+  // "cô"/"có", "dì"/"đi", and "chị"/"chỉ" share a folded stem, so they are not people here.
+  return /\b(toi|chung toi|em|minh|bo|ba|me|ma|cha|ong|anh|chu|cu|vo|chong|con|chau|nguoi nha|benh nhan)\b/.test(
+    folded,
   );
+}
+
+function isSudden(folded: string): boolean {
+  return /\b(dang|vua|bong|dot nhien|dot ngot|tu nhien|tu dung|du doi|lien tuc|nua tieng|tu sang|luc nay|len con|va mo hoi|toat mo hoi|bat tinh|mat y thuc|lo mo|khong tinh|lim di|khong phan ung|sui bot|khong dung day|dap dau)\b/.test(
+    folded,
+  );
+}
+
+/** History, stable management, prevention, or a definition. Not a live event. */
+function isPastOrStable(folded: string): boolean {
+  const years = /\b(lau nam|nhieu nam)\b/.test(folded);
+  const currentComplaint =
+    /\b(tuc nguc|dau nguc|that nguc|nhoi nguc|kho tho|du doi|va mo hoi|toat mo hoi|lo mo|khong tinh|bat tinh|co giat|meo mieng|noi ngong|mat lech|chay mau|non ra mau|sui bot)\b/.test(
+      folded,
+    );
+  if (years && !currentComplaint) return true;
+  return /\b(nam truoc|ngay xua|tung bi|nam ngoai|on dinh|dinh ky|khi gang suc|nen tap|nen an|vat ly tri lieu|uong thuoc deu|hay kho tho|hay co giat|phong te nga|phong te|phong nga|phong ngua|de phong|ngan ngua|de khoi|de tranh|cach so cuu|hoc so cuu|co nen hoc|co phai dau hieu|dau hieu\b.{0,40}\bla gi\b|sau khi bi|sau khi mo|sau khi xuat|bao lau|da khoi)\b/.test(
+    folded,
+  );
+}
+
+function hasHardClinical(folded: string): boolean {
+  return /\b(meo mieng|mieng meo|noi ngong|noi dot|noi u o|xe mot ben|xe mat|yeu nua|yeu mot|liet nua|liet mot|mat lech|mieng lech|lech mieng|te nua mat|co giat|dang giat|giat lien|co cung|cung nguoi|dau nguc|tuc nguc|that nguc|nhoi nguc|siet nguc|kho tho|hen nang|chay mau|non ra mau|oi ra mau|di ngoai ra mau|mac nghen|bi nghen|bi hoc|ngat tho|khong tho|tho khong|du doi|bat tinh|lo mo|khong tinh|sui bot|len con)\b/.test(
+    folded,
+  );
+}
+
+/** Frames that can hide a topic word only when nothing acute is happening. */
+function hasEducationFrame(folded: string): boolean {
+  return /\b(co sao khong|co nguy hiem khong|co hai khong|co phai|cham soc|co nen|phong|nen tap|nen an|dinh ky|on dinh|dau hieu|cach so cuu|khi gang suc|vat ly tri lieu|uong thuoc deu|ngay xua|nam truoc|co de bi|co tot khong|de khong|tranh bi|tranh hoc)\b/.test(
+    folded,
+  );
+}
+
+/**
+ * Question frames cancel a topic only when no acute picture is present.
+ * A live sign, a sudden change, or a named person with that sign always wins.
+ */
+function isEducation(folded: string): boolean {
+  const sudden = isSudden(folded);
+  const past = isPastOrStable(folded);
+  const hard = hasHardClinical(folded);
+  if (past && !sudden) return true;
+  if (sudden || (hard && hasSpecificPerson(folded))) return false;
+  if (
+    hasSpecificPerson(folded) &&
+    /\b(qua lieu|uong nham|ngo doc|ca vi|thuoc tru sau|thuoc diet)\b/.test(folded)
+  ) {
+    return false;
+  }
+  if (hard && !/\b(hoc so cuu|co nen hoc|cach so cuu|co phai dau hieu)\b/.test(folded)) {
+    return false;
+  }
+  return hasEducationFrame(folded);
 }
 
 export const SYMPTOM_SAFETY_LINE = "Nếu có dấu hiệu nguy hiểm, gọi ngay 115.";
 
-const SYMPTOM_WORDS = new Set([
+const SYMPTOM_ACCENTED = [
   "đau",
+  "nhức",
   "ngực",
   "ngã",
+  "té",
   "tê",
   "thở",
   "mệt",
@@ -599,50 +773,44 @@ const SYMPTOM_WORDS = new Set([
   "chóng",
   "sốt",
   "nôn",
+  "ói",
   "máu",
   "choáng",
   "sưng",
+  "phù",
+  "giật",
   "lịm",
   "run",
-]);
+  "ngất",
+  "xỉu",
+  "nghẹn",
+  "liệt",
+  "lệch",
+  "ngọng",
+  "méo",
+  "ngứa",
+  "mẩn",
+  "tím",
+  "tái",
+  "yếu",
+  "rít",
+  "cứng",
+  "toát",
+  "hóc",
+];
 
-const SYMPTOM_FOLDED = new Set([
-  "dau",
-  "nguc",
-  "nga",
-  "te",
-  "tho",
-  "met",
-  "nong",
-  "ho",
-  "chong",
-  "sot",
-  "non",
-  "mau",
-  "ngat",
-  "xiu",
-  "giat",
-  "nghen",
-  "choang",
-  "sung",
-  "phu",
-  "lech",
-  "ngong",
-  "liet",
-  "run",
-  "oi",
-  "lim",
-]);
+const SYMPTOM_WORDS = new Set(SYMPTOM_ACCENTED);
+// "hóc" folds to "hoc", the same stem as "học", so only the accented word counts.
+const SYMPTOM_FOLDED = new Set(
+  SYMPTOM_ACCENTED.filter((word) => word !== "hóc").map((word) => foldVietnamese(word)),
+);
+
+const SYMPTOM_PHRASES =
+  /\b(kho tho|dau nguc|tuc nguc|that nguc|nhoi nguc|buon non|chong mat|hoa mat|lo mo|lu lan|duong huyet|tieu duong|chay mau|meo mieng|co giat|co cung|bat tinh|mat ngu|kho ngu|tieu chay|tao bon|me day|phu ne|dau dau|dau bung|dau lung|dau hong|dau khop|sung khop|kho tieu|sut can|chan an|met moi|toat mo hoi|va mo hoi|noi man|tim tai|hut hoi|ngop tho|non oi|mat suc|te bi|ngu khong ngon|noi me day|sung phu|kho khe)\b/;
 
 export function questionMentionsSymptom(question: string): boolean {
   const { tokens, folded } = analyzeQuestion(question);
-  if (
-    /\b(kho tho|dau nguc|tuc nguc|buon non|lo mo|lu lan|duong huyet|tieu duong|chay mau|meo mieng|co giat|bat tinh)\b/.test(
-      folded,
-    )
-  ) {
-    return true;
-  }
+  if (SYMPTOM_PHRASES.test(folded)) return true;
   return tokens.some((token) => {
     if (token.toned) return SYMPTOM_WORDS.has(token.accented);
     return SYMPTOM_FOLDED.has(token.folded);
