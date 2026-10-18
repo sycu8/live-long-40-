@@ -10,12 +10,21 @@ import { createId, nowIso } from "@shared/utils/id";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
 import { enforceRateLimit } from "../middleware/security";
-import { runChatPipeline, SYSTEM_PROMPT_VERSION } from "../ai/pipeline";
+import {
+  logUpgradeTimeout,
+  runChatPipeline,
+  SYSTEM_PROMPT_VERSION,
+  UPGRADE_BUDGET_MS,
+} from "../ai/pipeline";
 
 /** How long the first screen stays open for a later escalation. */
-export const UPGRADE_WAIT_MS = 6_000;
+export const UPGRADE_WAIT_MS = UPGRADE_BUDGET_MS;
 
-type UpgradePayload = { message: string; riskClass: string };
+type UpgradePayload = {
+  message: string;
+  riskClass: string;
+  finalMessage?: string;
+};
 
 const SCREEN_CLASSES = new Set<string>([
   "self_harm",
@@ -45,10 +54,18 @@ function isScreenClass(value: string): value is ScreenClass {
  */
 export async function takeUpgrade(
   current: string,
-  upgrade: Promise<UpgradePayload | null> | undefined,
+  upgrade: (Promise<UpgradePayload | null> & { timeoutGate?: object }) | undefined,
   waitMs: number,
-): Promise<{ riskClass: string; extra: string | null; timedOut: boolean }> {
-  if (!upgrade) return { riskClass: current, extra: null, timedOut: false };
+): Promise<{
+  riskClass: string;
+  extra: string | null;
+  finalMessage: string | null;
+  timedOut: boolean;
+}> {
+  if (!upgrade) {
+    return { riskClass: current, extra: null, finalMessage: null, timedOut: false };
+  }
+  const gate = upgrade.timeoutGate ?? upgrade;
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const raced = await Promise.race([
@@ -58,19 +75,24 @@ export async function takeUpgrade(
       }),
     ]);
     if (raced.kind === "timeout") {
-      console.error(JSON.stringify({ level: "error", message: "upgrade_timeout" }));
-      return { riskClass: current, extra: null, timedOut: true };
+      logUpgradeTimeout(gate);
+      return { riskClass: current, extra: null, finalMessage: null, timedOut: true };
     }
     const value = raced.value;
-    if (
+    const accepted =
       value &&
       isScreenClass(value.riskClass) &&
-      isScreenClass(current) &&
-      strictlyMoreSevere(value.riskClass, current)
-    ) {
-      return { riskClass: value.riskClass, extra: value.message, timedOut: false };
+      ((isScreenClass(current) && strictlyMoreSevere(value.riskClass, current)) ||
+        (!isScreenClass(current) && value.riskClass === "self_harm"));
+    if (accepted && value) {
+      return {
+        riskClass: value.riskClass,
+        extra: value.message,
+        finalMessage: value.finalMessage ?? null,
+        timedOut: false,
+      };
     }
-    return { riskClass: current, extra: null, timedOut: false };
+    return { riskClass: current, extra: null, finalMessage: null, timedOut: false };
   } finally {
     if (timer !== undefined) clearTimeout(timer);
   }
@@ -258,6 +280,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
     const finishUpgrade = async (): Promise<{
       riskClass: string;
       extra: string | null;
+      finalMessage: string | null;
     }> => {
       const outcome = await takeUpgrade(
         pipeline.riskClass,
@@ -276,26 +299,36 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           /* the first screen was already stored */
         }
       }
-      try {
-        await c.env.ANALYTICS_QUEUE?.send({
-          type: "risk_routed",
-          riskClass: outcome.riskClass,
-          at: nowIso(),
-        });
-      } catch {
-        /* optional binding */
+      if (isScreenClass(outcome.riskClass)) {
+        try {
+          await c.env.ANALYTICS_QUEUE?.send({
+            type: "risk_routed",
+            riskClass: outcome.riskClass,
+            at: nowIso(),
+          });
+        } catch {
+          /* optional binding */
+        }
       }
-      return { riskClass: outcome.riskClass, extra: outcome.extra };
+      return {
+        riskClass: outcome.riskClass,
+        extra: outcome.extra,
+        finalMessage: outcome.finalMessage,
+      };
     };
 
     if (wantsJson) {
-      keepAlive(c, finishUpgrade());
+      const settled = await finishUpgrade();
+      const content =
+        settled.finalMessage ??
+        (settled.extra ? `${pipeline.message}${settled.extra}` : pipeline.message);
       return c.json({
         messagePublicId: assistantPublicId,
         kind: "high_risk",
-        content: pipeline.message,
-        classification: pipeline.classification,
-        riskClass: pipeline.riskClass,
+        content,
+        classification:
+          settled.riskClass === "none" ? pipeline.classification : "high_risk_health",
+        riskClass: settled.riskClass,
       });
     }
 
@@ -324,7 +357,8 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           extra: null,
         };
         try {
-          settled = await finishUpgrade();
+          const outcome = await finishUpgrade();
+          settled = { riskClass: outcome.riskClass, extra: outcome.extra };
         } catch {
           settled = { riskClass: pipeline.riskClass, extra: null };
         }

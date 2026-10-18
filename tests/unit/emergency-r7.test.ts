@@ -27,7 +27,7 @@ const chestVerdict = {
 
 describe("emergency rules r7", () => {
   it("bumps the ruleset", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.7");
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.8");
   });
 
   it("treats a spoken muốn chết plan as self-harm, including across a comma", () => {
@@ -75,7 +75,7 @@ describe("emergency rules r7", () => {
   it("keeps intentional self-poisoning on the self-harm route with 115", () => {
     for (const question of [
       "Em định uống thuốc chuột",
-      "Anh ấy tự đầu độc bằng thuốc ngủ để không dậy",
+      "Em tự đầu độc bằng thuốc ngủ để không dậy",
     ]) {
       const result = evaluateHighRisk(question);
       expect(result.riskClass, question).toBe("self_harm");

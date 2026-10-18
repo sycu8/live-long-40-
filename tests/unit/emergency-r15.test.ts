@@ -131,8 +131,8 @@ describe("emergency r15", () => {
     vi.useRealTimers();
   });
 
-  it("is ruleset v1.8.7 and keeps the reverted verifier prompt", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.7");
+  it("is ruleset v1.8.8 and keeps the reverted verifier prompt", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.8");
     expect(UPGRADE_WAIT_MS).toBe(6000);
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).toContain("You may escalate");
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).toContain("You may not dismiss a real plan");
@@ -151,6 +151,7 @@ describe("emergency r15", () => {
     await expect(resultPromise).resolves.toEqual({
       riskClass: "unconscious",
       extra: null,
+      finalMessage: null,
       timedOut: true,
     });
     expect(
@@ -177,6 +178,7 @@ describe("emergency r15", () => {
     expect(downgraded).toEqual({
       riskClass: "unconscious",
       extra: null,
+      finalMessage: null,
       timedOut: false,
     });
   });
@@ -225,7 +227,7 @@ describe("emergency r15", () => {
   );
 
   it.each([1800, 3000])(
-    "F23 json returns the first screen and still routes the %sms classifier once",
+    "F23 json waits out a %sms classifier and returns the final class",
     async (delay) => {
       clearAcuteClassifierCache();
       const harness = chatApp();
@@ -247,18 +249,14 @@ describe("emergency r15", () => {
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toContain("application/json");
       const body = (await response.json()) as { riskClass: string; content: string };
-      expect(returnedAt).toBeLessThan(400);
-      expect(body.riskClass).toBe("unconscious");
+      expect(returnedAt).toBeGreaterThan(delay - 100);
+      expect(returnedAt).toBeLessThan(delay + 2_500);
+      expect(body.riskClass).toBe("self_harm");
       expect(body.content).toContain("Gọi 115");
-      expect(body.content).not.toContain("Ở lại bên cạnh");
-      await vi.waitFor(
-        () => {
-          expect(harness.analytics).toEqual([
-            expect.objectContaining({ type: "risk_routed", riskClass: "self_harm" }),
-          ]);
-        },
-        { timeout: delay + 4000 },
-      );
+      expect(body.content).toContain("Ở lại bên cạnh");
+      expect(harness.analytics).toEqual([
+        expect.objectContaining({ type: "risk_routed", riskClass: "self_harm" }),
+      ]);
       expect(harness.calls).toHaveLength(1);
       expect(harness.calls[0]?.aborted).toBe(false);
       expect(harness.calls[0]?.elapsed).toBeGreaterThanOrEqual(delay - 50);

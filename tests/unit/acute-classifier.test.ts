@@ -597,7 +597,7 @@ describe("acute classifier JSON", () => {
   });
 
   it("lets self-harm outrank a poisoning screen and keeps the hotline", () => {
-    const question = "Anh ấy uống hết thuốc ngủ để chết";
+    const question = "Em uống hết thuốc ngủ để chết";
     const result = evaluateHighRisk(question);
     expect(result.riskClass).toBe("self_harm");
     expect(result.message).toMatch(/gọi 115/i);

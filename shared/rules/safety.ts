@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.8.7";
+export const SAFETY_RULESET_VERSION = "v1.8.8";
 
 export type RiskClass =
   | "chest_pain"
@@ -1434,7 +1434,9 @@ function seizureStillAcute(folded: string): boolean {
   }
   if (/\b(mang thai|co thai|dang mang bau)\b/.test(folded)) return true;
   const oldBleed =
-    /\b(hom qua|hom truoc|truoc do|luc truoc|da cam|lau roi|nam ngoai)\b/.test(folded);
+    /\b(hom qua|hom truoc|truoc do|luc truoc|da cam|lau roi|nam ngoai|da lanh|vet cu|khong con chay|tu lau|da kho|vet seo|may hom truoc)\b/.test(
+      folded,
+    );
   if (
     !oldBleed &&
     /\b(chan thuong|dap dau|chay mau|thuong tich|bi thuong)\b/.test(folded)
@@ -1482,8 +1484,27 @@ function seizureHasResolved(tokens: SafetyToken[], folded: string): boolean {
   return false;
 }
 
+function seizureMentionIsInformational(folded: string): boolean {
+  if (
+    /\b(dang giat|dang co giat|giat khong|giat lien|sui bot|co cung|cung nguoi|len con|bat tinh|giat khong dung)\b/.test(
+      folded,
+    )
+  ) {
+    return false;
+  }
+  // A live seizure keeps its screen when the only extra is a ", là gì?" tail.
+  const core = folded.replace(
+    /\b(la gi|phai lam sao|lam sao bay gio|phai lam gi)\b/g,
+    " ",
+  );
+  return /\b(dau hieu|trieu chung|thong tin|tim hieu|hay gap|thuong gap|nguyen nhan|cach nhan|nhan biet)\b/.test(
+    core,
+  );
+}
+
 function matchSeizure(tokens: SafetyToken[], folded: string): boolean {
   if (seizureHasResolved(tokens, folded)) return false;
+  if (seizureMentionIsInformational(folded)) return false;
   if (
     /\b(lam sao phong|phong ngua|de phong|ngan ngua|cach phong)\b/.test(folded) &&
     !/\b(dang giat|giat lien|giat khong|lien tuc|sui bot|co cung|cung nguoi|bat tinh|len con)\b/.test(
@@ -1518,8 +1539,10 @@ function matchSeizure(tokens: SafetyToken[], folded: string): boolean {
 
 function matchBurn(folded: string): boolean {
   if (
-    /\bbong nhe\b/.test(folded) &&
-    !/\b(khap|rong|nang|sau|dien|hoa chat|nuoc soi|lua)\b/.test(folded)
+    /\b(bong nhe|bong nho|bong chut|bong mot chut|bong hoi|hoi bong|chi bong|bong rat nhe)\b/.test(
+      folded,
+    ) &&
+    !/\b(khap|rong|nang|sau|dien|hoa chat|nuoc soi|lua|phong rop)\b/.test(folded)
   ) {
     return false;
   }
@@ -2086,7 +2109,30 @@ export function refineClassifierRisk(
   const masked = applyNegationMask(tokens);
   const maskedFolded = masked.map((token) => token.folded).join(" ");
   const past = selfHarmIsPastStable(tokens, folded);
+  const cardiac = matchChest(folded) || /\b(tim|nguc|mo hoi|toat mo hoi)\b/.test(folded);
+  if (modelClass === "chest_pain" && !cardiac) {
+    if (breathingSignal(folded) && !chestPainPicture(folded)) return "breathing";
+    if (matchStroke(folded)) return "stroke";
+    if (matchSeizure(tokens, folded)) return "seizure";
+    if (matchBleeding(folded)) return "bleeding";
+    return null;
+  }
   if (modelClass === "chest_pain" && past && !matchChest(folded)) return null;
+  if (
+    modelClass === "poisoning" &&
+    matchBleeding(folded) &&
+    !matchPoison(folded) &&
+    !matchSelfHarm(masked)
+  ) {
+    return "bleeding";
+  }
+  if (
+    modelClass === "unconscious" &&
+    matchStroke(folded) &&
+    !matchUnconscious(tokens, folded)
+  ) {
+    return "stroke";
+  }
   if (
     past &&
     !isSudden(folded) &&
@@ -2320,9 +2366,11 @@ export function evaluateHighRisk(question: string): SafetyMatch {
   const forHarm = applySelfHarmDenial(tokens);
   const masked = applyNegationMask(tokens);
   const maskedFolded = masked.map((token) => token.folded).join(" ");
-  let riskClass = matchSelfHarm(forHarm)
-    ? "self_harm"
-    : pickRiskClass(masked, maskedFolded);
+  const crisisAllowed = matchSelfHarm(forHarm) && cleanInstantCrisis(question);
+  let riskClass = crisisAllowed ? "self_harm" : pickRiskClass(masked, maskedFolded);
+  if (riskClass === "self_harm" && !cleanInstantCrisis(question)) {
+    riskClass = pickAcuteClass(masked, maskedFolded);
+  }
 
   if (riskClass && riskClass !== "self_harm" && isEducation(folded)) riskClass = null;
   if (
@@ -2388,6 +2436,13 @@ export function crisisUpgradeText(): string {
   return stepsAfterHeader(MESSAGES.self_harm);
 }
 
+/** Crisis block first, then one acute screen, with the emergency header once. */
+export function composeCrisisFirst(
+  acute: Exclude<RiskClass, "none" | "self_harm">,
+): string {
+  return `${MESSAGES.self_harm}\n\n${stepsAfterHeader(MESSAGES[acute])}`;
+}
+
 function ingestedHarm(folded: string): boolean {
   return (
     matchPoison(folded) ||
@@ -2400,11 +2455,19 @@ function ingestedHarm(folded: string): boolean {
 /**
  * A wish or plan about one's own life that is not yet a high-precision screen.
  * The class is the cue. The classifier and the verifier choose the screen.
+ * Passive and euphemistic forms stay here. They are not added to the instant list.
  */
 function indirectFirstPersonIntent(tokens: SafetyToken[], joined: string): boolean {
   if (!tokens.some((token) => FIRST_PERSON.has(token.folded))) return false;
-  if (!/\b(muon|dinh|tinh|toan|se|sap|dang)\b/.test(joined)) return false;
-  return /\b(cuoc doi|cuoc song|doi minh|ban than|ket lieu|giet minh|giet ban than|bien mat|buong xuoi|giai thoat|cham dut|khong muon ton tai|khong muon tiep|ngu mai|ngu luon|bo cuoc|ket thuc tat ca|ket thuc moi thu|ra di mai|ra di luon)\b/.test(
+  if (
+    /\b(roi bo cuoc doi|roi bo cuoc song|trut bo cuoc doi|trut bo cuoc song|buong bo cuoc song|khong muon ton tai)\b/.test(
+      joined,
+    )
+  ) {
+    return true;
+  }
+  if (!/\b(muon|dinh|tinh|toan|se|sap|dang|chi)\b/.test(joined)) return false;
+  return /\b(cuoc doi|cuoc song|doi minh|ban than|ket lieu|giet minh|giet ban than|bien mat|buong xuoi|giai thoat|cham dut|khong muon ton tai|khong muon tiep|ngu mai|ngu luon|bo cuoc|ket thuc tat ca|ket thuc moi thu|ra di mai|ra di luon|khong tinh lai|khong tro ve|trut bo|roi bo)\b/.test(
     joined,
   );
 }
@@ -2421,21 +2484,127 @@ function denialBesideIntent(tokens: SafetyToken[], joined: string): boolean {
   );
 }
 
+const MINIMIZER_RE =
+  /\b(khong sao|noi choi|noi dua|chi dua|chi noi|khong nghiem|khong phai that|thoi ma)\b/;
+
+function splitSentences(question: string): string[] {
+  const parts = question
+    .normalize("NFC")
+    .split(/[.!?…\n]+/u)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : [question];
+}
+
+/**
+ * A negator counts as a denial unless it is the distress phrase itself.
+ * "chưa" does not count. "không còn sức" does not count. "không còn muốn" does.
+ */
+function isDemotionNegator(tokens: SafetyToken[], index: number): boolean {
+  const token = tokens[index];
+  if (!token || !isSimpleNegator(token) || token.folded === "chua") return false;
+  const next = foldedAt(tokens, index + 1);
+  const third = foldedAt(tokens, index + 2);
+  const fourth = foldedAt(tokens, index + 3);
+  if (next === "muon" && third === "song" && fourth !== "chung") return false;
+  if (next === "thiet") return false;
+  if (next === "song" && third === "noi") return false;
+  if (next === "chiu" && (third === "noi" || third === "dung")) return false;
+  // "không còn muốn" denies a plan. "không còn sức" and "chẳng còn ý nghĩa" do not.
+  if (next === "con") {
+    return (
+      third === "muon" ||
+      third === "nghi" ||
+      third === "dinh" ||
+      third === "tinh" ||
+      third === "tu"
+    );
+  }
+  // "không dậy" / "không thở" is the outcome, not a denial of the plan.
+  if (
+    next === "day" ||
+    next === "tho" ||
+    next === "ngoi" ||
+    next === "dung" ||
+    next === "di" ||
+    next === "an" ||
+    next === "ngu" ||
+    (next === "tinh" && third !== "tu")
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function sharesClause(tokens: SafetyToken[], a: number, b: number): boolean {
+  return sameClause(tokens, Math.min(a, b), Math.max(a, b));
+}
+
+/** A denial negator in the same clause as the intent cue. A later clause does not reach back. */
+function denialInIntentClause(tokens: SafetyToken[]): boolean {
+  const cues = selfHarmEvidence(tokens);
+  if (cues.length === 0) return false;
+  return tokens.some((_, index) => {
+    if (!isDemotionNegator(tokens, index)) return false;
+    return cues.some((cue) => sharesClause(tokens, index, cue));
+  });
+}
+
+/**
+ * Minimizers and hypotheticals cover the sentence. A negator covers only the
+ * intent clause, so a comma plus ", là gì?" does not cancel a real plan.
+ * Reported speech stays on the screen: the public fixture includes it.
+ */
+function sentenceHasDemotionMarker(tokens: SafetyToken[], joined: string): boolean {
+  if (isHypothetical(joined)) return true;
+  if (MINIMIZER_RE.test(joined)) return true;
+  if (isSelfHarmInformation(tokens, joined) && !hasTightPersonalPlan(tokens)) return true;
+  return denialInIntentClause(tokens);
+}
+
+function sentenceAllowsInstantCrisis(sentence: string): boolean {
+  const { tokens, folded } = analyzeQuestion(sentence);
+  if (!matchSelfHarm(tokens)) return false;
+  if (sentenceHasDemotionMarker(tokens, folded)) return false;
+  return true;
+}
+
+/**
+ * The instant crisis screen is one clean first-person intent sentence.
+ * A marker anywhere in that sentence blocks it. The 2-token window is not widened.
+ */
+export function cleanInstantCrisis(question: string): boolean {
+  return splitSentences(question).some((sentence) =>
+    sentenceAllowsInstantCrisis(sentence),
+  );
+}
+
+/**
+ * The rules would have opened the crisis screen, and a sentence marker blocks it.
+ * The cue stays. The classifier and the verifier decide.
+ */
+export function instantCrisisDemoted(question: string): boolean {
+  const { tokens } = analyzeQuestion(question);
+  return matchSelfHarm(applySelfHarmDenial(tokens)) && !cleanInstantCrisis(question);
+}
+
 /**
  * Intent that should compose the crisis block onto an acute screen.
- * Broad distress such as "không chịu nổi" is not this context.
+ * The same sentence mask as the instant screen. A clean intent in another
+ * sentence still counts. A masked cue does not.
  */
 export function selfHarmIntentContext(question: string): boolean {
   if (hasExplicitFigurativeMarker(question)) return false;
   const { tokens, folded } = analyzeQuestion(question);
   if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens))
     return false;
-  if (isHypothetical(folded) && !/\b(dang|vua|toi nay|dem nay)\b/.test(folded))
-    return false;
   if (selfHarmIsPastStable(tokens, folded) && !negatesCurrentPlan(tokens)) return false;
-  if (indirectFirstPersonIntent(tokens, folded)) return true;
-  if (ambiguousSelfHarmCue(tokens) && !hasSelfHarmTopic(tokens, folded)) return false;
-  return hasSelfHarmTopic(tokens, folded);
+  if (cleanInstantCrisis(question)) return true;
+  return splitSentences(question).some((sentence) => {
+    const part = analyzeQuestion(sentence);
+    if (sentenceHasDemotionMarker(part.tokens, part.folded)) return false;
+    return indirectFirstPersonIntent(part.tokens, part.folded);
+  });
 }
 
 /**
@@ -2550,6 +2719,7 @@ function cueParts(question: string): CueParts {
  * verifier stays in charge of that class.
  */
 export function hasSelfHarmLexicon(question: string): boolean {
+  if (instantCrisisDemoted(question)) return false;
   const parts = cueParts(question);
   if (!parts) return false;
   const visible = applySelfHarmDenial(parts.tokens);
@@ -2571,6 +2741,7 @@ export function hasSelfHarmLexicon(question: string): boolean {
  */
 export function hasSelfHarmCue(question: string): boolean {
   if (hasSelfHarmLexicon(question)) return true;
+  if (instantCrisisDemoted(question)) return true;
   const parts = cueParts(question);
   if (!parts) return false;
   if (indirectFirstPersonIntent(parts.tokens, parts.folded)) return true;

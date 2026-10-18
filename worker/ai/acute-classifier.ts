@@ -301,10 +301,11 @@ export async function classifyAcuteRisk(
   const cached = await readCache(env, key);
   if (cached) return { status: "ok", verdict: cached, cached: true };
 
-  const timeoutMs = Math.min(
-    ACUTE_CLASSIFIER_TIMEOUT_MS,
-    options?.timeoutMs ?? ACUTE_CLASSIFIER_TIMEOUT_MS,
-  );
+  const requested = options?.timeoutMs ?? ACUTE_CLASSIFIER_TIMEOUT_MS;
+  // The blocking path stays at 3.5s. An upgrade may use the remaining 6s budget.
+  const cap =
+    requested > ACUTE_CLASSIFIER_TIMEOUT_MS ? 6_000 : ACUTE_CLASSIFIER_TIMEOUT_MS;
+  const timeoutMs = Math.min(cap, requested);
   const first = await readModel(env, question, timeoutMs);
   if ("fail" in first) return { status: "fail", reason: first.fail };
   const parsed = parseAcuteClassifierOutput(first.raw);

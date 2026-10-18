@@ -9,13 +9,16 @@ import {
   type RuleView,
 } from "@shared/rules/precedence";
 import {
+  composeCrisisFirst,
   crisisUpgradeText,
   emergencyMessage,
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
   hasAcuteCue,
   hasSelfHarmCue,
+  instantCrisisDemoted,
   presentAcuteScreen,
+  selfHarmIntentContext,
   POST_SEIZURE_CHECK_LINE,
   questionMentionsSymptom,
   refineClassifierRisk,
@@ -280,7 +283,7 @@ export type ChatPipelineResult =
        * A later crisis screen for unconscious or urgent. The first screen does not wait.
        * Null when the classifier does not upgrade.
        */
-      upgrade?: Promise<{ message: string; riskClass: string } | null>;
+      upgrade?: RuleUpgrade;
     }
   | {
       kind: "abstain";
@@ -327,6 +330,24 @@ function finalizeGroundedAnswer(full: string, sources: RetrievedSource[]): strin
  * that ceiling is a cutoff and is not cached.
  */
 export const CHAT_AI_TIMEOUT_MS = 30_000;
+
+/** Hard bound for a later crisis upgrade. The classifier and the verifier share it. */
+export const UPGRADE_BUDGET_MS = 6_000;
+
+const upgradeTimeoutGates = new WeakSet<object>();
+
+/** One log per upgrade, whether the pipeline or the chat timer hits the bound first. */
+export function logUpgradeTimeout(gate: object): void {
+  if (upgradeTimeoutGates.has(gate)) return;
+  upgradeTimeoutGates.add(gate);
+  console.error(JSON.stringify({ level: "error", message: "upgrade_timeout" }));
+}
+
+export type RuleUpgrade = Promise<{
+  message: string;
+  riskClass: string;
+  finalMessage?: string;
+} | null> & { timeoutGate: object };
 
 const PARTIAL_FALLBACK_SEPARATOR = "\n\n---\n";
 
@@ -490,17 +511,27 @@ async function finishDecision(
   const rules = ruleViewFor(question);
   const failed = classifierFailed(layer);
   const view = !layer || layer.status !== "ok" ? null : classifierView(question, layer);
-  const decision = decide(rules, view, failed);
-  if (decision.kind !== "verify" || !view) return decision;
-  let verified: boolean | "failed" = "failed";
-  try {
-    const answer = await verify(question);
-    if (answer === true) verified = true;
-    else if (answer === false) verified = false;
-  } catch {
-    verified = "failed";
+  let decision = decide(rules, view, failed);
+  const maskedCue = hasSelfHarmCue(question) && !selfHarmIntentContext(question);
+  const poisonPicture =
+    decision.kind === "screen" &&
+    (decision.riskClass === "poisoning" || view?.class === "poisoning");
+  if ((decision.kind === "verify" && view) || (maskedCue && poisonPicture && view)) {
+    let verified: boolean | "failed" = "failed";
+    try {
+      const answer = await verify(question);
+      if (answer === true) verified = true;
+      else if (answer === false) verified = false;
+    } catch {
+      verified = "failed";
+    }
+    if (decision.kind === "verify") {
+      decision = decide(rules, { ...view, verified }, false);
+    } else if (verified === true) {
+      return { kind: "screen", riskClass: "self_harm" };
+    }
   }
-  return decide(rules, { ...view, verified }, false);
+  return decision;
 }
 
 /** Rules alert when the classifier times out. A settled verdict still goes through the table. */
@@ -620,36 +651,116 @@ function shouldRunAcuteClassifier(question: string, classification: string): boo
   return false;
 }
 
+function shouldAttachUpgrade(question: string, presented: string): boolean {
+  if (presented === "self_harm") return false;
+  if (presented === "unconscious" || presented === "urgent") return true;
+  if (!hasSelfHarmCue(question) || selfHarmIntentContext(question)) return false;
+  return presented !== "none";
+}
+
 function startRuleUpgrade(
   env: Env,
   question: string,
   rules: RuleView,
   options: ChatPipelineOptions | undefined,
-): Promise<{ message: string; riskClass: string } | null> {
-  const box = startClassifier(env, question, true, options);
-  const verify = (text: string) =>
-    options?.verifyCrisis ? options.verifyCrisis(text) : verifyCrisisWording(env, text);
-  return resolvedLayer(box)
-    .then(async (layer) => {
-      const view =
-        !layer || layer.status !== "ok" ? null : classifierView(question, layer);
-      if (!view || (view.class !== "self_harm" && !view.crisis)) return null;
-      let verified: boolean | "failed" = "failed";
-      try {
-        const answer = await verify(question);
-        if (answer === true) verified = true;
-        else if (answer === false) verified = false;
-      } catch {
-        verified = "failed";
-      }
+): RuleUpgrade {
+  const gate = {};
+  const started = Date.now();
+  const left = () => UPGRADE_BUDGET_MS - (Date.now() - started);
+  const run = async (): Promise<{
+    message: string;
+    riskClass: string;
+    finalMessage?: string;
+  } | null> => {
+    if (left() <= 0) {
+      logUpgradeTimeout(gate);
+      return null;
+    }
+    const upgradeOptions: ChatPipelineOptions = {
+      ...options,
+      classifierTimeoutMs: Math.min(UPGRADE_BUDGET_MS, Math.max(1, left())),
+    };
+    const box = startClassifier(env, question, true, upgradeOptions);
+    let layer: AcuteLayerResult | null = null;
+    try {
+      layer = await resolvedLayer(box);
+    } catch {
+      layer = { status: "fail", reason: "empty" };
+    }
+    if (left() <= 0) {
+      logUpgradeTimeout(gate);
+      return null;
+    }
+    const view = !layer || layer.status !== "ok" ? null : classifierView(question, layer);
+    const maskedCue = hasSelfHarmCue(question) && !selfHarmIntentContext(question);
+    const crisisLike = Boolean(view && (view.class === "self_harm" || view.crisis));
+    const poisonLike = view?.class === "poisoning" || rules.class === "poisoning";
+    const unconsciousUpgrade =
+      (rules.class === "unconscious" || rules.class === "urgent") && crisisLike;
+    if (!view || (!unconsciousUpgrade && !(maskedCue && (crisisLike || poisonLike)))) {
+      return null;
+    }
+    if (left() <= 0) {
+      logUpgradeTimeout(gate);
+      return null;
+    }
+    let verified: boolean | "failed" = "failed";
+    try {
+      const answer = options?.verifyCrisis
+        ? await options.verifyCrisis(question)
+        : await verifyCrisisWording(env, question, {
+            timeoutMs: Math.min(2_000, Math.max(1, left())),
+          });
+      if (answer === true) verified = true;
+      else if (answer === false) verified = false;
+    } catch {
+      verified = "failed";
+    }
+    if (left() <= 0) {
+      logUpgradeTimeout(gate);
+      return null;
+    }
+    if (rules.class === "unconscious" || rules.class === "urgent") {
       const upgraded = mayUpgrade(rules, { ...view, verified });
-      if (!upgraded || upgraded.kind !== "screen") return null;
+      if (upgraded?.kind === "screen") {
+        return {
+          message: `\n\n${crisisUpgradeText()}`,
+          riskClass: upgraded.riskClass,
+        };
+      }
+    }
+    if (maskedCue && verified === true && (crisisLike || poisonLike)) {
+      const acute =
+        rules.class && rules.class !== "urgent" && rules.class !== "self_harm"
+          ? rules.class
+          : view.class === "poisoning"
+            ? "poisoning"
+            : null;
+      if (
+        acute === "chest_pain" ||
+        acute === "poisoning" ||
+        acute === "seizure" ||
+        acute === "unconscious" ||
+        acute === "bleeding"
+      ) {
+        return {
+          message: `\n\n${crisisUpgradeText()}`,
+          riskClass: "self_harm",
+          finalMessage: composeCrisisFirst(acute),
+        };
+      }
       return {
-        message: `\n\n${crisisUpgradeText()}`,
-        riskClass: upgraded.riskClass,
+        message: `\n\n${emergencyMessage("self_harm")}`,
+        riskClass: "self_harm",
+        finalMessage: emergencyMessage("self_harm"),
       };
-    })
-    .catch(() => null);
+    }
+    return null;
+  };
+  return Object.assign(
+    run().catch(() => null),
+    { timeoutGate: gate },
+  );
 }
 
 export async function runChatPipeline(
@@ -664,16 +775,25 @@ export async function runChatPipeline(
     const decision = decide(rules, null, false);
     const riskClass = decision.kind === "screen" ? decision.riskClass : rules.class;
     const presented = presentAcuteScreen(riskClass, question);
-    const upgrade =
-      presented.riskClass === "unconscious" || presented.riskClass === "urgent"
-        ? startRuleUpgrade(env, question, rules, options)
-        : undefined;
+    const upgrade = shouldAttachUpgrade(question, presented.riskClass)
+      ? startRuleUpgrade(env, question, rules, options)
+      : undefined;
     return {
       kind: "high_risk",
       riskClass: presented.riskClass,
       message: presented.message,
       classification: "high_risk_health",
       upgrade,
+    };
+  }
+
+  if (instantCrisisDemoted(question)) {
+    return {
+      kind: "high_risk",
+      riskClass: "none",
+      message: GENTLE_SUPPORT_LINE,
+      classification: "high_risk_health",
+      upgrade: startRuleUpgrade(env, question, rules, options),
     };
   }
 
