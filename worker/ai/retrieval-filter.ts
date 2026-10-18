@@ -4,7 +4,13 @@ import {
   sourceLooksOfficial,
 } from "@shared/rules/sources";
 
-const MIN_SCORE = 0.25;
+/**
+ * Floor for AI Search embedding scores only. Lexical ranking uses
+ * MIN_RETRIEVAL_SCORE afterwards. 0.42 on this scale dropped real hits.
+ */
+const EMBEDDING_MIN_SCORE = 0.25;
+
+const MIN_SCORE = EMBEDDING_MIN_SCORE;
 
 export type RetrievalCandidate = {
   score?: number;
@@ -41,7 +47,12 @@ export function filterRetrievedCandidates(
     if (score < MIN_SCORE) return false;
     if (requireOfficial && !candidateIsOfficialEvidence(meta)) return false;
     // Prefer entries that still have an issuer string when official patterns apply
-    if (requireOfficial && meta.issuer && !isOfficialIssuer(String(meta.issuer)) && !isEvidenceTrustTier(String(meta.trust_tier ?? ""))) {
+    if (
+      requireOfficial &&
+      meta.issuer &&
+      !isOfficialIssuer(String(meta.issuer)) &&
+      !isEvidenceTrustTier(String(meta.trust_tier ?? ""))
+    ) {
       return false;
     }
     return true;

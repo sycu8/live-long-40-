@@ -46,6 +46,15 @@ describe("answer bank official sources", () => {
     }
   });
 
+  it("does not treat a bathroom or medicine question as a different bank entry", () => {
+    expect(
+      matchAnswerBank("Sửa phòng tắm thế nào để phòng ngã tại nhà cho cha mẹ?"),
+    ).toBeNull();
+    expect(
+      matchAnswerBank("Tôi đang theo dõi huyết áp, có được tự ngưng thuốc không?"),
+    ).toBeNull();
+  });
+
   it("matches ASCII paraphrases", () => {
     expect(matchAnswerBank("quy du phong la gi")?.id).toBe("emergency-fund");
     expect(matchAnswerBank("lam gi khi cha me bi nga")?.id).toBe("parent-fall");
@@ -66,11 +75,12 @@ describe("answer bank official sources", () => {
   it("builds stable cache keys for equivalent folded questions", () => {
     const a = cacheKeyForQuestion("Quỹ dự phòng là gì?");
     const b = cacheKeyForQuestion("quy du phong la gi?");
-    const prefix = `ans_cache:v4:${WORKERS_AI_TEXT_MODEL}:`;
+    const prefix = `ans_cache:v5:${WORKERS_AI_TEXT_MODEL}:`;
     expect(a).toBe(b);
     expect(a.startsWith(prefix)).toBe(true);
     expect(a.slice(prefix.length)).toMatch(/^[0-9a-f]{8}$/);
     expect(a).not.toContain("quy");
+    expect(a).not.toContain("ans_cache:v4:");
     expect(a).not.toContain("ans_cache:v3:");
   });
 });

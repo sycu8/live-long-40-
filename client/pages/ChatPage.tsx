@@ -306,14 +306,27 @@ export function ChatPage() {
                       : "mr-2 bg-white/80 lg:mr-8"
                   }`}
                 >
-                  <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                  {m.content ? (
+                    <p className="leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap">
+                      {m.content}
+                    </p>
+                  ) : m.role === "assistant" && streaming ? (
+                    <p
+                      className="leading-relaxed text-[var(--color-ink-muted)]"
+                      role="status"
+                    >
+                      Đang soạn câu trả lời…
+                    </p>
+                  ) : (
+                    <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                  )}
                   {m.sources && m.sources.length > 0 ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {m.sources.map((s) => (
                         <button
                           key={s.key}
                           type="button"
-                          className="rounded-md bg-[var(--color-blue-soft)] px-2 py-1 text-sm text-[var(--color-blue)]"
+                          className="max-w-full rounded-md bg-[var(--color-blue-soft)] px-2 py-1 text-left text-sm [overflow-wrap:anywhere] text-[var(--color-blue)]"
                           onClick={() => setDrawerSource(s)}
                         >
                           [{s.key}] {s.title}
@@ -417,7 +430,7 @@ export function ChatPage() {
                 href={drawerSource.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 block text-sm break-all text-[var(--color-blue)] underline"
+                className="mt-2 block max-w-full text-sm [overflow-wrap:anywhere] break-all text-[var(--color-blue)] underline"
               >
                 Xem tài liệu nguồn: {drawerSource.url}
               </a>

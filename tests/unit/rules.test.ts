@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scoreAssessment, ASSESSMENT_QUESTIONS } from "@shared/rules/scoring";
 import { generateThirtyDayPlan } from "@shared/rules/plan";
+import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@shared/rules/prompt";
 import { evaluateHighRisk } from "@shared/rules/safety";
 import { classifyQuestion, normalizeQuery } from "@shared/rules/classification";
 import { validateCitations } from "../../worker/ai/pipeline";
@@ -136,6 +137,18 @@ describe("plan recommendations", () => {
   });
 });
 
+describe("health answer prompt", () => {
+  it("ties an organization's name to its own source and sends red flags to 115", () => {
+    expect(SYSTEM_PROMPT_VERSION).toBe("v1.4.0");
+    expect(SYSTEM_PROMPT).toContain("7–9 giờ");
+    expect(SYSTEM_PROMPT).toMatch(/không gán số giờ ngủ/i);
+    expect(SYSTEM_PROMPT).toContain("gọi 115");
+    expect(SYSTEM_PROMPT).toMatch(/tê hoặc yếu sau ngã/);
+    expect(SYSTEM_PROMPT).toMatch(/đau ngực/);
+    expect(SYSTEM_PROMPT).toMatch(/đột quỵ/);
+  });
+});
+
 describe("high-risk safety routing", () => {
   it("routes severe chest pain", () => {
     const r = evaluateHighRisk("Tôi bị đau ngực dữ dội lan xuống cánh tay");
@@ -159,6 +172,22 @@ describe("high-risk safety routing", () => {
 
   it("routes self-harm language", () => {
     expect(evaluateHighRisk("toi muon tu tu").matched).toBe(true);
+  });
+
+  it("routes numbness after a fall to emergency, not a clinic visit", () => {
+    const r = evaluateHighRisk("Mẹ tôi ngã, giờ tê nửa người");
+    expect(r.matched).toBe(true);
+    expect(r.riskClass).toBe("fall_emergency");
+    expect(r.message).toContain("115");
+    expect(r.message).toMatch(/cấp cứu/i);
+    expect(evaluateHighRisk("me nga xong te nua nguoi").matched).toBe(true);
+    expect(evaluateHighRisk("Làm gì khi cha mẹ bị ngã nhẹ và vẫn tỉnh?").matched).toBe(
+      false,
+    );
+    expect(evaluateHighRisk("Tôi bị tê tay vì ngồi lâu").matched).toBe(false);
+    expect(
+      evaluateHighRisk("Tiểu đường hay tê chân thì làm sao phòng ngã?").matched,
+    ).toBe(false);
   });
 });
 
@@ -208,9 +237,21 @@ describe("citations and retrieval helpers", () => {
 
 describe("ingestion chunking", () => {
   it("preserves Vietnamese diacritics while chunking", () => {
-    const chunks = chunkText("# Tiêu đề\n\nNội dung về quỹ dự phòng và phòng ngã.\n\n## Mục 2\n\nThêm chi tiết.");
+    const chunks = chunkText(
+      "# Tiêu đề\n\nNội dung về quỹ dự phòng và phòng ngã.\n\n## Mục 2\n\nThêm chi tiết.",
+    );
     expect(chunks.length).toBeGreaterThan(0);
     expect(chunks.some((c) => c.content.includes("dự phòng"))).toBe(true);
+  });
+
+  it("splits a long paragraph so each chunk stays under the size cap", () => {
+    const sentence = "Người lớn tuổi nên đi bộ đều để giữ sức khỏe và thăng bằng. ";
+    const body = sentence.repeat(20).trim();
+    expect(body.length).toBeGreaterThan(480);
+    const chunks = chunkText(body);
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.every((chunk) => chunk.content.length <= 480)).toBe(true);
+    expect(chunks.map((chunk) => chunk.content).join(" ")).toContain("đi bộ đều");
   });
 
   it("treats prompt-injection-like source text as plain content", () => {

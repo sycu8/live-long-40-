@@ -5,7 +5,11 @@ import {
   isAcuteClassifierInput,
 } from "../../worker/ai/acute-classifier";
 import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
-import { CHAT_AI_TIMEOUT_MS, runChatPipeline } from "../../worker/ai/pipeline";
+import {
+  CHAT_AI_TIMEOUT_MS,
+  runChatPipeline,
+  TRUNCATED_ANSWER_NOTICE,
+} from "../../worker/ai/pipeline";
 import { SYMPTOM_SAFETY_LINE } from "../../shared/rules/safety";
 import type { Env } from "../../worker/env";
 
@@ -196,10 +200,10 @@ describe("chat Workers AI fallback", () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
     const cachedPuts = answerCachePuts(puts);
     expect(cachedPuts).toHaveLength(1);
-    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v4:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
+    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v5:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
       true,
     );
-    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v3:");
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v4:");
     const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
     expect(cached.answer).toBe(MODEL_WITH_LINE);
   });
@@ -326,8 +330,8 @@ describe("chat Workers AI fallback", () => {
     const displayed = await readDisplayed(result.stream);
     const saved = await result.fullTextPromise;
     expect(saved).toBe(displayed);
-    expect(saved).toContain(uncited);
-    expect(saved).toContain("\n\n---\nDựa trên nguồn từ cơ quan nhà nước");
+    expect(saved).not.toContain(uncited);
+    expect(saved.startsWith("Dựa trên nguồn từ cơ quan nhà nước")).toBe(true);
     expect(answerCachePuts(puts)).toEqual([]);
   });
 
@@ -416,7 +420,9 @@ describe("chat Workers AI fallback", () => {
     const displayed = await readDisplayed(result.stream);
     const saved = await result.fullTextPromise;
     expect(saved).toBe(displayed);
-    expect(saved).toBe(MODEL_WITH_LINE);
+    expect(saved).toBe(
+      `${MODEL_ANSWER}${TRUNCATED_ANSWER_NOTICE}\n\n${SYMPTOM_SAFETY_LINE}`,
+    );
     expect(answerCachePuts(puts)).toEqual([]);
   });
 
@@ -450,12 +456,16 @@ describe("chat Workers AI fallback", () => {
     const result = await runChatPipeline(env, QUESTION);
     expect(result.kind).toBe("answer");
     if (result.kind !== "answer") return;
+    const displayed = await readDisplayed(result.stream);
     const saved = await result.fullTextPromise;
-    expect(saved).toBe(MODEL_WITH_LINE);
+    expect(saved).toBe(displayed);
+    expect(saved).toBe(
+      `${MODEL_ANSWER}${TRUNCATED_ANSWER_NOTICE}\n\n${SYMPTOM_SAFETY_LINE}`,
+    );
     expect(answerCachePuts(puts)).toEqual([]);
   });
 
-  it("saves the same text that was displayed when citations are mixed", async () => {
+  it("drops citation markers that point at no source and does not cache them", async () => {
     const { puts, CONFIG } = memoryConfig();
     const mixed =
       "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1] Một ý không có trong nguồn. [S99]";
@@ -477,11 +487,86 @@ describe("chat Workers AI fallback", () => {
     const saved = await result.fullTextPromise;
     expect(saved).toBe(displayed);
     expect(saved).toContain("[S1]");
-    expect(saved).toContain("[S99]");
-    const cachedPuts = answerCachePuts(puts);
-    expect(cachedPuts).toHaveLength(1);
-    const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
-    expect(cached.answer).toBe(saved);
+    expect(saved).not.toContain("[S99]");
+    expect(saved).not.toContain("Một ý không có trong nguồn.");
+    expect(saved).toContain(SYMPTOM_SAFETY_LINE);
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("replaces an answer that attributes a number the source does not state", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const claim =
+      "Bộ Y tế khuyên người lớn ngủ từ 7 đến 9 giờ mỗi đêm để giữ sức khỏe tinh thần. [S1]";
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: claim };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved.startsWith("Dựa trên nguồn từ cơ quan nhà nước")).toBe(true);
+    expect(saved).not.toContain("7 đến 9");
+    expect(saved).not.toContain("Bộ Y tế");
+    expect(saved).toContain("nhịp đi bộ buổi sáng");
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("drops only the sentence with an unsupported number", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const mixed = `${MODEL_ANSWER} Chúng ta nên ngủ 7–9 tiếng mỗi đêm. [S1]`;
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: mixed };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toContain(MODEL_ANSWER);
+    expect(saved).not.toContain("7–9");
+    expect(saved).not.toContain("Dựa trên nguồn từ cơ quan nhà nước");
+    expect(answerCachePuts(puts)).toHaveLength(1);
+  });
+
+  it("does not cache a cited answer whose claim is absent from the source", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const flu =
+      "Kháng sinh giúp phòng cúm mùa ở người lớn tuổi. Ở bán cầu bắc nên tiêm vắc xin từ tháng 10 đến tháng 3 mỗi năm. [S1]";
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: flu };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const displayed = await readDisplayed(result.stream);
+    const saved = await result.fullTextPromise;
+    expect(saved).toBe(displayed);
+    expect(saved).not.toContain("tháng 10");
+    expect(saved).toContain("Dựa trên nguồn từ cơ quan nhà nước");
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 });
 

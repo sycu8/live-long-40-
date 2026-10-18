@@ -15,7 +15,7 @@ Tạo instance tên khớp `AI_SEARCH_INSTANCE` (`song-an-40-knowledge`). Khi ad
 
 ## Workers AI
 
-Chat và blog gọi `env.AI.run(model, inputs)` trực tiếp trên binding `AI`. Không đặt `AI_GATEWAY_ID`: gateway `song-an-40` chưa được cấu hình và trả lỗi 2001.
+Chat và blog gọi `env.AI.run(model, inputs)` trực tiếp trên binding `AI`.
 
 ## Blog — lịch hàng ngày & crawl
 
