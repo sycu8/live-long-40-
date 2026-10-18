@@ -75,11 +75,12 @@ describe("answer bank official sources", () => {
   it("builds stable cache keys for equivalent folded questions", () => {
     const a = cacheKeyForQuestion("Quỹ dự phòng là gì?");
     const b = cacheKeyForQuestion("quy du phong la gi?");
-    const prefix = `ans_cache:v6:${WORKERS_AI_TEXT_MODEL}:`;
+    const prefix = `ans_cache:v7:${WORKERS_AI_TEXT_MODEL}:`;
     expect(a).toBe(b);
     expect(a.startsWith(prefix)).toBe(true);
     expect(a.slice(prefix.length)).toMatch(/^[0-9a-f]{8}$/);
     expect(a).not.toContain("quy");
+    expect(a).not.toContain("ans_cache:v6:");
     expect(a).not.toContain("ans_cache:v5:");
     expect(a).not.toContain("ans_cache:v4:");
     expect(a).not.toContain("ans_cache:v3:");

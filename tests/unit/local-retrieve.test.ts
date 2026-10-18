@@ -162,6 +162,14 @@ describe("rankLocalKnowledge", () => {
       "cdc-cholesterol",
     );
     expect(rankLocalKnowledge(query, [blog], [], 3)).toEqual([]);
+    const guidelineOnly: LocalChunkRow = {
+      ...shared,
+      chunk_id: "guide",
+      source_id: "other-guideline",
+      issuer: "Hội hướng dẫn nội bộ",
+      trust_tier: "intl_guideline",
+    };
+    expect(rankLocalKnowledge(query, [guidelineOnly], [], 3)).toEqual([]);
   });
 });
 
@@ -177,5 +185,8 @@ describe("isCompleteHttpUrl", () => {
       isCompleteHttpUrl("https://www.who.int/news-room/fact-sheets/detail/ageing-and-health"),
     ).toBe(true);
     expect(isCompleteHttpUrl("https://www.who.int")).toBe(true);
+    expect(isCompleteHttpUrl("https://www.who")).toBe(false);
+    expect(isCompleteHttpUrl("https://www.who.")).toBe(false);
+    expect(isCompleteHttpUrl("https://www.who.int.")).toBe(false);
   });
 });

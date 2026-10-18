@@ -446,6 +446,45 @@ describe("answer cache source relevance", () => {
     expect(postponesSeekingCare("Sử dụng thuốc rồi hãy đi khám.")).toBe(false);
     expect(postponesSeekingCare("Su dung thuoc roi hay di kham.")).toBe(false);
     expect(postponesSeekingCare("Không cần lo, hãy gặp bác sĩ khi cần.")).toBe(false);
+    const downgrades = [
+      "Bạn có thể skip việc đi khám.",
+      "No need for medical help.",
+      "It is not necessary to go to the hospital.",
+      "Wait until tomorrow to see a doctor.",
+      "See a doctor later.",
+      "Ngày mai hãy đi khám.",
+      "Ngay mai hay di kham.",
+      "Để sau rồi gặp bác sĩ.",
+      "De sau roi gap bac si.",
+      "Hãy đi khám sau.",
+      "Just rest, a doctor is not necessary.",
+      "Cứ nghỉ, không cần đi bệnh viện.",
+      "Bỏ qua kiểm tra sức khỏe.",
+      "Bo qua kiem tra suc khoe.",
+    ];
+    for (const sentence of downgrades) {
+      expect(postponesSeekingCare(sentence), sentence).toBe(true);
+      expect(sentenceDropReason(sentence, [source], QUESTION), sentence).toBe(
+        "care_avoidance",
+      );
+    }
+    const positiveAdvice = [
+      "Hãy đi khám nếu mệt.",
+      "Nên gặp bác sĩ khi cần.",
+      "Sử dụng thuốc rồi hãy đi khám.",
+      "Su dung thuoc roi hay di kham.",
+      "Không bỏ qua việc đi khám.",
+      "Khong bo qua viec di kham.",
+      "Đừng chờ, hãy đến bệnh viện.",
+      "Dung cho, hay den benh vien.",
+      "Nếu mệt hãy đi khám.",
+      "Nên kiểm tra sức khỏe định kỳ.",
+      "Hãy gặp bác sĩ để được tư vấn thêm.",
+      "Theo dõi và đi khám khi cần để giữ sức khỏe.",
+      "Hãy nghỉ rồi đi khám nếu không đỡ.",
+    ];
+    const droppedPositive = positiveAdvice.filter((sentence) => postponesSeekingCare(sentence));
+    expect(droppedPositive, droppedPositive.join(" | ")).toEqual([]);
 
     const { puts, CONFIG } = memoryConfig();
     const grounded =
@@ -505,6 +544,25 @@ describe("answer cache source relevance", () => {
     expect(opened).toContain("hướng dẫn");
     expect(opened).not.toContain("**");
     expect(sentenceDropReason(unclosedClaim, [WALKING], QUESTION)).toBeNull();
+    const leading =
+      "**Bộ Y tế** Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
+    const peeled = groundedSentence(leading, [WALKING], QUESTION);
+    expect(peeled).toContain("hướng dẫn");
+    expect(peeled).toContain("[S1]");
+    expect(peeled).not.toContain("**");
+    expect(groundedSentence("**Bộ Y tế** [S1]", [WALKING], QUESTION)).toBe("");
+    expect(sentenceDropReason("Bạn có nên đi bộ buổi sáng không? [S1]", [WALKING], QUESTION)).toBe(
+      "rhetorical",
+    );
+    expect(groundedSentence("WHO [S1]", [WALKING], QUESTION)).toBe("");
+    expect(
+      groundedSentence(
+        "Người 61 tuổi nên chạy marathon mỗi tuần để giảm cân theo hướng dẫn. [S1]",
+        [WALKING],
+        QUESTION,
+      ),
+    ).toBe("");
+    expect(sentenceDropReason("Đi bộ sáng. [S1]", [WALKING], QUESTION)).toBe("echo");
   });
 
   it("does not cache a cited echo of the question", async () => {

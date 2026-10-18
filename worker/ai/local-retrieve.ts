@@ -5,20 +5,54 @@ export { foldVietnamese };
 
 const HTTP_URL = /https?:\/\/[^\s)>\]]+/gi;
 
+/** Real top-level domains. A cut host such as "www.who" must not pass as ".who". */
+const PUBLIC_TLD = new Set([
+  "com",
+  "org",
+  "net",
+  "int",
+  "gov",
+  "edu",
+  "vn",
+  "uk",
+  "io",
+  "app",
+  "info",
+  "mil",
+  "health",
+  "us",
+  "au",
+  "jp",
+  "fr",
+  "de",
+  "sg",
+  "eu",
+]);
+
+function authorityHost(raw: string): string {
+  const match = /^https?:\/\/([^/?#\s]+)/i.exec(raw.trim());
+  return (match?.[1] ?? "").replace(/[),;:!?]+$/g, "");
+}
+
 /** A URL that parses and was not cut off mid-host, mid-path, or mid-encoding. */
 export function isCompleteHttpUrl(raw: string): boolean {
   const trimmed = raw.trim();
   // A token that still ends in "-" or "." is incomplete. Callers that own the
-  // sentence may strip one final "." and ask again.
+  // sentence may strip one final "." after a path and ask again.
   if (!trimmed || /[-.]$/.test(trimmed)) return false;
   const url = trimmed.replace(/[),;:!?]+$/g, "");
   if (!url || /[-.]$/.test(url)) return false;
+  const host = authorityHost(url);
+  if (!host || host.endsWith(".") || host.endsWith("-")) return false;
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
-    if (!parsed.hostname.includes(".")) return false;
-    const tld = parsed.hostname.split(".").pop() ?? "";
-    if (!/^[a-z]{2,}$/i.test(tld)) return false;
+    if (parsed.hostname.endsWith(".")) return false;
+    const labels = parsed.hostname.split(".").filter(Boolean);
+    if (labels.length < 2) return false;
+    if (labels.some((label) => label.length < 2 || label.endsWith("-"))) return false;
+    const tld = labels[labels.length - 1] ?? "";
+    if (!PUBLIC_TLD.has(tld.toLowerCase())) return false;
     if (/%(?:$|[0-9a-f]$)/i.test(url)) return false;
     if (/[-.]$/.test(parsed.pathname)) return false;
     return true;
@@ -29,15 +63,23 @@ export function isCompleteHttpUrl(raw: string): boolean {
 
 /**
  * The URL to keep, or null when the token was cut.
- * One sentence period after a finished URL is not part of the URL.
+ * One sentence period after a path is not part of the URL.
+ * A trailing dot on the host itself is a cut-off host.
  */
 export function completeHttpUrl(raw: string): string | null {
   const trimmed = raw.trim();
   if (isCompleteHttpUrl(trimmed)) return trimmed.replace(/[),;:!?]+$/g, "");
-  if (trimmed.endsWith(".") && isCompleteHttpUrl(trimmed.slice(0, -1))) {
-    return trimmed.slice(0, -1);
+  if (!trimmed.endsWith(".")) return null;
+  const without = trimmed.slice(0, -1);
+  if (authorityHost(without).endsWith(".")) return null;
+  if (!isCompleteHttpUrl(without)) return null;
+  try {
+    const parsed = new URL(without);
+    if (parsed.pathname === "" || parsed.pathname === "/") return null;
+  } catch {
+    return null;
   }
-  return null;
+  return without;
 }
 
 /** Scheme and host only, such as https://www.who.int, with no document path. */
@@ -210,8 +252,10 @@ function isLenientOfficial(row: {
   trust_tier?: string | null;
   trustTier?: string;
 }): boolean {
-  const tier = (row.trust_tier ?? row.trustTier ?? "").toLowerCase();
-  if (tier === "intl_guideline") return true;
+  // The 0.25 floor is the official-source floor (WHO, Bộ Y tế, CDC).
+  // trust_tier intl_guideline on its own stays at the global floor.
+  void row.trust_tier;
+  void row.trustTier;
   const issuer = foldVietnamese(row.issuer ?? "");
   if (/(?:^|[^a-z])cdc(?:[^a-z]|$)|centers for disease/.test(issuer)) return true;
   if (/bo y te/.test(issuer)) return true;

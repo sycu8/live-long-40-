@@ -58,7 +58,7 @@ function dbWithOfficialChunk(): D1Database {
 }
 
 const MODEL_ANSWER =
-  "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]";
+  "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
 const MODEL_WITH_LINE = `${MODEL_ANSWER}\n\n${SYMPTOM_SAFETY_LINE}`;
 
 function memoryConfig() {
@@ -166,9 +166,9 @@ describe("chat Workers AI fallback", () => {
     const calls: unknown[][] = [];
     const { puts, CONFIG } = memoryConfig();
     const body = [
-      `data: ${JSON.stringify({ response: "Người 61 tuổi nên đi bộ đều " })}`,
+      `data: ${JSON.stringify({ response: "Người 61 tuổi nên duy trì nhịp đi bộ " })}`,
       "",
-      `data: ${JSON.stringify({ response: "mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]" })}`,
+      `data: ${JSON.stringify({ response: "buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]" })}`,
       "",
       "data: [DONE]",
       "",
@@ -200,9 +200,10 @@ describe("chat Workers AI fallback", () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
     const cachedPuts = answerCachePuts(puts);
     expect(cachedPuts).toHaveLength(1);
-    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v6:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
+    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v7:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
       true,
     );
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v6:");
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v5:");
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v4:");
     const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
@@ -338,7 +339,7 @@ describe("chat Workers AI fallback", () => {
 
   it("keeps a Vietnamese answer split across SSE bytes", async () => {
     const text =
-      "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]";
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
     const bytes = new TextEncoder().encode(
       `data: ${JSON.stringify({ response: text })}\n\ndata: [DONE]\n\n`,
     );
@@ -371,9 +372,9 @@ describe("chat Workers AI fallback", () => {
   it("keeps the last SSE event when the model omits [DONE]", async () => {
     const { puts, CONFIG } = memoryConfig();
     const body = [
-      `data: ${JSON.stringify({ response: "Người 61 tuổi nên đi bộ đều " })}`,
+      `data: ${JSON.stringify({ response: "Người 61 tuổi nên duy trì nhịp đi bộ " })}`,
       "",
-      `data: ${JSON.stringify({ response: "mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]" })}`,
+      `data: ${JSON.stringify({ response: "buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]" })}`,
       "",
     ].join("\n");
     const env = {
@@ -469,7 +470,7 @@ describe("chat Workers AI fallback", () => {
   it("drops citation markers that point at no source and does not cache them", async () => {
     const { puts, CONFIG } = memoryConfig();
     const mixed =
-      "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1] Một ý không có trong nguồn. [S99]";
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1] Một ý không có trong nguồn. [S99]";
     const env = {
       DB: dbWithOfficialChunk(),
       CONFIG,

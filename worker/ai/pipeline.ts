@@ -440,6 +440,9 @@ function withDeadline<T>(
 /** After an all-dropped sentence, do not sit on the model until the 30s deadline. */
 const DROP_GRACE_MS = 1_200;
 
+/** Once a cited sentence is out, stop waiting on a model that keeps talking. */
+const FINISH_BUDGET_MS = 2_000;
+
 function nextOrStop<T>(
   promise: Promise<T>,
   abort: AbortController,
@@ -1169,6 +1172,10 @@ export async function runChatPipeline(
       let dropped = 0;
       let kept = 0;
       let stopEarly = false;
+      let droppedAny = false;
+      let modelWrote115 = false;
+      let modelAvoidedCare = false;
+      let quietFinish = false;
       try {
         const timeoutMs = options?.aiTimeoutMs ?? CHAT_AI_TIMEOUT_MS;
         const deadline = Date.now() + timeoutMs;
@@ -1188,10 +1195,8 @@ export async function runChatPipeline(
           abort,
         );
 
-        let droppedAny = false;
-        let modelWrote115 = false;
-        let modelAvoidedCare = false;
         let firstDropAt = 0;
+        let firstKeptAt = 0;
         const dropRatioExceeded = () => kept === 0 && dropped >= 2;
         const emitSentence = (sentence: string) => {
           const grounded = groundedSentence(sentence, sources, question);
@@ -1213,6 +1218,7 @@ export async function runChatPipeline(
             droppedAny = true;
           }
           kept += 1;
+          if (firstKeptAt === 0) firstKeptAt = Date.now();
           const text = emitted ? ` ${grounded}` : grounded;
           emitted += text;
           controller.enqueue(text);
@@ -1245,6 +1251,12 @@ export async function runChatPipeline(
           await readAiStream(
             response,
             () => {
+              if (kept >= 1 && firstKeptAt > 0) {
+                quietFinish = true;
+                const tail = pending.trim() ? 1_200 : 0;
+                return Math.min(deadline, firstKeptAt + FINISH_BUDGET_MS + tail);
+              }
+              quietFinish = false;
               if (kept === 0 && dropped >= 1 && firstDropAt > 0) {
                 return Math.min(deadline, firstDropAt + DROP_GRACE_MS);
               }
@@ -1294,6 +1306,16 @@ export async function runChatPipeline(
         // The 115 line is appended here, and the saved text includes it.
         await closeWithSafety(cleaned, canCache);
       } catch (err) {
+        if (quietFinish && kept >= 1) {
+          const canCache =
+            !answerHasInvalidCitations(modelText, sources) &&
+            !droppedAny &&
+            !modelWrote115 &&
+            !modelAvoidedCare &&
+            !postponesSeekingCare(modelText);
+          await closeWithSafety(emitted.trim(), canCache);
+          return;
+        }
         if (stopEarly || (kept === 0 && dropped > 0 && sources.length > 0)) {
           await enqueueFallback("", buildExtractiveAnswer(sources));
           return;

@@ -42,10 +42,10 @@ export type CachedAnswer = {
   cachedAt: string;
 };
 
-// v6 does not read v5. Care-avoidance misses (N02 and the cấp cứu / 115 /
-// exam variants) were stored for 7 days under v5. Those keys stay until TTL.
-const CACHE_PREFIX = "ans_cache:v6:";
-/** New writes expire in 7 days. Older v5 values are never read. */
+// v7 does not read v6. Care-downgrade answers were stored for 7 days under v6.
+// Those keys stay until TTL and are never replayed.
+const CACHE_PREFIX = "ans_cache:v7:";
+/** New writes expire in 7 days. Older v6 values are never read. */
 export const CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 function djb2(input: string): string {
@@ -302,7 +302,8 @@ export type SentenceDropReason =
   | "meta"
   | "echo"
   | "header"
-  | "issuer_tag";
+  | "issuer_tag"
+  | "rhetorical";
 
 /** Whitespace and surrounding punctuation only. Diacritics stay, so "hay" ≠ "hãy". */
 function normalizeClause(text: string): string {
@@ -327,70 +328,211 @@ export function mentionsEmergencyNumber(text: string): boolean {
   );
 }
 
-/** Care the user can be talked out of. Bare words, so "khám" counts as well as "đi khám". */
-const CARE_TERM =
-  "(?:xe\\s+cap\\s+cuu|cap\\s+cuu|tro\\s+giup\\s+y\\s+te|bac\\s+si|benh\\s+vien|kiem\\s+tra|kham|emergency|ambulance|medical\\s+help|\\bexam\\b|\\bdoctor\\b|\\bhospital\\b|\\ber\\b|115)";
-
-const DISCOURAGEMENT =
-  "(?:khong\\s+can(?:\\s+thiet)?|khong\\s+nen|khong\\s+phai|chua\\s+can|chang\\s+can|chang\\s+nen|co\\s+the\\s+khong|without\\s+an?\\s+exam|no\\s+need|not\\s+necessary|unnecessary|do\\s+not|dont)";
-
 const HAS_ACCENT =
   /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/i;
 
-function hasCareTerm(folded: string): boolean {
-  return new RegExp(`(?:^|[^a-z0-9])${CARE_TERM}(?:[^a-z0-9]|$)`).test(folded);
+/**
+ * Care / medical-help, as a class. Matching is by role (the word is a way to
+ * get checked), not by a list of whole sentences.
+ */
+function isCareWord(words: string[], index: number): boolean {
+  const word = words[index] ?? "";
+  const pair = `${word} ${words[index + 1] ?? ""}`;
+  const triple = `${pair} ${words[index + 2] ?? ""}`;
+  if (
+    triple === "xe cap cuu" ||
+    triple === "tro giup y" ||
+    pair === "cap cuu" ||
+    pair === "bac si" ||
+    pair === "benh vien" ||
+    pair === "phong kham" ||
+    pair === "y te" ||
+    pair === "kiem tra" ||
+    pair === "medical help" ||
+    pair === "urgent care" ||
+    pair === "check up"
+  ) {
+    return true;
+  }
+  return (
+    word === "kham" ||
+    word === "emergency" ||
+    word === "ambulance" ||
+    word === "exam" ||
+    word === "checkup" ||
+    word === "doctor" ||
+    word === "hospital" ||
+    word === "clinic" ||
+    word === "physician" ||
+    word === "er" ||
+    word === "115"
+  );
 }
 
-function hasDiscouragement(clause: string, folded: string): boolean {
-  if (new RegExp(`(?:^|[^a-z0-9])${DISCOURAGEMENT}(?:[^a-z0-9]|$)`).test(folded))
+function clauseWords(clause: string): string[] {
+  return foldVietnamese(clause)
+    .replace(/['’]/g, "")
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+/** "đừng" folds to the same string as "dụng". "sử dụng" is not a negator. */
+function isNegator(words: string[], index: number, clause: string): boolean {
+  const word = words[index] ?? "";
+  if (word === "not" || word === "no" || word === "never" || word === "without") return true;
+  if (word === "dont") return true;
+  if (word === "khong" || word === "chua" || word === "chang" || word === "khoi") return true;
+  if (word !== "dung") return false;
+  if (words[index - 1] === "su" || words[index - 1] === "noi" || words[index - 1] === "ung")
+    return false;
+  if (words[index + 1] === "cu") return false;
+  if (/đừng/i.test(clause)) return true;
+  return !HAS_ACCENT.test(clause);
+}
+
+function phraseAt(words: string[], index: number, phrase: string): boolean {
+  const parts = phrase.split(" ");
+  return parts.every((part, offset) => words[index + offset] === part);
+}
+
+/** Negation aimed at getting help: "không cần", "no need", "not necessary", "đừng". */
+function careNegationBefore(words: string[], careIndex: number, clause: string): boolean {
+  const window = words.slice(Math.max(0, careIndex - 6), careIndex);
+  if (window.includes("hay") || window.includes("nen") || window.includes("should")) return false;
+  for (let i = 0; i < window.length; i += 1) {
+    const at = Math.max(0, careIndex - window.length) + i;
+    if (!isNegator(words, at, clause)) continue;
+    const next = words.slice(at + 1, at + 4).join(" ");
+    // "không bỏ qua" / "đừng chờ" negate the delay, not the care.
+    if (/^(?:bo qua|skip|doi|cho|wait|nghi)\b/.test(next)) continue;
     return true;
-  // "đừng" and "dụng" both fold to "dung". "sử dụng" is not "đừng".
-  if (/đừng|khỏi/i.test(clause)) return true;
-  if (!HAS_ACCENT.test(clause)) {
-    const withoutUsage = folded
-      .replace(/(?:^|[^a-z])(?:su|noi|ung)\s+dung(?=[^a-z]|$)/g, " ")
-      .replace(/(?:^|[^a-z])dung\s+cu(?=[^a-z]|$)/g, " ");
-    if (/(?:^|[^a-z])(?:dung|khoi)(?:[^a-z]|$)/.test(withoutUsage)) return true;
+  }
+  const joined = window.join(" ");
+  return /no need|not necessary|not needed|do not need|dont need|unnecessary/.test(joined);
+}
+
+function hasUnnegatedDelay(words: string[], clause: string): boolean {
+  const delayAt = (index: number): boolean => {
+    if (phraseAt(words, index, "ngay mai")) return true;
+    if (phraseAt(words, index, "hom sau")) return true;
+    if (phraseAt(words, index, "de sau")) return true;
+    if (phraseAt(words, index, "lat nua")) return true;
+    if (phraseAt(words, index, "vai ngay")) return true;
+    if (phraseAt(words, index, "few days")) return true;
+    if (phraseAt(words, index, "a few")) return words[index + 2] === "days";
+    const word = words[index] ?? "";
+    if (word === "tomorrow" || word === "later" || word === "postpone") return true;
+    if (word === "wait") return true;
+    // "đợi"/"chờ" fold together with "đời"/"cho" (for). Use the accent when it is there.
+    if (word === "doi") {
+      if (/đợi/i.test(clause)) return true;
+      return !HAS_ACCENT.test(clause);
+    }
+    if (word === "cho") {
+      if (/chờ/i.test(clause)) return true;
+      if (HAS_ACCENT.test(clause)) return false;
+      const next = words[index + 1] ?? "";
+      const prev = words[index - 1] ?? "";
+      return next === "o" || next === "den" || next === "them" || next === "vai" || prev === "cu" || prev === "hay";
+    }
+    // "đi khám sau" / "sau hãy đi khám". "sau khi" is only sequence.
+    if (
+      word === "sau" &&
+      words[index + 1] !== "khi" &&
+      (index === words.length - 1 || words[index + 1] === "hay" || words[index + 1] === "moi")
+    ) {
+      return true;
+    }
+    return false;
+  };
+  for (let i = 0; i < words.length; i += 1) {
+    if (!delayAt(i)) continue;
+    const prev = i - 1;
+    if (prev >= 0 && isNegator(words, prev, clause)) continue;
+    return true;
   }
   return false;
 }
 
-/** "đợi vài ngày rồi khám" and "wait a few days before an exam". */
-function delaysCare(folded: string): boolean {
-  const waits =
-    /(?:^|[^a-z])(?:doi|cho|wait)\s+(?:vai|mot vai|few|a few|several|\d+)\s+(?:ngay|day|days)\b/.test(
-      folded,
-    ) || /wait\s+(?:a\s+)?few\s+days/.test(folded);
-  if (waits && hasCareTerm(folded)) return true;
-  return /(?:doi|cho)\s+(?:\w+\s+){0,4}roi\s+(?:di\s+|gap\s+|goi\s+)?(?:kham|bac|cap|benh)/.test(
-    folded,
-  );
-}
-
-function clauseAvoidsCare(clause: string): boolean {
-  const folded = foldVietnamese(clause).replace(/['’]/g, "");
-  if (delaysCare(folded)) return true;
-  if (hasCareTerm(folded) && hasDiscouragement(clause, folded)) return true;
-  if (/(?:^|[^a-z])(?:cu|chi can|hay cu)\s+(?:o nha|nghi o nha|cho|doi)/.test(folded))
+function hasUnnegatedMinimiser(words: string[]): boolean {
+  const joined = ` ${words.join(" ")} `;
+  const patterns = [
+    " bo qua ",
+    " skip ",
+    " just rest ",
+    " cu nghi ",
+    " chi can nghi ",
+    " nghi o nha ",
+    " cu o nha ",
+    " cho o nha ",
+    " doi o nha ",
+    " stay home ",
+    " just wait ",
+    " wait at home ",
+    " unnecessary ",
+    " khong sao ",
+  ];
+  for (const pattern of patterns) {
+    const at = joined.indexOf(pattern);
+    if (at < 0) continue;
+    const before = joined.slice(0, at).trim().split(/\s+/);
+    const prev = before[before.length - 1] ?? "";
+    if (prev === "khong" || prev === "dung" || prev === "dont" || prev === "never" || prev === "not")
+      continue;
     return true;
-  if (/(?:^|[^a-z])hay\s+(?:cu\s+)?(?:cho|doi)\s+o\s+nha/.test(folded)) return true;
-  if (/(?:cho|doi)\s+(?:them\s+)?o\s+nha/.test(folded)) return true;
-  if (/(?:just wait|wait at home|stay home)/.test(folded)) return true;
-  if (/theo doi them o nha/.test(folded)) return true;
+  }
+  if (/theo doi them o nha/.test(words.join(" "))) return true;
   return false;
 }
 
-/**
- * The model tells the user not to get checked, or to wait at home.
- * Positive advice such as "hãy đi khám" and "nên gặp bác sĩ" does not match.
- */
-export function postponesSeekingCare(sentence: string): boolean {
-  if (delaysCare(foldVietnamese(sentence).replace(/['’]/g, ""))) return true;
+function clauseAvoidsCare(clause: string): boolean {
+  const words = clauseWords(clause);
+  if (words.length === 0) return false;
+  const joined = words.join(" ");
+  // Waiting at home or "just rest" is itself the deferral.
+  if (
+    /(?:cu o nha|cho o nha|doi o nha|nghi o nha|just rest|just wait|stay home|wait at home|cu nghi|theo doi them o nha)/.test(
+      joined,
+    ) &&
+    hasUnnegatedMinimiser(words)
+  ) {
+    return true;
+  }
+  let care = false;
+  for (let i = 0; i < words.length; i += 1) {
+    if (!isCareWord(words, i)) continue;
+    care = true;
+    if (careNegationBefore(words, i, clause)) return true;
+    const after = words.slice(i + 1, i + 6).join(" ");
+    if (/not necessary|not needed|unnecessary|no need|khong can|khong nen/.test(after)) return true;
+  }
+  if (!care) return false;
+  if (hasUnnegatedDelay(words, clause)) return true;
+  if (hasUnnegatedMinimiser(words)) return true;
+  return false;
+}
+
+function clauseParts(sentence: string): string[] {
   const parts = sentence
     .split(/[,;]|(?:\s+nhưng\s+)/i)
     .map((part) => part.trim())
     .filter(Boolean);
-  return (parts.length > 0 ? parts : [sentence]).some(clauseAvoidsCare);
+  return parts.length > 0 ? parts : [sentence];
+}
+
+/**
+ * Care or medical help combined with negation, minimisation, or delay.
+ * "Hãy đi khám" and "Không bỏ qua việc đi khám" do not match.
+ * "Ngày mai hãy đi khám" does: that is care deferred until later.
+ */
+export function postponesSeekingCare(sentence: string): boolean {
+  return clauseParts(sentence).some(clauseAvoidsCare);
+}
+
+/** Positive care clauses kept when the same sentence also talks the user out of care. */
+function positiveCareRemainder(sentence: string): string {
+  const kept = clauseParts(sentence).filter((part) => !clauseAvoidsCare(part));
+  return kept.join(", ").trim();
 }
 
 export function answerPostponesCare(answer: string): boolean {
@@ -484,8 +626,11 @@ function claimBackedByCited(
   const haystack = foldVietnamese(
     cited.map((source) => `${source.title}\n${source.snippet}`).join("\n"),
   );
-  const hits = tokens.filter((token) => containsToken(haystack, token));
-  return hits.length / tokens.length >= PARAPHRASE_OVERLAP;
+  const claims = tokens.filter((token) => !LIGHT_CLAIM.has(token));
+  const checked = claims.length > 0 ? claims : tokens;
+  const hits = checked.filter((token) => containsToken(haystack, token));
+  // A shared topic word is not enough. Most of the claim has to be in the passage.
+  return hits.length / checked.length >= 0.7;
 }
 
 function overlapRatio(
@@ -500,6 +645,26 @@ function overlapRatio(
   const hits = tokens.filter((token) => containsToken(haystack, token));
   return hits.length / tokens.length;
 }
+
+/** Light verbs and function words. They do not make a WHO passage "support" a new claim. */
+const LIGHT_CLAIM = new Set([
+  "bang",
+  "giup",
+  "cach",
+  "cung",
+  "hoac",
+  "neu",
+  "vao",
+  "roi",
+  "nay",
+  "nua",
+  "rat",
+  "minh",
+  "ban",
+  "khi",
+  "voi",
+  "duoc",
+]);
 
 const GENERIC_CLAIM = new Set([
   "nguoi",
@@ -642,23 +807,71 @@ function supportFailure(
   return null;
 }
 
-function uniqueTokens(text: string): string[] {
-  return [...new Set(contentTokens(text.replace(/\[s\d+\]/gi, " ")))];
+const ECHO_STOP = new Set([
+  "la",
+  "va",
+  "cua",
+  "voi",
+  "cac",
+  "mot",
+  "nhung",
+  "the",
+  "nao",
+  "gi",
+  "toi",
+  "ban",
+  "khi",
+  "lam",
+  "de",
+  "co",
+  "trong",
+  "nay",
+  "do",
+  "duoc",
+  "nhu",
+  "tren",
+  "and",
+  "for",
+  "with",
+  "this",
+  "that",
+  "you",
+  "your",
+  "how",
+  "what",
+  "from",
+]);
+
+/** Short words count. "Đi bộ sáng" is an echo even though each word is under 4 letters. */
+function echoTokens(text: string): string[] {
+  return [
+    ...new Set(
+      foldVietnamese(text)
+        .replace(/\[s\d+\]/gi, " ")
+        .replace(/https?:\/\/\S+/g, " ")
+        .split(/[^a-z0-9]+/)
+        .filter((token) => token.length >= 2 && !ECHO_STOP.has(token)),
+    ),
+  ];
 }
 
-/** Jaccard overlap with the question. A snippet fact the question never used is a claim. */
+/** Jaccard or containment with the question. A snippet fact the question never used is a claim. */
 function echoesQuestion(
   sentence: string,
   question: string,
   sources: Array<{ title: string; snippet: string }> = [],
 ): boolean {
-  const sentenceTokens = uniqueTokens(sentence);
-  const questionTokens = new Set(uniqueTokens(question));
-  if (sentenceTokens.length < 3 || questionTokens.size === 0) return false;
+  const sentenceTokens = echoTokens(sentence);
+  const questionTokens = new Set(echoTokens(question));
+  if (sentenceTokens.length < 2 || questionTokens.size === 0) return false;
   const intersection = sentenceTokens.filter((token) => questionTokens.has(token));
   const union = new Set([...sentenceTokens, ...questionTokens]).size;
-  if (union === 0 || intersection.length / union < 0.6) return false;
-  const snippetTokens = new Set(uniqueTokens(sources.map((source) => `${source.title} ${source.snippet}`).join(" ")));
+  const jaccard = union === 0 ? 0 : intersection.length / union;
+  const containment = intersection.length / sentenceTokens.length;
+  if (jaccard < 0.6 && containment < 0.8) return false;
+  const snippetTokens = new Set(
+    echoTokens(sources.map((source) => `${source.title} ${source.snippet}`).join(" ")),
+  );
   const novelClaim = sentenceTokens.some(
     (token) => !questionTokens.has(token) && snippetTokens.has(token),
   );
@@ -671,6 +884,69 @@ function stripUnclosedBold(text: string): string {
   return text.replace(/\*\*/g, "");
 }
 
+function isHeaderLine(line: string): boolean {
+  const bare = line.replace(/(\s*\[S\d+\])+\s*$/gi, "").trim();
+  if (!bare) return false;
+  if (/^#{1,6}\s+/.test(bare)) return true;
+  if (/^\*\*[^*]+\*\*$/.test(bare)) return true;
+  const folded = foldVietnamese(bare);
+  if (/^(?:nguon|sources?|references?|citations?)\s*:/.test(folded)) return true;
+  return false;
+}
+
+/** Drop a leading bold or heading line before the advice is grounded. */
+function peelHeader(text: string): { body: string; droppedHeader: boolean } {
+  const kept: string[] = [];
+  let droppedHeader = false;
+  for (const line of text.split(/\n+/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (isHeaderLine(trimmed)) {
+      droppedHeader = true;
+      continue;
+    }
+    kept.push(trimmed);
+  }
+  let body = kept.join(" ").trim();
+  const peeled = body.replace(/^(?:\s*\*\*[^*]+\*\*\s*)+/, "").trim();
+  if (peeled !== body) droppedHeader = true;
+  body = peeled.replace(/^\s*#{1,6}\s+[^\n.]+\s*/, "").trim();
+  return { body, droppedHeader };
+}
+
+function isIssuerOnly(text: string): boolean {
+  const folded = foldVietnamese(text)
+    .replace(/\[s\d+\]/gi, " ")
+    .replace(/[.*]+/g, " ");
+  const words = folded.split(/[^a-z0-9]+/).filter((word) => word.length >= 2);
+  if (words.length === 0) return false;
+  const issuer = new Set([
+    "bo",
+    "y",
+    "te",
+    "viet",
+    "nam",
+    "to",
+    "chuc",
+    "gioi",
+    "who",
+    "bao",
+    "hiem",
+    "xa",
+    "hoi",
+    "ngan",
+    "hang",
+    "nha",
+    "nuoc",
+    "cdc",
+    "theo",
+    "cua",
+    "la",
+    "nguon",
+  ]);
+  return words.every((word) => issuer.has(word));
+}
+
 function nonAnswerReason(
   sentence: string,
   question: string,
@@ -679,22 +955,15 @@ function nonAnswerReason(
   const stripped = sentence.replace(/\[S\d+\]/gi, " ").trim();
   const folded = foldVietnamese(stripped);
   if (
-    /(?:duoi day la|toi se tra loi|sau day la|cau tra loi|minh se giai thich|here is|i will answer)/.test(
+    /(?:^|[^a-z])(?:duoi day|sau day|toi se tra loi|cau tra loi|minh se giai thich|xin tra loi|de tra loi|ve cau hoi|tom lai|here is|i will answer|let me|to answer)/.test(
       folded,
     )
   ) {
     return "meta";
   }
-  if (/^(?:#{1,6}\s+)/.test(stripped)) return "header";
-  if (/^(?:nguon|sources?|references?|citations?)\s*:/.test(folded)) return "header";
-  if (/^\s*\*\*[^*]+\*\*\s*$/.test(stripped)) return "header";
-  if (
-    /^(?:bo y te(?: viet nam)?|to chuc y te the gioi(?: \(who\))?|who|bao hiem xa hoi viet nam|ngan hang nha nuoc(?: viet nam)?)\.?$/.test(
-      folded.replace(/[.*]+/g, "").trim(),
-    )
-  ) {
-    return "issuer_tag";
-  }
+  if (isHeaderLine(stripped)) return "header";
+  if (isIssuerOnly(stripped)) return "issuer_tag";
+  if (/\?\s*$/.test(stripped)) return "rhetorical";
   if (echoesQuestion(sentence, question, sources)) return "echo";
   return null;
 }
@@ -707,6 +976,11 @@ export function answerEchoesQuestion(
   return answerSentences(answer).some((sentence) =>
     echoesQuestion(sentence, question, sources),
   );
+}
+
+function answerHasCutUrl(answer: string): boolean {
+  const urls = answer.match(/https?:\/\/[^\s)>\]]+/gi) ?? [];
+  return urls.some((raw) => completeHttpUrl(raw) == null);
 }
 
 function isDanglingFragment(text: string): boolean {
@@ -724,12 +998,27 @@ function assessSentence(
 ): { text: string; reason: SentenceDropReason | null } {
   const trimmed = sentence.trim();
   if (!trimmed || JUNK_TEXT.test(trimmed)) return { text: "", reason: "junk" };
-  const opened = stripUnclosedBold(trimmed);
-  const nonAnswer = nonAnswerReason(opened, question, sources);
-  if (nonAnswer) return { text: "", reason: nonAnswer };
+  const openedBold = stripUnclosedBold(trimmed);
+  const peeled = peelHeader(openedBold);
+  const opened = peeled.body;
+  if (!opened) {
+    return { text: "", reason: peeled.droppedHeader ? "header" : "junk" };
+  }
   // A model phone instruction is removed. A factual 115 in a reading can stay.
   if (mentionsEmergencyNumber(opened)) return { text: "", reason: "model_115" };
-  if (postponesSeekingCare(opened)) return { text: "", reason: "care_avoidance" };
+  // Short care words ("bác sĩ") are not a citation-only line.
+  if (postponesSeekingCare(opened)) {
+    const remainder = positiveCareRemainder(opened);
+    if (remainder && !postponesSeekingCare(remainder)) {
+      return assessSentence(remainder, sources, question);
+    }
+    return { text: "", reason: "care_avoidance" };
+  }
+  if (isCitationOnly(opened)) {
+    return { text: "", reason: peeled.droppedHeader ? "header" : "citation_only" };
+  }
+  const nonAnswer = nonAnswerReason(opened, question, sources);
+  if (nonAnswer) return { text: "", reason: nonAnswer };
   if (isSourceRefusal(opened) && sources.length > 0) return { text: "", reason: "refusal" };
   if (/chưa tìm thấy đủ nguồn/.test(opened)) {
     const citedKeys = [...opened.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
@@ -905,6 +1194,7 @@ export async function readAnswerCache(
     if (!isGroundedOfficialAnswer(parsed)) return null;
     if (answerHasModelEmergency(parsed.answer)) return null;
     if (answerPostponesCare(parsed.answer)) return null;
+    if (answerHasCutUrl(parsed.answer)) return null;
     if (answerEchoesQuestion(parsed.answer, question, parsed.sources)) return null;
     const mode = parsed.mode === "answer_bank" ? "answer_bank" : "kv_cache";
     if (!cachedSourcesMatchQuestion(question, parsed.answer, parsed.sources, mode))
@@ -928,6 +1218,7 @@ export async function writeAnswerCache(
   if (!isGroundedOfficialAnswer(payload)) return;
   if (answerHasModelEmergency(payload.answer)) return;
   if (answerPostponesCare(payload.answer)) return;
+  if (answerHasCutUrl(payload.answer)) return;
   if (answerEchoesQuestion(payload.answer, question, payload.sources)) return;
   if (answerHasInvalidCitations(payload.answer, payload.sources)) return;
   if (
