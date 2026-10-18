@@ -56,9 +56,10 @@ import {
 } from "./local-retrieve";
 import {
   answerHasInvalidCitations,
+  groundedSentence,
+  isCitationOnly,
   resolvePreparedAnswer,
-  sentenceIsSupported,
-  stripInvalidCitationMarkers,
+  supportedAnswerText,
   writeAnswerCache,
   type CachedAnswer,
 } from "./answer-cache";
@@ -371,7 +372,9 @@ function splitReadySentences(
       j += mark[0].length;
     }
     const after = buffer.slice(j);
-    if (!flush && after.length === 0) break;
+    const citationAttached = /\[S\d+\]\s*$/.test(buffer.slice(start, j));
+    // A finished cited sentence can go out before the next token arrives.
+    if (!flush && after.length === 0 && !citationAttached) break;
     if (!flush && after.length > 0 && !/^\s/.test(after)) continue;
     const sentence = buffer.slice(start, j).trim();
     if (sentence) ready.push(sentence);
@@ -1116,6 +1119,7 @@ export async function runChatPipeline(
         resolveFull(`${body.replace(/\s+$/, "")}${extra}`);
         controller.close();
       };
+      let pending = "";
       try {
         const timeoutMs = options?.aiTimeoutMs ?? CHAT_AI_TIMEOUT_MS;
         const deadline = Date.now() + timeoutMs;
@@ -1135,10 +1139,19 @@ export async function runChatPipeline(
           abort,
         );
 
-        let pending = "";
+        let droppedAny = false;
         const emitSentence = (sentence: string) => {
-          if (!sentenceIsSupported(sentence, sources, question)) return;
-          const text = emitted ? ` ${sentence}` : sentence;
+          const grounded = groundedSentence(sentence, sources, question);
+          if (!grounded || isCitationOnly(grounded)) {
+            if (sentence.trim()) droppedAny = true;
+            return;
+          }
+          if (
+            grounded.replace(/\s+/g, " ").trim() !== sentence.replace(/\s+/g, " ").trim()
+          ) {
+            droppedAny = true;
+          }
+          const text = emitted ? ` ${grounded}` : grounded;
           emitted += text;
           controller.enqueue(text);
         };
@@ -1171,8 +1184,13 @@ export async function runChatPipeline(
         const cleaned = emitted.trim();
         const hadInvalid = answerHasInvalidCitations(modelText, sources);
         const fallback = buildExtractiveAnswer(sources);
+        const canCache = !hadInvalid && !droppedAny;
         const citedCutoff =
           cutoff != null && cleaned !== "" && answerHasCitations(cleaned);
+        if (isCitationOnly(modelText) || isCitationOnly(cleaned)) {
+          await closeWithSafety(ABSTENTION_MESSAGE, false);
+          return;
+        }
         if (citedCutoff) {
           const notice = TRUNCATED_ANSWER_NOTICE;
           controller.enqueue(notice);
@@ -1189,7 +1207,7 @@ export async function runChatPipeline(
         }
 
         // The 115 line is appended here, and the saved text includes it.
-        await closeWithSafety(cleaned, !hadInvalid);
+        await closeWithSafety(cleaned, canCache);
       } catch (err) {
         if (!abort.signal.aborted) abort.abort(err);
         console.error(
@@ -1200,15 +1218,18 @@ export async function runChatPipeline(
             error: formatWorkersAiError(err),
           }),
         );
-        const pendingTail = stripInvalidCitationMarkers(modelText, sources);
-        const unsent = pendingTail.startsWith(emitted)
-          ? pendingTail.slice(emitted.length)
-          : pendingTail;
-        if (unsent) {
-          emitted += unsent;
-          controller.enqueue(unsent);
+        const filteredTail = supportedAnswerText(pending, sources, question);
+        if (filteredTail && !isCitationOnly(filteredTail)) {
+          const text = emitted ? ` ${filteredTail}` : filteredTail;
+          emitted += text;
+          controller.enqueue(text);
         }
-        await enqueueFallback(emitted, buildExtractiveAnswer(sources));
+        const shown = isCitationOnly(emitted) ? "" : emitted.trim();
+        if (isCitationOnly(modelText) || isCitationOnly(shown)) {
+          await closeWithSafety(ABSTENTION_MESSAGE, false);
+          return;
+        }
+        await enqueueFallback(shown, buildExtractiveAnswer(sources));
       }
     },
   });

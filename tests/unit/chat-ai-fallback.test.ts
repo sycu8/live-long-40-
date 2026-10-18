@@ -304,8 +304,8 @@ describe("chat Workers AI fallback", () => {
     expect(result.kind).toBe("answer");
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
-    expect(text.startsWith("Đi bộ ")).toBe(true);
-    expect(text).toContain("\n\n---\nDựa trên nguồn từ cơ quan nhà nước");
+    expect(text).not.toContain("Đi bộ ");
+    expect(text.startsWith("Dựa trên nguồn từ cơ quan nhà nước")).toBe(true);
     expect(answerCachePuts(puts)).toEqual([]);
     expect(signal?.aborted).toBe(true);
   });
@@ -540,7 +540,7 @@ describe("chat Workers AI fallback", () => {
     expect(saved).toContain(MODEL_ANSWER);
     expect(saved).not.toContain("7–9");
     expect(saved).not.toContain("Dựa trên nguồn từ cơ quan nhà nước");
-    expect(answerCachePuts(puts)).toHaveLength(1);
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 
   it("does not cache a cited answer whose claim is absent from the source", async () => {
@@ -567,6 +567,116 @@ describe("chat Workers AI fallback", () => {
     expect(saved).not.toContain("tháng 10");
     expect(saved).toContain("Dựa trên nguồn từ cơ quan nhà nước");
     expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("filters a stream error the same way as a finished answer", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { puts, CONFIG } = memoryConfig();
+    const junk = "Theo một nghiên cứu Lancet, hãy ngừng thuốc tiểu đường ngay. Gọi 115.";
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  `data: ${JSON.stringify({ response: junk })}\n\n`,
+                ),
+              );
+              controller.error(new Error("upstream reset"));
+            },
+          });
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).not.toMatch(/lancet/i);
+    expect(saved).not.toMatch(/ngừng thuốc/i);
+    expect(saved).toMatch(/gọi 115|115/i);
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("replaces an answer that is only a citation marker", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: "[S1]" };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toContain("chưa tìm thấy đủ nguồn");
+    expect(saved).not.toContain("[S1]");
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("sends the first cited sentence before the model continues", async () => {
+    let releaseNext: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      releaseNext = resolve;
+    });
+    const encoder = new TextEncoder();
+    const firstSentence = `${MODEL_ANSWER}`;
+    const env = {
+      DB: dbWithOfficialChunk(),
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          let pulls = 0;
+          return new ReadableStream<Uint8Array>({
+            async pull(controller) {
+              pulls += 1;
+              if (pulls === 1) {
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ response: firstSentence })}\n\n`,
+                  ),
+                );
+                return;
+              }
+              await gate;
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ response: " Câu sau không có nguồn." })}\n\n`,
+                ),
+              );
+              controller.close();
+            },
+          });
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const reader = result.stream.getReader();
+    const first = await reader.read();
+    expect(first.value).toContain(MODEL_ANSWER);
+    expect(first.value).not.toContain("Câu sau");
+    releaseNext();
+    let rest = "";
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      rest += next.value ?? "";
+    }
+    expect(rest).not.toContain("Câu sau không có nguồn");
   });
 });
 

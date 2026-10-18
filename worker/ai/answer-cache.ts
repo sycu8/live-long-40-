@@ -37,7 +37,8 @@ export type CachedAnswer = {
 // v5 does not read v4. #44 and the previous grounding build both wrote v4,
 // including off-topic answers. Those keys are left in KV until their TTL.
 const CACHE_PREFIX = "ans_cache:v5:";
-const CACHE_TTL_SECONDS = 60 * 60 * 24 * 45; // ~45 days
+/** New writes expire in 7 days. Older v5 values keep whatever TTL they were given. */
+export const CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 function djb2(input: string): string {
   let hash = 5381;
@@ -217,7 +218,65 @@ const OUTSIDE_MARKERS = [
   "meta-analysis",
   "meta analysis",
   "cochrane",
+  "clinical trial",
+  "pubmed",
 ];
+
+/** Stop or change medication. Allowed only when a cited chunk says so. */
+const MEDICATION_CHANGE =
+  /ngung thuoc|doi thuoc|thay thuoc|giam lieu|tang lieu|bo thuoc|cat thuoc|tu y ngung|tu y doi|tu y thay|dieu chinh lieu|stop (?:the |your )?(?:medication|medicine|drug)s?|chang(?:e|ing) (?:your )?(?:medication|medicine|dose)|discontinu/;
+
+const JUNK_TEXT =
+  /```|\bundefined\b|\bas an ai\b|\bas a language model\b|tôi là một (?:mô hình|trợ lý)|i am an ai/i;
+
+function normalizeSpace(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+export function isCitationOnly(text: string): boolean {
+  if (!/\[S\d+\]/.test(text)) return false;
+  return normalizeSpace(text.replace(/\[S\d+\]/g, " ")).length === 0;
+}
+
+function hasMedicationChange(text: string): boolean {
+  return MEDICATION_CHANGE.test(foldVietnamese(text));
+}
+
+function medicationChangeIsSupported(
+  text: string,
+  cited: Array<{ title: string; snippet: string }>,
+): boolean {
+  if (!hasMedicationChange(text)) return true;
+  const blob = foldVietnamese(
+    cited.map((source) => `${source.title}\n${source.snippet}`).join("\n"),
+  );
+  return MEDICATION_CHANGE.test(blob);
+}
+
+/** The 115 instruction, with no other claim riding in the same clause. */
+function isSafetyOnlyClause(clause: string): boolean {
+  const folded = foldVietnamese(clause).replace(/\[s\d+\]/g, " ");
+  const has115 = /goi\s+(?:ngay\s+)?115/.test(folded);
+  const preamble = /neu co dau hieu nguy hiem/.test(folded);
+  if (!has115 && !preamble) return false;
+  const stripped = folded
+    .replace(/goi\s+(?:ngay\s+)?115/g, " ")
+    .replace(/neu co dau hieu nguy hiem/g, " ")
+    .replace(/https?:\/\/\S+/g, " ");
+  const tokens = stripped
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4 && !GENERIC_CLAIM.has(token));
+  return tokens.length === 0;
+}
+
+function splitClaimsAndSafety(sentence: string): string[] {
+  if (!/gọi\s+(?:ngay\s+)?115/i.test(sentence)) return [sentence];
+  const parts = sentence
+    .split(/(?<!\d)\s*[,;]\s*(?!\d)|\s+(?:và|nhưng)\s+/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : [sentence];
+}
 
 function citedBlob(
   sources: Array<{ issuer: string; title: string; snippet: string; url?: string }>,
@@ -239,7 +298,8 @@ function claimBackedByCited(
   const tokens = foldedSentence
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length >= 4 && !GENERIC_CLAIM.has(token));
-  if (tokens.length === 0) return cited.length > 0;
+  // A citation marker alone is not a claim.
+  if (tokens.length === 0) return false;
   const haystack = foldVietnamese(
     cited.map((source) => `${source.title}\n${source.snippet}`).join("\n"),
   );
@@ -282,54 +342,108 @@ function mentionsOutsideSource(
   return false;
 }
 
-export function sentenceIsSupported(
+type SupportSource = {
+  key: string;
+  issuer: string;
+  title: string;
+  snippet: string;
+  publicationDate?: string;
+  url?: string;
+};
+
+function citationsIn(text: string): string {
+  const keys = [...text.matchAll(/\[(S\d+)\]/g)].map((match) => `[${match[1] ?? ""}]`);
+  return [...new Set(keys)].join("");
+}
+
+function clauseIsSupported(
+  clause: string,
   sentence: string,
-  sources: Array<{
-    key: string;
-    issuer: string;
-    title: string;
-    snippet: string;
-    publicationDate?: string;
-    url?: string;
-  }>,
+  sources: SupportSource[],
   question: string,
 ): boolean {
-  if (/chưa tìm thấy đủ nguồn/.test(sentence)) return true;
-  if (
-    /gọi\s+(?:ngay\s+)?115/i.test(sentence) &&
-    !ISSUER_MENTIONS.some((m) => m.pattern.test(sentence))
-  )
-    return true;
-  if (/```|\bundefined\b|\bas an ai\b/i.test(sentence)) return false;
-  if (answerHasInvalidCitations(sentence, sources)) return false;
-  const citedKeys = [...sentence.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
+  if (JUNK_TEXT.test(clause) || isCitationOnly(clause)) return false;
+  const probe = /\[S\d+\]/.test(clause)
+    ? clause
+    : `${clause} ${citationsIn(sentence)}`.trim();
+  if (answerHasInvalidCitations(probe, sources)) return false;
+  const citedKeys = [...probe.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
   const cited = sources.filter((source) => citedKeys.includes(source.key));
   if (cited.length === 0) return false;
-  if (mentionsOutsideSource(sentence, cited)) return false;
+  if (mentionsOutsideSource(probe, cited)) return false;
+  if (!medicationChangeIsSupported(probe, cited)) return false;
   if (
-    !claimNumbers(sentence).every((number) =>
-      numberIsSupported(number, sentence, sources, question),
+    !claimNumbers(probe).every((number) =>
+      numberIsSupported(number, probe, sources, question),
     )
   ) {
     return false;
   }
-  return claimBackedByCited(sentence, cited);
+  return claimBackedByCited(probe, cited);
 }
 
-/** Drop unsupported sentences. Keep the rest, including an honest refusal. */
+/**
+ * Keep a cited claim and a bare 115 clause. Drop everything else in the sentence,
+ * including a 115 sentence that also carries an unsupported claim.
+ */
+export function groundedSentence(
+  sentence: string,
+  sources: SupportSource[],
+  question: string,
+): string {
+  const trimmed = sentence.trim();
+  if (!trimmed || JUNK_TEXT.test(trimmed)) return "";
+  if (/chưa tìm thấy đủ nguồn/.test(trimmed)) {
+    const citedKeys = [...trimmed.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
+    const cited = sources.filter((source) => citedKeys.includes(source.key));
+    const pool = cited.length > 0 ? cited : sources;
+    if (mentionsOutsideSource(trimmed, pool)) return "";
+    if (!medicationChangeIsSupported(trimmed, pool)) return "";
+    return trimmed;
+  }
+  const parts = splitClaimsAndSafety(trimmed);
+  const kept = parts.filter((part) => {
+    if (!isSafetyOnlyClause(part))
+      return clauseIsSupported(part, trimmed, sources, question);
+    const citedKeys = [...trimmed.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
+    const cited = sources.filter((source) => citedKeys.includes(source.key));
+    return !mentionsOutsideSource(part, cited);
+  });
+  if (kept.length === 0) return "";
+  if (kept.length === parts.length) return trimmed;
+  if (kept.every((part) => isSafetyOnlyClause(part))) {
+    return normalizeSpace(kept.join(", ").replace(/\[S\d+\]/g, " "));
+  }
+  const body = normalizeSpace(
+    kept
+      .map((part) => part.replace(/\[S\d+\]/g, " "))
+      .join(", ")
+      .replace(/\s+([,.;])/g, "$1"),
+  );
+  const markers = citationsIn(trimmed);
+  const grounded = markers ? `${body} ${markers}` : body;
+  return isCitationOnly(grounded) ? "" : grounded;
+}
+
+export function sentenceIsSupported(
+  sentence: string,
+  sources: SupportSource[],
+  question: string,
+): boolean {
+  const grounded = groundedSentence(sentence, sources, question);
+  if (!grounded || isCitationOnly(grounded)) return false;
+  return normalizeSpace(grounded) === normalizeSpace(sentence);
+}
+
+/** Drop unsupported sentences. A 115 clause stays; other claims in that sentence do not. */
 export function supportedAnswerText(
   answer: string,
-  sources: Array<{
-    key: string;
-    issuer: string;
-    title: string;
-    snippet: string;
-    publicationDate?: string;
-  }>,
+  sources: SupportSource[],
   question: string,
 ): string {
   return answerSentences(answer)
-    .filter((sentence) => sentenceIsSupported(sentence, sources, question))
+    .map((sentence) => groundedSentence(sentence, sources, question))
+    .filter((sentence) => sentence && !isCitationOnly(sentence))
     .join(" ")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
@@ -360,8 +474,8 @@ export function citedAnswerMatchesQuestion(
   const used = [...answer.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
   const cited = sources.filter((source) => used.includes(source.key));
   if (cited.length === 0) return false;
-  if (cited.every((source) => (source.score ?? 1) < MIN_RETRIEVAL_SCORE)) return false;
-  return cited.some((source) => sourceMatchesQuestionTopic(question, source));
+  if (cited.some((source) => (source.score ?? 1) < MIN_RETRIEVAL_SCORE)) return false;
+  return cited.every((source) => sourceMatchesQuestionTopic(question, source));
 }
 
 /** Only cache / replay answers that cite official sources. */
@@ -402,9 +516,11 @@ export function cachedSourcesMatchQuestion(
   sources: CachedSource[],
   mode: CachedAnswer["mode"] = "kv_cache",
 ): boolean {
+  void mode;
   if (!sources.every((source) => sourceUrlOk(source.url))) return false;
   if (!citedAnswerMatchesQuestion(question, answer, sources)) return false;
-  if (mode === "answer_bank") return true;
+  // Bank and generated answers both have to be fully grounded. A dropped
+  // sentence or an off-topic citation must not be stored.
   return answerAttributionsMatchSources(answer, sources, question);
 }
 

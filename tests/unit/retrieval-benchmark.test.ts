@@ -303,11 +303,12 @@ describe("retrieval regressions from the 36-question QA set", () => {
     // Offline on the 10 official snippets, production cap of 3.
     // Failed #42 ranker on this same set: top1 23/36, irrelevant 10,
     // and B10, B12, B22, B14 returned no relevant source.
-    // After the topic gate: top1 31/36, irrelevant 5, only the bathroom
-    // question (the falls sheet never mentions a bathroom) is an answerable miss.
+    // After the topic gate and dropping weak single-token matches:
+    // top1 35/36, irrelevant 0. The bathroom question is still the only
+    // answerable miss — the falls sheet never mentions a bathroom.
     expect(missed).toEqual(["B14"]);
-    expect(top1).toBe(31);
-    expect(irrelevant).toBe(5);
+    expect(top1).toBe(35);
+    expect(irrelevant).toBe(0);
   });
 });
 

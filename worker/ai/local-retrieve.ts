@@ -41,13 +41,16 @@ function rawQueryTokens(folded: string): string[] {
 }
 
 function isMostlyEnglish(folded: string): boolean {
-  return /\b(the|what|how|should|does|about|many|older|adults|week)\b/.test(folded);
+  // "thế nào" folds to "the nao", so a lone "the" is not an English question.
+  return /\b(what|how|should|does|about|many|older|adults|week)\b/.test(folded);
 }
 
 /** Words the source is likely to use when the question uses a different phrase. */
 function synonymTokens(folded: string): string[] {
   const extra: string[] = [];
-  if (/tap the duc|the duc|tap luyen|\b(exercise|workout|walking|walk)\b/.test(folded))
+  if (
+    /tap the duc|the duc|tap luyen|di bo|\b(exercise|workout|walking|walk)\b/.test(folded)
+  )
     extra.push("van", "dong");
   if (/mat ngu|kho ngu|thieu ngu|\b(insomnia|sleepless|sleep)\b/.test(folded))
     extra.push("giac", "ngu");
@@ -283,7 +286,10 @@ export function scoreTextInCorpus(
   ) {
     score *= 0.15;
   }
-  if (qFold.includes("di bo") && folded.includes("di bo")) {
+  if (
+    (qFold.includes("di bo") || qFold.includes("van dong")) &&
+    (folded.includes("di bo") || folded.includes("van dong"))
+  ) {
     score = Math.min(1, score + 0.45);
   }
   const strong = tokens.filter((token) => token.length >= 3);
@@ -329,19 +335,37 @@ const GENERIC_TOPIC = new Set([
   "keo",
   "dai",
   "giup",
+  "sang",
+  "ngoai",
+  "tam",
+  "thu",
 ]);
+
+/** One of these words is not enough to call a source on-topic. */
+const WEAK_TOPIC = new Set(["than", "kinh", "hang", "tiem", "xin", "vac"]);
 
 /** True when the question's own topic words appear in this source, not only in the answer. */
 export function sourceMatchesQuestionTopic(
   question: string,
   source: { title: string; snippet: string },
 ): boolean {
+  const qFold = foldVietnamese(question);
+  const haystack = foldVietnamese(`${source.title}\n${source.snippet}`);
+  if (
+    qFold.includes("di bo") &&
+    (haystack.includes("di bo") || haystack.includes("van dong"))
+  ) {
+    return true;
+  }
+  // A weight-loss question is not answered by a general activity sheet.
+  if (qFold.includes("giam can") && !haystack.includes("giam can")) return false;
   const tokens = queryTokens(question).filter(
     (token) => token.length >= 3 && !GENERIC_TOPIC.has(token),
   );
   if (tokens.length === 0) return false;
-  const haystack = foldVietnamese(`${source.title}\n${source.snippet}`);
-  return tokens.some((token) => containsToken(haystack, token));
+  const hits = tokens.filter((token) => containsToken(haystack, token));
+  if (hits.length === 0) return false;
+  return hits.some((token) => !WEAK_TOPIC.has(token));
 }
 
 /** Rank approved D1 chunks / lessons for grounded chat when AI Search is empty. */

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { SYMPTOM_SAFETY_LINE } from "../../shared/rules/safety";
 import {
   answerAttributionsMatchSources,
+  CACHE_TTL_SECONDS,
+  groundedSentence,
+  sentenceIsSupported,
   writeAnswerCache,
   type CachedSource,
 } from "../../worker/ai/answer-cache";
@@ -27,13 +31,13 @@ const FLU =
   "Kháng sinh giúp phòng cúm mùa ở người lớn tuổi. Ở bán cầu bắc nên tiêm vắc xin từ tháng 10 đến tháng 3 mỗi năm. [S1]";
 
 function memoryConfig() {
-  const puts: { key: string; value: string }[] = [];
+  const puts: { key: string; value: string; ttl?: number }[] = [];
   const CONFIG = {
     async get() {
       return null;
     },
-    async put(key: string, value: string) {
-      puts.push({ key, value });
+    async put(key: string, value: string, options?: { expirationTtl?: number }) {
+      puts.push({ key, value, ttl: options?.expirationTtl });
     },
   };
   return { puts, CONFIG };
@@ -125,10 +129,19 @@ describe("answer cache source relevance", () => {
       },
     );
     expect(puts).toHaveLength(1);
+    expect(puts[0]?.ttl).toBe(CACHE_TTL_SECONDS);
+    expect(CACHE_TTL_SECONDS).toBe(60 * 60 * 24 * 7);
   });
 
-  it("still stores a curated bank answer that paraphrases its source", async () => {
+  it("stores a curated bank answer only when the text is grounded", async () => {
     const { puts, CONFIG } = memoryConfig();
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: SUPPORTED,
+      sources: [WALKING],
+      mode: "answer_bank",
+    });
+    expect(puts).toHaveLength(1);
     await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
       classification: "health_education",
       answer: FLU,
@@ -136,5 +149,34 @@ describe("answer cache source relevance", () => {
       mode: "answer_bank",
     });
     expect(puts).toHaveLength(1);
+  });
+
+  it("does not let gọi 115 carry an uncited study, URL, or medication change", () => {
+    const invented =
+      "Theo một nghiên cứu Lancet (https://example.com/study), hãy ngừng thuốc tiểu đường, gọi 115. [S1]";
+    expect(sentenceIsSupported(invented, [WALKING], QUESTION)).toBe(false);
+    const kept = groundedSentence(invented, [WALKING], QUESTION);
+    expect(kept).toMatch(/gọi 115/i);
+    expect(kept).not.toMatch(/lancet|ngừng thuốc|example\.com/i);
+    expect(sentenceIsSupported(SYMPTOM_SAFETY_LINE, [WALKING], QUESTION)).toBe(true);
+    expect(sentenceIsSupported("[S1]", [WALKING], QUESTION)).toBe(false);
+  });
+
+  it("does not cache when any cited source is off topic", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const offTopic: CachedSource = {
+      ...WALKING,
+      key: "S2",
+      title: "Thủ tục hưởng lương hưu",
+      snippet: "Hồ sơ hưởng lương hưu nộp tại cơ quan bảo hiểm xã hội.",
+      url: "https://baohiemxahoi.gov.vn/Pages/huong-dan-huong-luong-huu.aspx",
+      score: 0.9,
+    };
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: `${SUPPORTED} Thủ tục lương hưu nộp tại cơ quan bảo hiểm. [S2]`,
+      sources: [WALKING, offTopic],
+    });
+    expect(puts).toEqual([]);
   });
 });

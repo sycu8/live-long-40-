@@ -518,6 +518,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
       const send = (obj: unknown) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
       };
+      send({ type: "status", text: "Đang soạn câu trả lời…" });
       send({
         type: "meta",
         classification: pipeline.classification,
@@ -621,7 +622,30 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           .bind(nowIso(), chat.id)
           .run();
 
-        send({ type: "done", abstained: false });
+        const citedKeys = new Set(
+          [...full.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? ""),
+        );
+        const citedSources = sources.filter((source, index, list) => {
+          if (!citedKeys.has(source.key)) return false;
+          const id = (source.url || source.title || source.key).trim();
+          return (
+            list.findIndex(
+              (item) => (item.url || item.title || item.key).trim() === id,
+            ) === index
+          );
+        });
+        send({
+          type: "done",
+          abstained: false,
+          sources: citedSources.map((s) => ({
+            key: s.key,
+            title: s.title,
+            issuer: s.issuer,
+            date: s.publicationDate,
+            url: s.url,
+            snippet: s.snippet,
+          })),
+        });
       } catch {
         send({
           type: "error",
