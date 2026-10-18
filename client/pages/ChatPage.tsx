@@ -17,6 +17,8 @@ type Source = {
 
 type Message = {
   id: string;
+  /** Server id. Kept separate so the local React key stays stable while tokens stream. */
+  publicId?: string;
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
@@ -160,6 +162,12 @@ export function ChatPage() {
       let sources: Source[] = [];
       let text = "";
 
+      const updateAssistant = (patch: Partial<Message>) => {
+        setMessages((m) =>
+          m.map((msg) => (msg.id === assistantId ? { ...msg, ...patch } : msg)),
+        );
+      };
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -179,24 +187,25 @@ export function ChatPage() {
           };
           if (payload.type === "meta" && payload.messagePublicId) {
             messagePublicId = payload.messagePublicId;
+            updateAssistant({ publicId: messagePublicId });
           }
-          if (payload.type === "sources" && payload.sources) {
+          if (
+            (payload.type === "sources" || payload.type === "citations") &&
+            payload.sources
+          ) {
             sources = payload.sources;
+            updateAssistant({ publicId: messagePublicId, sources });
           }
           if (payload.type === "token" && payload.text) {
             text += payload.text;
-            setMessages((m) =>
-              m.map((msg) =>
-                msg.id === assistantId
-                  ? { ...msg, id: messagePublicId, content: text, sources }
-                  : msg,
-              ),
-            );
+            updateAssistant({ publicId: messagePublicId, content: text, sources });
           }
           if (payload.type === "error") {
             throw new Error(payload.message ?? "Luồng trả lời lỗi.");
           }
           if (payload.type === "done") {
+            if (payload.sources) sources = payload.sources;
+            updateAssistant({ publicId: messagePublicId, content: text, sources });
             setFeedbackFor(messagePublicId);
           }
         }
@@ -284,6 +293,7 @@ export function ChatPage() {
               {messages.map((m) => (
                 <div
                   key={m.id}
+                  data-message-public-id={m.publicId}
                   className={`rounded-2xl px-4 py-3 ${
                     m.role === "user"
                       ? "ml-6 bg-[var(--color-green-soft)] lg:ml-16"
