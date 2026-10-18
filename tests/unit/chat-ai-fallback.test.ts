@@ -82,8 +82,11 @@ describe("chat Workers AI fallback", () => {
     const text = await result.fullTextPromise;
     expect(text).toContain("[S1]");
     expect(calls).toHaveLength(1);
-    expect(calls[0]).toHaveLength(2);
+    expect(calls[0]).toHaveLength(3);
     expect(calls[0]?.[0]).toBe(WORKERS_AI_TEXT_MODEL);
+    const options = calls[0]?.[2] as { gateway?: unknown; signal?: AbortSignal };
+    expect(options.gateway).toBeUndefined();
+    expect(options.signal).toBeInstanceOf(AbortSignal);
     const inputs = calls[0]?.[1] as { max_tokens?: number } | undefined;
     expect(inputs?.max_tokens).toBe(WORKERS_AI_MAX_TOKENS);
   });
@@ -142,7 +145,10 @@ describe("chat Workers AI fallback", () => {
     expect(text).toBe(MODEL_ANSWER);
     expect(text).not.toContain("[DONE]");
     expect(text).not.toContain("Dựa trên nguồn từ cơ quan nhà nước");
-    expect(calls[0]).toHaveLength(2);
+    expect(calls[0]).toHaveLength(3);
+    const options = calls[0]?.[2] as { gateway?: unknown; signal?: AbortSignal };
+    expect(options.gateway).toBeUndefined();
+    expect(options.signal).toBeInstanceOf(AbortSignal);
     expect(puts).toHaveLength(1);
     expect(puts[0]?.key.startsWith(`ans_cache:v3:${WORKERS_AI_TEXT_MODEL}:`)).toBe(true);
     expect(puts[0]?.key).not.toContain("ans_cache:v2:");
@@ -212,12 +218,16 @@ describe("chat Workers AI fallback", () => {
     expect(CHAT_AI_TIMEOUT_MS).toBe(30_000);
     const { puts, CONFIG } = memoryConfig();
     const encoder = new TextEncoder();
+    let signal: AbortSignal | undefined;
     const env = {
       DB: dbWithOfficialChunk(),
       CONFIG,
       AI: {
         async run(...args: unknown[]) {
-          expect(args).toHaveLength(2);
+          expect(args).toHaveLength(3);
+          const options = args[2] as { gateway?: unknown; signal?: AbortSignal };
+          expect(options.gateway).toBeUndefined();
+          signal = options.signal;
           let pulls = 0;
           return new ReadableStream<Uint8Array>({
             pull(controller) {
@@ -242,5 +252,188 @@ describe("chat Workers AI fallback", () => {
     expect(text.startsWith("Đi bộ ")).toBe(true);
     expect(text).toContain("\n\n---\nDựa trên nguồn từ cơ quan nhà nước");
     expect(puts).toEqual([]);
+    expect(signal?.aborted).toBe(true);
+  });
+
+  it("does not cache a fallback when the model answer has no citations", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const uncited = "Đi bộ đều giúp giữ sức khỏe, nhưng câu này không kèm nguồn.";
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run() {
+          return { response: uncited };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const displayed = await readDisplayed(result.stream);
+    const saved = await result.fullTextPromise;
+    expect(saved).toBe(displayed);
+    expect(saved).toContain(uncited);
+    expect(saved).toContain("\n\n---\nDựa trên nguồn từ cơ quan nhà nước");
+    expect(puts).toEqual([]);
+  });
+
+  it("keeps a Vietnamese answer split across SSE bytes", async () => {
+    const text =
+      "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]";
+    const bytes = new TextEncoder().encode(
+      `data: ${JSON.stringify({ response: text })}\n\ndata: [DONE]\n\n`,
+    );
+    const splitAt = bytes.findIndex((byte, index) => index > 0 && (byte & 0xc0) === 0x80);
+    expect(splitAt).toBeGreaterThan(0);
+    const env = {
+      DB: dbWithOfficialChunk(),
+      AI: {
+        async run() {
+          return new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(bytes.slice(0, splitAt));
+              controller.enqueue(bytes.slice(splitAt));
+              controller.close();
+            },
+          });
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toBe(text);
+    expect(saved).not.toContain("\uFFFD");
+  });
+
+  it("keeps the last SSE event when the model omits [DONE]", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const body = [
+      `data: ${JSON.stringify({ response: "Người 61 tuổi nên đi bộ đều " })}`,
+      "",
+      `data: ${JSON.stringify({ response: "mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]" })}`,
+      "",
+    ].join("\n");
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run() {
+          return sseByteStream(body);
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const text = await result.fullTextPromise;
+    expect(text).toBe(MODEL_ANSWER);
+    expect(puts).toHaveLength(1);
+  });
+
+  it("does not cache a cited answer that ends in an error event", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const body = [
+      `data: ${JSON.stringify({ response: MODEL_ANSWER })}`,
+      "",
+      "event: error",
+      'data: {"error":"upstream failed"}',
+      "",
+    ].join("\n");
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run() {
+          return sseByteStream(body);
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const displayed = await readDisplayed(result.stream);
+    const saved = await result.fullTextPromise;
+    expect(saved).toBe(displayed);
+    expect(saved).toBe(MODEL_ANSWER);
+    expect(puts).toEqual([]);
+  });
+
+  it("does not cache a cited answer that hits the token limit", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const body = [
+      `data: ${JSON.stringify({ response: MODEL_ANSWER })}`,
+      "",
+      `data: ${JSON.stringify({
+        response: "",
+        finish_reason: "length",
+        usage: {
+          completion_tokens: WORKERS_AI_MAX_TOKENS,
+          prompt_tokens: 20,
+          total_tokens: WORKERS_AI_MAX_TOKENS + 20,
+        },
+      })}`,
+      "",
+    ].join("\n");
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run() {
+          return sseByteStream(body);
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toBe(MODEL_ANSWER);
+    expect(puts).toEqual([]);
+  });
+
+  it("saves the same text that was displayed when citations are mixed", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const mixed =
+      "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1] Một ý không có trong nguồn. [S99]";
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run() {
+          return { response: mixed };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const displayed = await readDisplayed(result.stream);
+    const saved = await result.fullTextPromise;
+    expect(saved).toBe(displayed);
+    expect(saved).toContain("[S1]");
+    expect(saved).toContain("[S99]");
+    expect(puts).toHaveLength(1);
+    const cached = JSON.parse(puts[0]?.value ?? "{}") as { answer?: string };
+    expect(cached.answer).toBe(saved);
   });
 });
+
+async function readDisplayed(stream: ReadableStream<string>): Promise<string> {
+  const reader = stream.getReader();
+  let out = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    out += value;
+  }
+  return out;
+}

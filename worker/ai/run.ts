@@ -12,6 +12,7 @@ export async function runWorkersAi(
   env: Env,
   model: string,
   inputs: Record<string, unknown> | null | undefined,
+  options?: { signal?: AbortSignal },
 ): Promise<unknown> {
   if (!env.AI) {
     throw new Error("Workers AI binding is unavailable");
@@ -23,6 +24,9 @@ export async function runWorkersAi(
   }
   if (inputs == null || typeof inputs !== "object" || Array.isArray(inputs)) {
     throw new Error("Workers AI inputs must be an object");
+  }
+  if (options?.signal) {
+    return env.AI.run(model, inputs, { signal: options.signal });
   }
   return env.AI.run(model, inputs);
 }
@@ -158,12 +162,68 @@ function sseDataPayload(line: string): string | null {
   return rest.startsWith(" ") ? rest.slice(1) : rest;
 }
 
+export type AiStreamCutoff = "error" | "length";
+
+const TOKEN_LIMIT_REASONS = new Set(["length", "max_tokens", "token_limit"]);
+
+function reasonIsTokenLimit(value: unknown): boolean {
+  return typeof value === "string" && TOKEN_LIMIT_REASONS.has(value.trim().toLowerCase());
+}
+
+function cutoffFromRecord(
+  record: Record<string, unknown>,
+  maxTokens: number | undefined,
+): AiStreamCutoff | null {
+  if (
+    typeof record.error === "string" ||
+    (record.error != null && typeof record.error === "object") ||
+    (Array.isArray(record.errors) && record.errors.length > 0)
+  ) {
+    return "error";
+  }
+
+  if (
+    reasonIsTokenLimit(record.finish_reason) ||
+    reasonIsTokenLimit(record.stop_reason)
+  ) {
+    return "length";
+  }
+  if (Array.isArray(record.choices)) {
+    for (const choice of record.choices) {
+      if (!choice || typeof choice !== "object") continue;
+      const entry = choice as Record<string, unknown>;
+      if (
+        reasonIsTokenLimit(entry.finish_reason) ||
+        reasonIsTokenLimit(entry.stop_reason)
+      ) {
+        return "length";
+      }
+    }
+  }
+
+  const usage = record.usage;
+  if (maxTokens != null && usage && typeof usage === "object") {
+    const completion = (usage as { completion_tokens?: unknown }).completion_tokens;
+    if (typeof completion === "number" && completion >= maxTokens) return "length";
+  }
+  return null;
+}
+
 /** Text from one SSE event. `[DONE]` and unreadable payloads contribute nothing. */
-function textFromSsePayload(payload: string): string {
+function textFromSsePayload(
+  payload: string,
+  maxTokens: number | undefined,
+  note: (cutoff: AiStreamCutoff) => void,
+): string {
   const data = payload.trim();
   if (!data || data === "[DONE]") return "";
   try {
-    return readAiObject(JSON.parse(data));
+    const parsed = JSON.parse(data) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const cutoff = cutoffFromRecord(parsed as Record<string, unknown>, maxTokens);
+      if (cutoff) note(cutoff);
+    }
+    return readAiObject(parsed);
   } catch {
     return "";
   }
@@ -175,17 +235,30 @@ function textFromSsePayload(payload: string): string {
  * (`data: {"response":"..."}`, then `data: [DONE]`), and a frame can
  * be split across chunks.
  */
-export function createAiStreamReader() {
+export function createAiStreamReader(options?: { maxTokens?: number }) {
   const decoder = new TextDecoder();
+  const maxTokens = options?.maxTokens;
   let buffer = "";
   let pendingData: string[] = [];
   let sse = false;
+  let eventName = "";
+  let cutoff: AiStreamCutoff | null = null;
+
+  function note(next: AiStreamCutoff) {
+    if (next === "error" || cutoff == null) cutoff = next;
+  }
 
   function flushEvent(): string {
-    if (pendingData.length === 0) return "";
+    if (eventName === "error") note("error");
+    if (pendingData.length === 0) {
+      eventName = "";
+      return "";
+    }
     const payload = pendingData.join("\n");
     pendingData = [];
-    return textFromSsePayload(payload);
+    const text = textFromSsePayload(payload, maxTokens, note);
+    eventName = "";
+    return text;
   }
 
   function consume(final: boolean): string[] {
@@ -195,6 +268,11 @@ export function createAiStreamReader() {
       if (newline === -1) break;
       const line = buffer.slice(0, newline).replace(/\r$/, "");
       buffer = buffer.slice(newline + 1);
+      if (line.startsWith("event:")) {
+        eventName = line.slice(6).trim();
+        if (eventName === "error") note("error");
+        continue;
+      }
       if (line.trim() === "") {
         const text = flushEvent();
         if (text) out.push(text);
@@ -209,8 +287,13 @@ export function createAiStreamReader() {
     if (final) {
       const tail = buffer.replace(/\r$/, "");
       buffer = "";
-      const payload = sseDataPayload(tail);
-      if (payload != null) pendingData.push(payload);
+      if (tail.startsWith("event:")) {
+        eventName = tail.slice(6).trim();
+        if (eventName === "error") note("error");
+      } else {
+        const payload = sseDataPayload(tail);
+        if (payload != null) pendingData.push(payload);
+      }
       const text = flushEvent();
       if (text) out.push(text);
     }
@@ -243,6 +326,9 @@ export function createAiStreamReader() {
     flush(): string[] {
       buffer += decoder.decode();
       return consume(true);
+    },
+    get cutoff(): AiStreamCutoff | null {
+      return cutoff;
     },
   };
 }

@@ -242,7 +242,16 @@ function finalizeGroundedAnswer(full: string, sources: RetrievedSource[]): strin
   return text;
 }
 
-/** Chat Workers AI deadline. A hung stream must not sit until the Worker is killed. */
+/**
+ * Chat Workers AI deadline.
+ *
+ * The prompt asks for about 150–220 Vietnamese words. Even at a slow
+ * ~20 tokens/s, that answer plus time-to-first-token fits in 30s, and
+ * 30s still leaves room for a long answer of well over the prompt's
+ * length. Waiting longer would only keep a hung call or a run that is
+ * heading for the 8192-token ceiling. A completion that actually hits
+ * that ceiling is a cutoff and is not cached.
+ */
 export const CHAT_AI_TIMEOUT_MS = 30_000;
 
 const PARTIAL_FALLBACK_SEPARATOR = "\n\n---\n";
@@ -260,13 +269,18 @@ function withDeadline<T>(
   promise: Promise<T>,
   deadline: number,
   timeoutMs: number,
+  abort?: AbortController,
 ): Promise<T> {
   const remaining = Math.max(0, deadline - Date.now());
   let timer: ReturnType<typeof setTimeout> | undefined;
   // A late rejection must not surface as unhandled after the deadline wins.
   void promise.catch(() => undefined);
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(chatTimeoutError(timeoutMs)), remaining);
+    timer = setTimeout(() => {
+      const err = chatTimeoutError(timeoutMs);
+      if (abort && !abort.signal.aborted) abort.abort(err);
+      reject(err);
+    }, remaining);
   });
   return Promise.race([promise, timeout]).finally(() => {
     if (timer !== undefined) clearTimeout(timer);
@@ -277,12 +291,13 @@ async function readAiStream(
   source: AsyncIterable<unknown>,
   deadline: number,
   timeoutMs: number,
+  abort: AbortController,
   onChunk: (chunk: unknown) => void,
 ): Promise<void> {
   const iterator = source[Symbol.asyncIterator]();
   try {
     while (true) {
-      const next = await withDeadline(iterator.next(), deadline, timeoutMs);
+      const next = await withDeadline(iterator.next(), deadline, timeoutMs, abort);
       if (next.done) return;
       onChunk(next.value);
     }
@@ -408,17 +423,24 @@ export async function runChatPipeline(
   const stream = new ReadableStream<string>({
     async start(controller) {
       let modelText = "";
+      const abort = new AbortController();
       try {
         const timeoutMs = options?.aiTimeoutMs ?? CHAT_AI_TIMEOUT_MS;
         const deadline = Date.now() + timeoutMs;
         const response = await withDeadline(
-          runWorkersAi(env, model, {
-            messages,
-            stream: true,
-            max_tokens: WORKERS_AI_MAX_TOKENS,
-          }),
+          runWorkersAi(
+            env,
+            model,
+            {
+              messages,
+              stream: true,
+              max_tokens: WORKERS_AI_MAX_TOKENS,
+            },
+            { signal: abort.signal },
+          ),
           deadline,
           timeoutMs,
+          abort,
         );
 
         const pushText = (text: string) => {
@@ -427,38 +449,53 @@ export async function runChatPipeline(
           controller.enqueue(text);
         };
 
+        let cutoff: "error" | "length" | null = null;
         if (isAsyncIterable(response)) {
-          const reader = createAiStreamReader();
-          await readAiStream(response, deadline, timeoutMs, (chunk) => {
+          const reader = createAiStreamReader({ maxTokens: WORKERS_AI_MAX_TOKENS });
+          await readAiStream(response, deadline, timeoutMs, abort, (chunk) => {
             for (const text of reader.push(chunk)) pushText(text);
           });
           for (const text of reader.flush()) pushText(text);
+          cutoff = reader.cutoff;
         } else {
           const read = readWorkersAiText(response);
           if (read.ok && read.text) pushText(read.text);
         }
 
         const fallback = buildExtractiveAnswer(sources);
-        if (!modelText.trim()) {
-          enqueueFallback(controller, resolveFull, "", fallback);
-          return;
-        }
-
         const grounded = finalizeGroundedAnswer(modelText, sources);
         const replacedWithExtractive = grounded === fallback && modelText !== fallback;
+        const citedCutoff =
+          cutoff != null && modelText.trim() !== "" && answerHasCitations(modelText);
+        if (citedCutoff) {
+          // The user already saw these tokens. Keep that text, and do not
+          // cache a cut-off answer or append a second reply.
+          resolveFull(modelText);
+          controller.close();
+          return;
+        }
         if (
+          !modelText.trim() ||
           !answerHasCitations(modelText) ||
           replacedWithExtractive ||
           !answerHasCitations(grounded)
         ) {
-          enqueueFallback(controller, resolveFull, modelText, fallback);
+          enqueueFallback(
+            controller,
+            resolveFull,
+            modelText.trim() ? modelText : "",
+            fallback,
+          );
           return;
         }
 
-        cacheGenerated(grounded);
-        resolveFull(grounded);
+        // Persist the streamed text. Stripping mixed invalid citations
+        // here would make the saved answer differ from what was displayed.
+        cacheGenerated(modelText);
+        resolveFull(modelText);
         controller.close();
       } catch (err) {
+        if (!abort.signal.aborted) abort.abort(err);
         console.error(
           JSON.stringify({
             level: "error",
