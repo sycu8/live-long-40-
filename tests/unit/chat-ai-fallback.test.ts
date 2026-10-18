@@ -200,9 +200,10 @@ describe("chat Workers AI fallback", () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
     const cachedPuts = answerCachePuts(puts);
     expect(cachedPuts).toHaveLength(1);
-    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v7:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
+    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v8:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
       true,
     );
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v7:");
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v6:");
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v5:");
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v4:");

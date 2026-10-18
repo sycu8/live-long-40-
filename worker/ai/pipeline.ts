@@ -58,8 +58,8 @@ import {
   answerHasInvalidCitations,
   groundedSentence,
   isCitationOnly,
+  answerFailsCache,
   mentionsEmergencyNumber,
-  postponesSeekingCare,
   resolvePreparedAnswer,
   supportedAnswerText,
   writeAnswerCache,
@@ -1239,7 +1239,7 @@ export async function runChatPipeline(
         const pushText = (text: string) => {
           if (!text) return;
           if (mentionsEmergencyNumber(text)) modelWrote115 = true;
-          if (postponesSeekingCare(text)) modelAvoidedCare = true;
+          if (answerFailsCache(text)) modelAvoidedCare = true;
           modelText += text;
           pending += text;
           release(false);
@@ -1280,7 +1280,7 @@ export async function runChatPipeline(
         const cleaned = emitted.trim();
         const hadInvalid = answerHasInvalidCitations(modelText, sources);
         if (mentionsEmergencyNumber(modelText)) modelWrote115 = true;
-        if (postponesSeekingCare(modelText)) modelAvoidedCare = true;
+        if (answerFailsCache(modelText) || answerFailsCache(cleaned)) modelAvoidedCare = true;
         const fallback = buildExtractiveAnswer(sources);
         const canCache = !hadInvalid && !droppedAny && !modelWrote115 && !modelAvoidedCare;
         const usable =
@@ -1307,13 +1307,8 @@ export async function runChatPipeline(
         await closeWithSafety(cleaned, canCache);
       } catch (err) {
         if (quietFinish && kept >= 1) {
-          const canCache =
-            !answerHasInvalidCitations(modelText, sources) &&
-            !droppedAny &&
-            !modelWrote115 &&
-            !modelAvoidedCare &&
-            !postponesSeekingCare(modelText);
-          await closeWithSafety(emitted.trim(), canCache);
+          // The model was cut off. A truncated stream answer is never cached.
+          await closeWithSafety(emitted.trim(), false);
           return;
         }
         if (stopEarly || (kept === 0 && dropped > 0 && sources.length > 0)) {

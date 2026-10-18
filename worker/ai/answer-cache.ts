@@ -9,6 +9,8 @@ import { foldVietnamese } from "@shared/utils/vietnamese";
 import {
   containsToken,
   completeHttpUrl,
+  hostMatchesCited,
+  httpHostname,
   isCompleteHttpUrl,
   isHostOnlyUrl,
   MIN_RETRIEVAL_SCORE,
@@ -42,10 +44,10 @@ export type CachedAnswer = {
   cachedAt: string;
 };
 
-// v7 does not read v6. Care-downgrade answers were stored for 7 days under v6.
+// v8 does not read v7. Care-downgrade answers were stored for 7 days under v7.
 // Those keys stay until TTL and are never replayed.
-const CACHE_PREFIX = "ans_cache:v7:";
-/** New writes expire in 7 days. Older v6 values are never read. */
+const CACHE_PREFIX = "ans_cache:v8:";
+/** New writes expire in 7 days. Older keys are never read. */
 export const CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 function djb2(input: string): string {
@@ -332,41 +334,90 @@ const HAS_ACCENT =
   /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/i;
 
 /**
- * Care / medical-help, as a class. Matching is by role (the word is a way to
- * get checked), not by a list of whole sentences.
+ * Care, as a class. The property test crosses these with every operator token.
+ * Whole sentences are not listed here.
  */
-function isCareWord(words: string[], index: number): boolean {
-  const word = words[index] ?? "";
-  const pair = `${word} ${words[index + 1] ?? ""}`;
+export const CARE_TERMS = [
+  "hospital",
+  "doctor",
+  "clinic",
+  "kham",
+  "di vien",
+  "bac si",
+  "cap cuu",
+  "115",
+  "care",
+  "exam",
+  "checkup",
+  "checked",
+  "emergency",
+  "ambulance",
+  "benh vien",
+  "phong kham",
+  "xe cap cuu",
+  "tro giup",
+  "kiem tra",
+  "medical help",
+] as const;
+
+/** Negators. "shouldn't" is one token after the apostrophe is removed. */
+export const NEGATOR_TOKENS = [
+  "khong",
+  "chua",
+  "chang",
+  "dung",
+  "khoi",
+  "not",
+  "no",
+  "never",
+  "dont",
+  "shouldnt",
+  "without",
+] as const;
+
+/** Modals. A modal does not cancel a negator. */
+export const MODAL_TOKENS = ["nen", "hay", "should", "can", "must", "ought"] as const;
+
+/** Time and deferral. "put off" is detected beside these, not as its own sentence. */
+export const TIME_TOKENS = [
+  "mai",
+  "ngay",
+  "later",
+  "tomorrow",
+  "wait",
+  "week",
+  "day",
+  "days",
+  "postpone",
+  "delay",
+  "sau",
+  "tuan",
+  "doi",
+  "cho",
+] as const;
+
+export const LIMITER_TOKENS = [
+  "limit",
+  "skip",
+  "unnecessary",
+  "han che",
+  "gioi han",
+  "bo qua",
+] as const;
+
+const CARE_PHRASE_SET = new Set<string>(CARE_TERMS.filter((term) => term.includes(" ")));
+const CARE_WORDS = new Set<string>(CARE_TERMS.filter((term) => !term.includes(" ")));
+const NEGATOR_SET = new Set<string>(NEGATOR_TOKENS);
+const MODAL_SET = new Set<string>(MODAL_TOKENS);
+const TIME_SET = new Set<string>(TIME_TOKENS);
+const LIMITER_WORDS = new Set<string>(LIMITER_TOKENS.filter((term) => !term.includes(" ")));
+const LIMITER_PHRASE_SET = new Set<string>(LIMITER_TOKENS.filter((term) => term.includes(" ")));
+
+function careAt(words: string[], index: number): boolean {
+  const pair = `${words[index] ?? ""} ${words[index + 1] ?? ""}`;
   const triple = `${pair} ${words[index + 2] ?? ""}`;
-  if (
-    triple === "xe cap cuu" ||
-    triple === "tro giup y" ||
-    pair === "cap cuu" ||
-    pair === "bac si" ||
-    pair === "benh vien" ||
-    pair === "phong kham" ||
-    pair === "y te" ||
-    pair === "kiem tra" ||
-    pair === "medical help" ||
-    pair === "urgent care" ||
-    pair === "check up"
-  ) {
-    return true;
-  }
-  return (
-    word === "kham" ||
-    word === "emergency" ||
-    word === "ambulance" ||
-    word === "exam" ||
-    word === "checkup" ||
-    word === "doctor" ||
-    word === "hospital" ||
-    word === "clinic" ||
-    word === "physician" ||
-    word === "er" ||
-    word === "115"
-  );
+  if (CARE_PHRASE_SET.has(triple) || CARE_PHRASE_SET.has(pair)) return true;
+  return CARE_WORDS.has(words[index] ?? "");
 }
 
 function clauseWords(clause: string): string[] {
@@ -379,9 +430,7 @@ function clauseWords(clause: string): string[] {
 /** "đừng" folds to the same string as "dụng". "sử dụng" is not a negator. */
 function isNegator(words: string[], index: number, clause: string): boolean {
   const word = words[index] ?? "";
-  if (word === "not" || word === "no" || word === "never" || word === "without") return true;
-  if (word === "dont") return true;
-  if (word === "khong" || word === "chua" || word === "chang" || word === "khoi") return true;
+  if (word !== "dung" && NEGATOR_SET.has(word)) return true;
   if (word !== "dung") return false;
   if (words[index - 1] === "su" || words[index - 1] === "noi" || words[index - 1] === "ung")
     return false;
@@ -390,125 +439,69 @@ function isNegator(words: string[], index: number, clause: string): boolean {
   return !HAS_ACCENT.test(clause);
 }
 
-function phraseAt(words: string[], index: number, phrase: string): boolean {
-  const parts = phrase.split(" ");
-  return parts.every((part, offset) => words[index + offset] === part);
+function hasCare(words: string[]): boolean {
+  return words.some((_, index) => careAt(words, index));
 }
 
-/** Negation aimed at getting help: "không cần", "no need", "not necessary", "đừng". */
-function careNegationBefore(words: string[], careIndex: number, clause: string): boolean {
-  const window = words.slice(Math.max(0, careIndex - 6), careIndex);
-  if (window.includes("hay") || window.includes("nen") || window.includes("should")) return false;
-  for (let i = 0; i < window.length; i += 1) {
-    const at = Math.max(0, careIndex - window.length) + i;
-    if (!isNegator(words, at, clause)) continue;
-    const next = words.slice(at + 1, at + 4).join(" ");
-    // "không bỏ qua" / "đừng chờ" negate the delay, not the care.
-    if (/^(?:bo qua|skip|doi|cho|wait|nghi)\b/.test(next)) continue;
-    return true;
-  }
-  const joined = window.join(" ");
-  return /no need|not necessary|not needed|do not need|dont need|unnecessary/.test(joined);
-}
-
-function hasUnnegatedDelay(words: string[], clause: string): boolean {
-  const delayAt = (index: number): boolean => {
-    if (phraseAt(words, index, "ngay mai")) return true;
-    if (phraseAt(words, index, "hom sau")) return true;
-    if (phraseAt(words, index, "de sau")) return true;
-    if (phraseAt(words, index, "lat nua")) return true;
-    if (phraseAt(words, index, "vai ngay")) return true;
-    if (phraseAt(words, index, "few days")) return true;
-    if (phraseAt(words, index, "a few")) return words[index + 2] === "days";
-    const word = words[index] ?? "";
-    if (word === "tomorrow" || word === "later" || word === "postpone") return true;
-    if (word === "wait") return true;
-    // "đợi"/"chờ" fold together with "đời"/"cho" (for). Use the accent when it is there.
-    if (word === "doi") {
-      if (/đợi/i.test(clause)) return true;
-      return !HAS_ACCENT.test(clause);
-    }
-    if (word === "cho") {
-      if (/chờ/i.test(clause)) return true;
-      if (HAS_ACCENT.test(clause)) return false;
-      const next = words[index + 1] ?? "";
-      const prev = words[index - 1] ?? "";
-      return next === "o" || next === "den" || next === "them" || next === "vai" || prev === "cu" || prev === "hay";
-    }
-    // "đi khám sau" / "sau hãy đi khám". "sau khi" is only sequence.
-    if (
-      word === "sau" &&
-      words[index + 1] !== "khi" &&
-      (index === words.length - 1 || words[index + 1] === "hay" || words[index + 1] === "moi")
-    ) {
-      return true;
-    }
-    return false;
-  };
+function hasLimiter(words: string[]): boolean {
   for (let i = 0; i < words.length; i += 1) {
-    if (!delayAt(i)) continue;
-    const prev = i - 1;
-    if (prev >= 0 && isNegator(words, prev, clause)) continue;
-    return true;
+    if (LIMITER_WORDS.has(words[i] ?? "")) return true;
+    const pair = `${words[i] ?? ""} ${words[i + 1] ?? ""}`;
+    if (LIMITER_PHRASE_SET.has(pair)) return true;
   }
   return false;
 }
 
-function hasUnnegatedMinimiser(words: string[]): boolean {
-  const joined = ` ${words.join(" ")} `;
-  const patterns = [
-    " bo qua ",
-    " skip ",
-    " just rest ",
-    " cu nghi ",
-    " chi can nghi ",
-    " nghi o nha ",
-    " cu o nha ",
-    " cho o nha ",
-    " doi o nha ",
-    " stay home ",
-    " just wait ",
-    " wait at home ",
-    " unnecessary ",
-    " khong sao ",
-  ];
-  for (const pattern of patterns) {
-    const at = joined.indexOf(pattern);
-    if (at < 0) continue;
-    const before = joined.slice(0, at).trim().split(/\s+/);
-    const prev = before[before.length - 1] ?? "";
-    if (prev === "khong" || prev === "dung" || prev === "dont" || prev === "never" || prev === "not")
-      continue;
-    return true;
+function hasTime(words: string[]): boolean {
+  for (let i = 0; i < words.length; i += 1) {
+    const word = words[i] ?? "";
+    // "theo dõi" is monitoring, not "đợi".
+    if (word === "doi" && words[i - 1] === "theo") continue;
+    if (TIME_SET.has(word)) return true;
+    if (words[i] === "put" && words[i + 1] === "off") return true;
   }
-  if (/theo doi them o nha/.test(words.join(" "))) return true;
   return false;
 }
 
-function clauseAvoidsCare(clause: string): boolean {
+/** Negator, limiter, modal, or time word. A modal does not cancel a negator. */
+function hasOperator(words: string[], clause: string): boolean {
+  if (hasTime(words) || hasLimiter(words)) return true;
+  return words.some((word, index) => MODAL_SET.has(word) || isNegator(words, index, clause));
+}
+
+/** Care shares the clause with any operator. Position inside the clause does not matter. */
+function clauseFailsCache(clause: string): boolean {
   const words = clauseWords(clause);
-  if (words.length === 0) return false;
-  const joined = words.join(" ");
-  // Waiting at home or "just rest" is itself the deferral.
-  if (
-    /(?:cu o nha|cho o nha|doi o nha|nghi o nha|just rest|just wait|stay home|wait at home|cu nghi|theo doi them o nha)/.test(
-      joined,
-    ) &&
-    hasUnnegatedMinimiser(words)
-  ) {
-    return true;
-  }
-  let care = false;
+  return hasCare(words) && hasOperator(words, clause);
+}
+
+/**
+ * The only sentence that may be shown: a negator governs wait, delay, skip,
+ * hesitate, or stop, and the clause still points toward help.
+ */
+function isPositiveUrgency(sentence: string): boolean {
+  const words = clauseWords(sentence);
   for (let i = 0; i < words.length; i += 1) {
-    if (!isCareWord(words, i)) continue;
-    care = true;
-    if (careNegationBefore(words, i, clause)) return true;
-    const after = words.slice(i + 1, i + 6).join(" ");
-    if (/not necessary|not needed|unnecessary|no need|khong can|khong nen/.test(after)) return true;
+    if (!isNegator(words, i, sentence)) continue;
+    const next = words[i + 1] ?? "";
+    const pair = `${next} ${words[i + 2] ?? ""}`;
+    const governsDeferral =
+      next === "wait" ||
+      next === "delay" ||
+      next === "postpone" ||
+      next === "skip" ||
+      next === "hesitate" ||
+      next === "stop" ||
+      next === "cho" ||
+      next === "doi" ||
+      next === "hoan" ||
+      pair === "bo qua" ||
+      pair === "tri hoan";
+    if (!governsDeferral) continue;
+    if (hasCare(words)) return true;
+    if (/\b(?:call|calling|go|now|checked|medicine|medicines)\b/.test(words.join(" ")))
+      return true;
   }
-  if (!care) return false;
-  if (hasUnnegatedDelay(words, clause)) return true;
-  if (hasUnnegatedMinimiser(words)) return true;
   return false;
 }
 
@@ -521,24 +514,24 @@ function clauseParts(sentence: string): string[] {
 }
 
 /**
- * Care or medical help combined with negation, minimisation, or delay.
- * "Hãy đi khám" and "Không bỏ qua việc đi khám" do not match.
- * "Ngày mai hãy đi khám" does: that is care deferred until later.
+ * Drop the sentence. Positive urgency stays on screen and is still refused by
+ * {@link answerFailsCache}.
  */
 export function postponesSeekingCare(sentence: string): boolean {
-  return clauseParts(sentence).some(clauseAvoidsCare);
+  if (isPositiveUrgency(sentence)) return false;
+  return clauseParts(sentence).some(clauseFailsCache);
 }
 
-/** Positive care clauses kept when the same sentence also talks the user out of care. */
-function positiveCareRemainder(sentence: string): string {
-  const kept = clauseParts(sentence).filter((part) => !clauseAvoidsCare(part));
-  return kept.join(", ").trim();
+/** Never cache care paired with an operator. The system 115 line does not count. */
+export function answerFailsCache(answer: string): boolean {
+  return answerSentences(answer).some((sentence) => {
+    if (isSystemSafetyLine(sentence)) return false;
+    return clauseParts(sentence).some(clauseFailsCache);
+  });
 }
 
 export function answerPostponesCare(answer: string): boolean {
-  return answerSentences(answer).some(
-    (sentence) => !isSystemSafetyLine(sentence) && postponesSeekingCare(sentence),
-  );
+  return answerFailsCache(answer);
 }
 
 function isSystemSafetyLine(sentence: string): boolean {
@@ -751,6 +744,12 @@ type SupportSource = {
   url?: string;
 };
 
+function citedHostnames(sources: Array<{ url?: string }>): string[] {
+  return sources
+    .map((source) => (source.url ? httpHostname(source.url) : null))
+    .filter((host): host is string => Boolean(host));
+}
+
 function repairUrls(
   sentence: string,
   sources: SupportSource[],
@@ -759,17 +758,18 @@ function repairUrls(
   const known = sources
     .map((source) => source.url)
     .filter((url): url is string => Boolean(url));
+  const hosts = citedHostnames(sources);
   const text = sentence.replace(/https?:\/\/[^\s)>\]]+/gi, (raw) => {
     const url = completeHttpUrl(raw);
-    if (!url) {
+    const host = url ? httpHostname(url) : null;
+    if (!url || !host || !hosts.some((cited) => hostMatchesCited(host, cited))) {
       droppedUrl = true;
       return "";
     }
     const truncatedPath =
       !isHostOnlyUrl(url) &&
       known.some((source) => source.length > url.length && source.startsWith(url));
-    const cut = truncatedPath;
-    if (cut) {
+    if (truncatedPath) {
       droppedUrl = true;
       return "";
     }
@@ -885,33 +885,55 @@ function stripUnclosedBold(text: string): string {
 }
 
 function isHeaderLine(line: string): boolean {
-  const bare = line.replace(/(\s*\[S\d+\])+\s*$/gi, "").trim();
-  if (!bare) return false;
-  if (/^#{1,6}\s+/.test(bare)) return true;
-  if (/^\*\*[^*]+\*\*$/.test(bare)) return true;
-  const folded = foldVietnamese(bare);
+  const withoutChip = line.replace(/(\s*\[S\d+\])+\s*$/gi, "").trim();
+  if (!withoutChip) return false;
+  if (/^#{1,6}\s+/.test(withoutChip)) return true;
+  if (/^\*\*[^*]+\*\*:?\s*$/.test(withoutChip)) return true;
+  if (/^\[[^\]]+\]\s*$/.test(withoutChip)) return true;
+  if (/^[^:\n]{1,60}:\s*$/.test(withoutChip)) return true;
+  const folded = foldVietnamese(withoutChip);
   if (/^(?:nguon|sources?|references?|citations?)\s*:/.test(folded)) return true;
+  if (/^(?:cam on|xin cam on|thank you|thanks)\b/.test(folded)) return true;
   return false;
 }
 
-/** Drop a leading bold or heading line before the advice is grounded. */
+function stripTrailingIssuer(text: string): string {
+  return text
+    .replace(
+      /(?:\s*[,;–—-]\s*|\s+)(?:tổ chức y tế thế giới(?:\s*\(who\))?|bộ y tế(?: việt nam)?|bảo hiểm xã hội(?: việt nam)?|ngân hàng nhà nước(?: việt nam)?|who|cdc)\.?\s*$/i,
+      "",
+    )
+    .trim();
+}
+
+/** Drop a leading label, bold header, or [Theo …] tag before the claim is grounded. */
 function peelHeader(text: string): { body: string; droppedHeader: boolean } {
   const kept: string[] = [];
   let droppedHeader = false;
   for (const line of text.split(/\n+/)) {
-    const trimmed = line.trim();
+    let trimmed = line.trim().replace(/^\s*\[(?!S\d+\])[^\]\n]{1,40}\]\s*/, "");
+    trimmed = trimmed.replace(/^\s*\[(?!S\d+\])/i, "");
     if (!trimmed) continue;
-    if (isHeaderLine(trimmed)) {
+    if (isHeaderLine(trimmed) || isIssuerOnly(trimmed.replace(/(\s*\[S\d+\])+\s*$/gi, ""))) {
       droppedHeader = true;
       continue;
     }
-    kept.push(trimmed);
+    let body = trimmed
+      .replace(/^\s*\*\*[^*]+\*\*:?\s*(?:\[S\d+\]\s*)?/, "")
+      .replace(/^\s*\[[^\]\n]{1,40}\]\s*(?:\[S\d+\]\s*)?/, "")
+      .replace(/^\s*#{1,6}\s+[^:\n]{0,60}:?\s*(?:\[S\d+\]\s*)?/, "");
+    if (!/https?:\/\//i.test(body)) {
+      body = body.replace(/^\s*[^:\n]{1,40}:\s*(?:\[S\d+\]\s*)?/, "");
+    }
+    const peeled = stripTrailingIssuer(body.trim());
+    if (peeled !== trimmed) droppedHeader = true;
+    if (!peeled) {
+      droppedHeader = true;
+      continue;
+    }
+    kept.push(peeled);
   }
-  let body = kept.join(" ").trim();
-  const peeled = body.replace(/^(?:\s*\*\*[^*]+\*\*\s*)+/, "").trim();
-  if (peeled !== body) droppedHeader = true;
-  body = peeled.replace(/^\s*#{1,6}\s+[^\n.]+\s*/, "").trim();
-  return { body, droppedHeader };
+  return { body: kept.join(" ").trim(), droppedHeader };
 }
 
 function isIssuerOnly(text: string): boolean {
@@ -978,9 +1000,16 @@ export function answerEchoesQuestion(
   );
 }
 
-function answerHasCutUrl(answer: string): boolean {
+function answerHasCutUrl(answer: string, sources: Array<{ url?: string }> = []): boolean {
   const urls = answer.match(/https?:\/\/[^\s)>\]]+/gi) ?? [];
-  return urls.some((raw) => completeHttpUrl(raw) == null);
+  if (urls.length === 0) return false;
+  const hosts = citedHostnames(sources);
+  return urls.some((raw) => {
+    const url = completeHttpUrl(raw);
+    const host = url ? httpHostname(url) : null;
+    if (!url || !host) return true;
+    return !hosts.some((cited) => hostMatchesCited(host, cited));
+  });
 }
 
 function isDanglingFragment(text: string): boolean {
@@ -1004,16 +1033,21 @@ function assessSentence(
   if (!opened) {
     return { text: "", reason: peeled.droppedHeader ? "header" : "junk" };
   }
+  const showIfUrgent = (
+    reason: SentenceDropReason,
+  ): { text: string; reason: SentenceDropReason | null } => {
+    if (!isPositiveUrgency(opened)) return { text: "", reason };
+    const plain = opened
+      .replace(/\s*\[S\d+\]/gi, "")
+      .replace(/\*\*/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return plain ? { text: plain, reason: null } : { text: "", reason };
+  };
   // A model phone instruction is removed. A factual 115 in a reading can stay.
   if (mentionsEmergencyNumber(opened)) return { text: "", reason: "model_115" };
   // Short care words ("bác sĩ") are not a citation-only line.
-  if (postponesSeekingCare(opened)) {
-    const remainder = positiveCareRemainder(opened);
-    if (remainder && !postponesSeekingCare(remainder)) {
-      return assessSentence(remainder, sources, question);
-    }
-    return { text: "", reason: "care_avoidance" };
-  }
+  if (postponesSeekingCare(opened)) return showIfUrgent("care_avoidance");
   if (isCitationOnly(opened)) {
     return { text: "", reason: peeled.droppedHeader ? "header" : "citation_only" };
   }
@@ -1038,7 +1072,7 @@ function assessSentence(
   }
   if (/\[S\d+\]/.test(working)) {
     const reason = supportFailure(working, sources, question);
-    return reason ? { text: "", reason } : { text: working, reason: null };
+    return reason ? showIfUrgent(reason) : { text: working, reason: null };
   }
   let best: { key: string; ratio: number } | null = null;
   let fallback: SentenceDropReason = "uncited";
@@ -1056,7 +1090,7 @@ function assessSentence(
     }
     if (!best || ratio > best.ratio) best = { key: source.key, ratio };
   }
-  if (!best) return { text: "", reason: fallback };
+  if (!best) return showIfUrgent(fallback);
   return { text: `${normalizeSpace(working)} [${best.key}]`, reason: null };
 }
 
@@ -1194,7 +1228,7 @@ export async function readAnswerCache(
     if (!isGroundedOfficialAnswer(parsed)) return null;
     if (answerHasModelEmergency(parsed.answer)) return null;
     if (answerPostponesCare(parsed.answer)) return null;
-    if (answerHasCutUrl(parsed.answer)) return null;
+    if (answerHasCutUrl(parsed.answer, parsed.sources)) return null;
     if (answerEchoesQuestion(parsed.answer, question, parsed.sources)) return null;
     const mode = parsed.mode === "answer_bank" ? "answer_bank" : "kv_cache";
     if (!cachedSourcesMatchQuestion(question, parsed.answer, parsed.sources, mode))
@@ -1218,7 +1252,7 @@ export async function writeAnswerCache(
   if (!isGroundedOfficialAnswer(payload)) return;
   if (answerHasModelEmergency(payload.answer)) return;
   if (answerPostponesCare(payload.answer)) return;
-  if (answerHasCutUrl(payload.answer)) return;
+  if (answerHasCutUrl(payload.answer, payload.sources)) return;
   if (answerEchoesQuestion(payload.answer, question, payload.sources)) return;
   if (answerHasInvalidCitations(payload.answer, payload.sources)) return;
   if (

@@ -5,33 +5,56 @@ export { foldVietnamese };
 
 const HTTP_URL = /https?:\/\/[^\s)>\]]+/gi;
 
-/** Real top-level domains. A cut host such as "www.who" must not pass as ".who". */
-const PUBLIC_TLD = new Set([
+/** Generic and sponsored suffixes. Two-letter labels are country codes (.it, .ca, .vn). */
+const GENERIC_SUFFIX = new Set([
   "com",
   "org",
   "net",
   "int",
   "gov",
   "edu",
-  "vn",
-  "uk",
-  "io",
-  "app",
-  "info",
   "mil",
+  "info",
+  "biz",
+  "name",
+  "pro",
+  "app",
+  "dev",
   "health",
-  "us",
-  "au",
-  "jp",
-  "fr",
-  "de",
-  "sg",
-  "eu",
+  "io",
 ]);
+
+/** Multi-label public suffixes. The registrable name is the label in front of these. */
+const MULTI_SUFFIX = [
+  "gov.vn",
+  "com.vn",
+  "edu.vn",
+  "org.vn",
+  "net.vn",
+  "ac.vn",
+  "co.uk",
+  "ac.uk",
+  "gov.uk",
+  "com.au",
+  "co.jp",
+];
 
 function authorityHost(raw: string): string {
   const match = /^https?:\/\/([^/?#\s]+)/i.exec(raw.trim());
   return (match?.[1] ?? "").replace(/[),;:!?]+$/g, "");
+}
+
+/** True when the host has a real public suffix and a name in front of it. */
+export function hasPublicSuffix(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/\.$/, "");
+  const labels = host.split(".").filter(Boolean);
+  if (labels.length < 2) return false;
+  if (labels.some((label) => label.length < 2 || label.endsWith("-"))) return false;
+  const lastTwo = labels.slice(-2).join(".");
+  if (MULTI_SUFFIX.includes(lastTwo)) return labels.length >= 3;
+  const last = labels[labels.length - 1] ?? "";
+  if (/^[a-z]{2}$/.test(last)) return true;
+  return GENERIC_SUFFIX.has(last);
 }
 
 /** A URL that parses and was not cut off mid-host, mid-path, or mid-encoding. */
@@ -48,11 +71,7 @@ export function isCompleteHttpUrl(raw: string): boolean {
     const parsed = new URL(url);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
     if (parsed.hostname.endsWith(".")) return false;
-    const labels = parsed.hostname.split(".").filter(Boolean);
-    if (labels.length < 2) return false;
-    if (labels.some((label) => label.length < 2 || label.endsWith("-"))) return false;
-    const tld = labels[labels.length - 1] ?? "";
-    if (!PUBLIC_TLD.has(tld.toLowerCase())) return false;
+    if (!hasPublicSuffix(parsed.hostname)) return false;
     if (/%(?:$|[0-9a-f]$)/i.test(url)) return false;
     if (/[-.]$/.test(parsed.pathname)) return false;
     return true;
@@ -63,23 +82,40 @@ export function isCompleteHttpUrl(raw: string): boolean {
 
 /**
  * The URL to keep, or null when the token was cut.
- * One sentence period after a path is not part of the URL.
- * A trailing dot on the host itself is a cut-off host.
+ * Trailing sentence punctuation is removed before the host is checked, so
+ * "https://www.who.int." is the host www.who.int. A host with no public
+ * suffix, such as www.who, stays incomplete.
  */
 export function completeHttpUrl(raw: string): string | null {
-  const trimmed = raw.trim();
-  if (isCompleteHttpUrl(trimmed)) return trimmed.replace(/[),;:!?]+$/g, "");
+  const trimmed = raw.trim().replace(/[),;:!?]+$/g, "");
+  if (isCompleteHttpUrl(trimmed)) return trimmed;
   if (!trimmed.endsWith(".")) return null;
-  const without = trimmed.slice(0, -1);
-  if (authorityHost(without).endsWith(".")) return null;
+  const without = trimmed.replace(/\.+$/g, "");
+  if (authorityHost(without).endsWith(".") || authorityHost(without).endsWith("-")) return null;
   if (!isCompleteHttpUrl(without)) return null;
+  return without;
+}
+
+/** Hostname of a URL, or null when it does not parse. */
+export function httpHostname(raw: string): string | null {
+  const url = completeHttpUrl(raw);
+  if (!url) return null;
   try {
-    const parsed = new URL(without);
-    if (parsed.pathname === "" || parsed.pathname === "/") return null;
+    return new URL(url).hostname.toLowerCase().replace(/\.$/, "");
   } catch {
     return null;
   }
-  return without;
+}
+
+/**
+ * The URL host must be the cited host or a subdomain of it.
+ * https://baohiemxahoi.gov is not a subdomain of baohiemxahoi.gov.vn.
+ */
+export function hostMatchesCited(urlHost: string, citedHost: string): boolean {
+  const host = urlHost.toLowerCase().replace(/\.$/, "");
+  const cited = citedHost.toLowerCase().replace(/\.$/, "");
+  if (!host || !cited) return false;
+  return host === cited || host.endsWith(`.${cited}`);
 }
 
 /** Scheme and host only, such as https://www.who.int, with no document path. */

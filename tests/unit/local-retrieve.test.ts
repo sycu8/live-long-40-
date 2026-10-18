@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  completeHttpUrl,
   foldVietnamese,
   isCompleteHttpUrl,
   MIN_RETRIEVAL_SCORE,
@@ -188,5 +189,9 @@ describe("isCompleteHttpUrl", () => {
     expect(isCompleteHttpUrl("https://www.who")).toBe(false);
     expect(isCompleteHttpUrl("https://www.who.")).toBe(false);
     expect(isCompleteHttpUrl("https://www.who.int.")).toBe(false);
+    expect(completeHttpUrl("https://www.who.int.")).toBe("https://www.who.int");
+    expect(completeHttpUrl("https://www.who.")).toBeNull();
+    expect(isCompleteHttpUrl("https://www.salute.gov.it/page")).toBe(true);
+    expect(isCompleteHttpUrl("https://www.canada.ca/en/health")).toBe(true);
   });
 });
