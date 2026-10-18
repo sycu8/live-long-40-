@@ -62,7 +62,16 @@ describe("blog helpers", () => {
   });
 
   it("ships advisor batch posts with 300+ words, sources, and internal links", () => {
-    expect(advisorBatch.length).toBe(6);
+    expect(advisorBatch.length).toBe(10);
+    const slugs = new Set(advisorBatch.map((p) => p.slug));
+    for (const slug of [
+      "an-uong-don-gian-tuoi-ngoai-40",
+      "bot-ngoi-lau-trong-ngay-lam-viec",
+      "ngan-sach-thang-va-tranh-vay-nong",
+      "chia-viec-cham-soc-va-lien-he-khan",
+    ]) {
+      expect(slugs.has(slug)).toBe(true);
+    }
     for (const post of advisorBatch) {
       expect(countBlogWords(post.body)).toBeGreaterThanOrEqual(BLOG_MIN_WORDS);
       expect(Array.isArray(post.sourceIds)).toBe(true);
