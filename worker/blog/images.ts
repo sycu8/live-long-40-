@@ -1,3 +1,4 @@
+import { runWorkersAi } from "../ai/run";
 import type { Env } from "../env";
 
 const IMAGE_MODELS = [
@@ -31,15 +32,9 @@ export async function generateAndStoreBlogCover(
     "Flat modern illustration, wide 16:9 composition.",
   ].join(" ");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ai = env.AI_GATEWAY_ID
-    ? ((env.AI as any).gateway?.(env.AI_GATEWAY_ID) ?? env.AI)
-    : env.AI;
-
   for (const model of IMAGE_MODELS) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result: any = await ai.run(model, {
+      const result = await runWorkersAi(env, model, {
         prompt,
         // flux schnell accepts steps; other models ignore unknown fields
         num_steps: 4,

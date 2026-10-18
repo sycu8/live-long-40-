@@ -15,7 +15,7 @@ Tạo instance tên khớp `AI_SEARCH_INSTANCE` (`song-an-40-knowledge`). Khi ad
 
 ## AI Gateway
 
-Đặt `AI_GATEWAY_ID`. Pipeline ưu tiên `env.AI.gateway(id).run(...)` để có rate/cost controls; tắt full prompt logging cho chat cá nhân hóa trên dashboard Gateway.
+Đặt `AI_GATEWAY_ID`. Inference đi qua `env.AI.run(model, inputs, { gateway: { id } })` để có rate/cost controls. `env.AI.gateway(id)` chỉ dùng cho log/URL (`patchLog`, `getLog`, `getUrl`); `gateway.run()` là universal endpoint và nhận `{ provider, endpoint, headers, query }`. Tắt full prompt logging cho chat cá nhân hóa trên dashboard Gateway.
 
 ## Blog — lịch hàng ngày & crawl
 

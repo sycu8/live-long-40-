@@ -7,6 +7,7 @@ import {
   sourceLooksOfficial,
 } from "@shared/rules/sources";
 import type { Env } from "../env";
+import { isAsyncIterable, readAiChunk, readAiText, runWorkersAi } from "./run";
 import { filterRetrievedCandidates } from "./retrieval-filter";
 import {
   rankLocalKnowledge,
@@ -341,10 +342,6 @@ export async function runChatPipeline(
   }
 
   const model = "@cf/meta/llama-3.1-8b-instruct";
-  const ai = env.AI_GATEWAY_ID
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((env.AI as any).gateway?.(env.AI_GATEWAY_ID) ?? env.AI)
-    : env.AI;
 
   let resolveFull!: (v: string) => void;
   const fullTextPromise = new Promise<string>((r) => {
@@ -354,28 +351,28 @@ export async function runChatPipeline(
   const stream = new ReadableStream<string>({
     async start(controller) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const response: any = await ai.run(model, {
+        const response = await runWorkersAi(env, model, {
           messages,
           stream: true,
         });
 
         let full = "";
-        if (response && typeof response === "object" && Symbol.asyncIterator in response) {
+        if (isAsyncIterable(response)) {
           for await (const chunk of response) {
-            const text =
-              typeof chunk === "string"
-                ? chunk
-                : (chunk?.response ?? chunk?.delta?.content ?? "");
+            const text = readAiChunk(chunk);
             if (text) {
               full += text;
-              controller.enqueue(String(text));
+              controller.enqueue(text);
             }
           }
-        } else if (typeof response?.response === "string") {
-          full = response.response;
-          controller.enqueue(full);
         } else {
+          const text = readAiText(response);
+          if (text) {
+            full = text;
+            controller.enqueue(full);
+          }
+        }
+        if (!full) {
           full = buildExtractiveAnswer(sources);
           controller.enqueue(full);
         }

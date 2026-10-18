@@ -11,6 +11,7 @@ import {
 } from "@shared/content/blog-theme-sources";
 import { OFFICIAL_SOURCES } from "@shared/content/official-sources";
 import { createId, nowIso } from "@shared/utils/id";
+import { readAiText, runWorkersAi } from "../ai/run";
 import type { Env } from "../env";
 import { generateAndStoreBlogCover } from "./images";
 import type { BlogEditorialPost } from "./types";
@@ -95,14 +96,9 @@ Trả về ĐÚNG một JSON (không markdown ngoài JSON):
 {"title":"...","excerpt":"1-2 câu","minutes":8,"sourceIds":["..."],"body":"markdown"}`;
 
   const model = "@cf/meta/llama-3.1-8b-instruct";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ai = env.AI_GATEWAY_ID
-    ? ((env.AI as any).gateway?.(env.AI_GATEWAY_ID) ?? env.AI)
-    : env.AI;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await ai.run(model, {
+    const response = await runWorkersAi(env, model, {
       messages: [
         {
           role: "system",
@@ -114,12 +110,7 @@ Trả về ĐÚNG một JSON (không markdown ngoài JSON):
       stream: false,
       max_tokens: 3200,
     });
-    const text =
-      typeof response?.response === "string"
-        ? response.response
-        : typeof response === "string"
-          ? response
-          : "";
+    const text = readAiText(response);
     const parsed = parseJsonObject(text);
     if (!parsed) return null;
     const title = String(parsed.title ?? "").trim();
