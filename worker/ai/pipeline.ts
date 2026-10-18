@@ -7,7 +7,14 @@ import {
   sourceLooksOfficial,
 } from "@shared/rules/sources";
 import type { Env } from "../env";
-import { isAsyncIterable, readAiChunk, readAiText, runWorkersAi } from "./run";
+import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "./models";
+import {
+  formatWorkersAiError,
+  isAsyncIterable,
+  readAiChunk,
+  readWorkersAiText,
+  runWorkersAi,
+} from "./run";
 import { filterRetrievedCandidates } from "./retrieval-filter";
 import {
   rankLocalKnowledge,
@@ -341,7 +348,7 @@ export async function runChatPipeline(
     };
   }
 
-  const model = "@cf/meta/llama-3.1-8b-instruct";
+  const model = WORKERS_AI_TEXT_MODEL;
 
   let resolveFull!: (v: string) => void;
   const fullTextPromise = new Promise<string>((r) => {
@@ -354,6 +361,7 @@ export async function runChatPipeline(
         const response = await runWorkersAi(env, model, {
           messages,
           stream: true,
+          max_tokens: WORKERS_AI_MAX_TOKENS,
         });
 
         let full = "";
@@ -366,9 +374,9 @@ export async function runChatPipeline(
             }
           }
         } else {
-          const text = readAiText(response);
-          if (text) {
-            full = text;
+          const read = readWorkersAiText(response);
+          if (read.ok && read.text) {
+            full = read.text;
             controller.enqueue(full);
           }
         }
@@ -393,7 +401,15 @@ export async function runChatPipeline(
         cacheGenerated(full);
         resolveFull(full);
         controller.close();
-      } catch {
+      } catch (err) {
+        console.error(
+          JSON.stringify({
+            level: "error",
+            message: "chat_ai_generate_failed",
+            model,
+            error: formatWorkersAiError(err),
+          }),
+        );
         const msg =
           "Hệ thống trả lời tạm thời gặp sự cố. Vui lòng thử lại sau.";
         controller.enqueue(msg);
