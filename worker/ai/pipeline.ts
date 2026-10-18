@@ -368,7 +368,10 @@ function splitReadySentences(
   for (let i = 0; i < buffer.length; i += 1) {
     const ch = buffer[i];
     if (ch !== "." && ch !== "!" && ch !== "?" && ch !== "…" && ch !== "\n") continue;
-    if (ch === "." && /(?:^|[\s(])(?:tp|ts|bs|gs|pgs|ths|mr|dr|st|vs)\.$/i.test(buffer.slice(0, i + 1))) {
+    if (
+      ch === "." &&
+      /(?:^|[\s(])(?:tp|ts|bs|gs|pgs|ths|mr|dr|st|vs)\.$/i.test(buffer.slice(0, i + 1))
+    ) {
       continue;
     }
     if (ch === "." && /https?:\/\/[^\s)\]>"']*$/.test(buffer.slice(0, i))) {
@@ -1295,14 +1298,12 @@ export async function runChatPipeline(
         const cleaned = emitted.trim();
         const hadInvalid = answerHasInvalidCitations(modelText, sources);
         if (mentionsEmergencyNumber(modelText)) modelWrote115 = true;
-        if (
-          answerFailsCache(modelText, sources) ||
-          answerFailsCache(cleaned, sources)
-        ) {
+        if (answerFailsCache(modelText, sources) || answerFailsCache(cleaned, sources)) {
           modelAvoidedCare = true;
         }
         const fallback = buildExtractiveAnswer(sources);
-        const canCache = !hadInvalid && !droppedAny && !modelWrote115 && !modelAvoidedCare;
+        const canCache =
+          !hadInvalid && !droppedAny && !modelWrote115 && !modelAvoidedCare;
         const usable =
           cleaned !== "" &&
           !isCitationOnly(cleaned) &&
