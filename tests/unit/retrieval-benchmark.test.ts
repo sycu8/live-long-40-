@@ -278,6 +278,18 @@ describe("retrieval regressions from the 36-question QA set", () => {
         q: "Where is the pension procedure explained?",
         expect: "bhxh-pension-procedure",
       },
+      {
+        q: "How should I prepare for old age?",
+        expect: "who-ageing",
+      },
+      {
+        q: "Where can I check whether a medicine is licensed?",
+        expect: "byt-drug-registration-lookup",
+      },
+      {
+        q: "Is my health insurance card still valid?",
+        expect: "bhxh-bhyt-card-lookup",
+      },
     ];
     for (const item of english) {
       const ranked = rankLocalKnowledge(item.q, CHUNKS, [], 3);

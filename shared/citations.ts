@@ -35,9 +35,12 @@ export function presentCitations<T extends CitationSource>(
   text: string,
   sources: T[],
 ): { text: string; sources: T[] } {
-  const cited = new Set([...text.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? ""));
-  const citedSources =
-    cited.size === 0 ? sources : sources.filter((source) => cited.has(source.key));
+  const collapsed = text.replace(/(\[S\d+\])(?:\s*\1)+/g, "$1");
+  const cited = new Set(
+    [...collapsed.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? ""),
+  );
+  // No [S1] in the text means no chips, even when sources were retrieved.
+  const citedSources = sources.filter((source) => cited.has(source.key));
   const unique = dedupeCitationSources(citedSources);
-  return { text: stripUnkeptCitationMarkers(text, unique), sources: unique };
+  return { text: stripUnkeptCitationMarkers(collapsed, unique), sources: unique };
 }

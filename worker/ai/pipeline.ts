@@ -59,6 +59,7 @@ import {
   groundedSentence,
   isCitationOnly,
   mentionsEmergencyNumber,
+  postponesSeekingCare,
   resolvePreparedAnswer,
   supportedAnswerText,
   writeAnswerCache,
@@ -366,7 +367,13 @@ function splitReadySentences(
   for (let i = 0; i < buffer.length; i += 1) {
     const ch = buffer[i];
     if (ch !== "." && ch !== "!" && ch !== "?" && ch !== "…" && ch !== "\n") continue;
-    if (ch === "." && /https?:\/\/[^\s)\]>"']*$/.test(buffer.slice(0, i))) continue;
+    if (ch === "." && /(?:^|[\s(])(?:tp|ts|bs|gs|pgs|ths|mr|dr|st|vs)\.$/i.test(buffer.slice(0, i + 1))) {
+      continue;
+    }
+    if (ch === "." && /https?:\/\/[^\s)\]>"']*$/.test(buffer.slice(0, i))) {
+      const next = buffer[i + 1] ?? "";
+      if (/[A-Za-z0-9/?#%\-_]/.test(next)) continue;
+    }
     let j = i + 1;
     while (j < buffer.length) {
       const mark = /^\s*\[S\d+\]/.exec(buffer.slice(j));
@@ -1183,6 +1190,7 @@ export async function runChatPipeline(
 
         let droppedAny = false;
         let modelWrote115 = false;
+        let modelAvoidedCare = false;
         let firstDropAt = 0;
         const dropRatioExceeded = () => kept === 0 && dropped >= 2;
         const emitSentence = (sentence: string) => {
@@ -1225,6 +1233,7 @@ export async function runChatPipeline(
         const pushText = (text: string) => {
           if (!text) return;
           if (mentionsEmergencyNumber(text)) modelWrote115 = true;
+          if (postponesSeekingCare(text)) modelAvoidedCare = true;
           modelText += text;
           pending += text;
           release(false);
@@ -1259,8 +1268,9 @@ export async function runChatPipeline(
         const cleaned = emitted.trim();
         const hadInvalid = answerHasInvalidCitations(modelText, sources);
         if (mentionsEmergencyNumber(modelText)) modelWrote115 = true;
+        if (postponesSeekingCare(modelText)) modelAvoidedCare = true;
         const fallback = buildExtractiveAnswer(sources);
-        const canCache = !hadInvalid && !droppedAny && !modelWrote115;
+        const canCache = !hadInvalid && !droppedAny && !modelWrote115 && !modelAvoidedCare;
         const usable =
           cleaned !== "" &&
           !isCitationOnly(cleaned) &&

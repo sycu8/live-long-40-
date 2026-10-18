@@ -21,6 +21,17 @@ export function isCompleteHttpUrl(raw: string): boolean {
   }
 }
 
+/** Scheme and host only, such as https://www.who.int, with no document path. */
+export function isHostOnlyUrl(raw: string): boolean {
+  if (!isCompleteHttpUrl(raw)) return false;
+  try {
+    const parsed = new URL(raw.replace(/[.,;:!?)]+$/g, ""));
+    return parsed.pathname === "" || parsed.pathname === "/";
+  } catch {
+    return false;
+  }
+}
+
 /** Remove a URL that does not parse as a finished http(s) address. */
 export function stripIncompleteUrls(text: string): string {
   return text
@@ -95,31 +106,48 @@ function isMostlyEnglish(folded: string): boolean {
 /** Words the source is likely to use when the question uses a different phrase. */
 function synonymTokens(folded: string): string[] {
   const extra: string[] = [];
+  const add = (tokens: string[]) => {
+    for (const token of tokens) extra.push(token);
+  };
   if (
-    /tap the duc|the duc|tap luyen|di bo|\b(exercise|workout|walking|walk)\b/.test(folded)
-  )
-    extra.push("van", "dong");
-  if (/mat ngu|kho ngu|thieu ngu|\b(insomnia|sleepless|sleep)\b/.test(folded))
-    extra.push("giac", "ngu");
-  if (/tram cam|buon chan|\b(depress|depression|mood|mental)\b/.test(folded))
-    extra.push("tinh", "than");
-  if (
-    /ngung thuoc|tu y ngung|bo thuoc|tieu duong|\b(diabetes|medication|medicine)\b/.test(
+    /tap the duc|the duc|tap luyen|di bo|ngoi lau|\b(exercise|workout|walking|walk|activity)\b/.test(
       folded,
     )
   )
-    extra.push("ngung", "thuoc");
-  if (/\b(fall|falls|falling)\b/.test(folded)) extra.push("nga");
-  if (/\b(blood pressure|hypertension)\b/.test(folded)) extra.push("huyet", "ap");
-  if (/\b(checkup|check up|screening)\b/.test(folded)) extra.push("kham", "dinh", "ky");
-  if (/\b(pension|retirement|retire)\b/.test(folded)) extra.push("luong", "huu");
-  if (/\b(health insurance|insurance card|bhyt)\b/.test(folded))
-    extra.push("bhyt", "bao", "hiem");
-  if (/\b(saving|savings|budget|financial education)\b/.test(folded))
-    extra.push("tiet", "kiem", "tai", "chinh");
-  if (/\b(ageing|aging)\b/.test(folded)) extra.push("gia", "hoa");
-  if (/\b(drug registration|marketing authorisation|medicine licen[cs]e)\b/.test(folded))
-    extra.push("dang", "ky", "thuoc");
+    add(["van", "dong"]);
+  if (/mat ngu|kho ngu|thieu ngu|buon ngu|\b(insomnia|sleepless|sleep)\b/.test(folded))
+    add(["giac", "ngu"]);
+  if (/tram cam|buon chan|tinh than|\b(depress|depression|mood|mental|anxiety)\b/.test(folded))
+    add(["tinh", "than"]);
+  if (
+    /ngung thuoc|tu y ngung|bo thuoc|tieu duong|\b(diabetes|medication|medicine|drug|pill)\b/.test(
+      folded,
+    )
+  )
+    add(["thuoc"]);
+  if (/bi nga|te nga|\b(fall|falls|falling|slipped)\b/.test(folded)) add(["nga"]);
+  if (/\b(blood pressure|hypertension|high blood)\b/.test(folded)) add(["huyet", "ap"]);
+  if (
+    /kham suc khoe|kham tong quat|kham dinh ky|\b(checkup|check-up|check up|screening|health check)\b/.test(
+      folded,
+    )
+  )
+    add(["kham", "dinh", "ky"]);
+  if (/huu tri|\b(pension|retirement|retire)\b/.test(folded)) add(["luong", "huu"]);
+  if (
+    /the bao hiem|bao hiem y te|\b(health insurance|insurance card|bhyt)\b/.test(folded)
+  )
+    add(["bhyt", "bao", "hiem"]);
+  if (/\b(saving|savings|budget|financial education)\b|tiet kiem|chi tieu/.test(folded))
+    add(["tiet", "kiem", "tai", "chinh"]);
+  if (/tuoi gia|nguoi gia|\b(ageing|aging|old age|elderly)\b/.test(folded))
+    add(["gia", "hoa"]);
+  if (
+    /cap phep|luu hanh|giay dang ky|\b(drug registration|marketing authorisation|medicine licen[cs]e|licensed|licen[cs]ed)\b/.test(
+      folded,
+    )
+  )
+    add(["dang", "ky", "thuoc"]);
   return extra;
 }
 
@@ -462,6 +490,50 @@ export function sourceMatchesQuestionTopic(
   return hits.some((token) => !WEAK_TOPIC.has(token));
 }
 
+function logRetrievalMiss(query: string, chunks: LocalChunkRow[]): void {
+  const corpus = chunks.map((row) =>
+    foldVietnamese(`${row.title}\n${row.heading ?? ""}\n${row.content}`),
+  );
+  const nearest = chunks
+    .map((row) => {
+      const titleScore = scoreTextInCorpus(
+        `${row.title}\n${row.heading ?? ""}`,
+        query,
+        corpus,
+      );
+      const bodyScore = scoreTextInCorpus(row.content, query, corpus);
+      const score = Math.max(titleScore * 1.25, bodyScore, (titleScore + bodyScore) / 2);
+      const topic = sourceMatchesQuestionTopic(query, {
+        title: row.title,
+        snippet: row.content,
+      });
+      const reason =
+        score === 0
+          ? "no_token"
+          : score < MIN_RETRIEVAL_SCORE
+            ? "below_floor"
+            : topic
+              ? "filtered_after_score"
+              : "topic_gate";
+      return {
+        sourceId: row.source_id,
+        score: Number(score.toFixed(3)),
+        reason,
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+  console.info(
+    JSON.stringify({
+      level: "info",
+      message: "retrieval_empty",
+      query,
+      tokens: queryTokens(query),
+      nearest,
+    }),
+  );
+}
+
 /** Rank approved D1 chunks / lessons for grounded chat when AI Search is empty. */
 export function rankLocalKnowledge(
   query: string,
@@ -551,6 +623,9 @@ export function rankLocalKnowledge(
       ),
   );
   const kept = specific.map((entry) => entry.item).slice(0, limit);
+  if (kept.length === 0 && (chunks.length > 0 || lessons.length > 0)) {
+    logRetrievalMiss(query, chunks);
+  }
   return kept.map((item, index) => {
     const { _score: _, ...rest } = item;
     return { ...rest, key: `S${index + 1}`, score: rest.score };

@@ -9,6 +9,7 @@ import { foldVietnamese } from "@shared/utils/vietnamese";
 import {
   containsToken,
   isCompleteHttpUrl,
+  isHostOnlyUrl,
   MIN_RETRIEVAL_SCORE,
   sourceMatchesQuestionTopic,
 } from "./local-retrieve";
@@ -164,12 +165,17 @@ const ISSUER_MENTIONS: Array<{ kind: IssuerKind; pattern: RegExp }> = [
   { kind: "sbv", pattern: /ngân\s*hàng\s*nhà\s*nước/i },
 ];
 
+/** A period inside a URL stays; the period after "URL." still ends the sentence. */
+const URL_IN_SENTENCE = /https?:\/\/(?:[^\s)>\].]|[.](?!\s|$))+/gi;
+
 function answerSentences(answer: string): string[] {
   const urls: string[] = [];
-  const masked = answer.replace(/https?:\/\/[^\s)>\]]+/gi, (url) => {
-    urls.push(url);
-    return ` URL${urls.length - 1}TOKEN `;
-  });
+  const masked = answer
+    .replace(/(^|[\s(])((?:TP|TS|BS|GS|PGS|ThS|Mr|Dr|St|vs))(\.)/gi, "$1$2\uE000")
+    .replace(URL_IN_SENTENCE, (url) => {
+      urls.push(url);
+      return ` URL${urls.length - 1}TOKEN `;
+    });
   const parts = masked
     .split(/(?<=[.!?…])\s+|\n+/)
     .map((part) => part.trim())
@@ -183,8 +189,14 @@ function answerSentences(answer: string): string[] {
     }
   }
   return merged.map((part) =>
-    part.replace(/URL(\d+)TOKEN/g, (_, index: string) => urls[Number(index)] ?? ""),
+    part
+      .replace(/URL(\d+)TOKEN/g, (_, index: string) => urls[Number(index)] ?? "")
+      .replace(/\uE000/g, "."),
   );
+}
+
+function collapseCitationMarkers(text: string): string {
+  return text.replace(/(\[S\d+\])(?:\s*\1)+/g, "$1");
 }
 
 function claimNumbers(sentence: string): string[] {
@@ -284,7 +296,12 @@ export type SentenceDropReason =
   | "medication"
   | "number"
   | "low_overlap"
-  | "uncited";
+  | "uncited"
+  | "care_avoidance"
+  | "meta"
+  | "echo"
+  | "header"
+  | "issuer_tag";
 
 /** Whitespace and surrounding punctuation only. Diacritics stay, so "hay" ≠ "hãy". */
 function normalizeClause(text: string): string {
@@ -298,9 +315,76 @@ function normalizeClause(text: string): string {
     .toLowerCase();
 }
 
-/** Any 115 in model text. The system appends its own line after filtering. */
+/**
+ * A phone instruction, not a factual 115 in a reading.
+ * "gọi 115" counts. "Điều 115" and "115 triệu" do not.
+ */
 export function mentionsEmergencyNumber(text: string): boolean {
-  return /(?:^|[^\d])115(?:[^\d]|$)/.test(text);
+  const folded = foldVietnamese(text).replace(/['’]/g, "");
+  return /(?:goi|call|dial|tong dai|so dien thoai|lien he|cap cuu)\s+(?:ngay\s+|so\s+)?115\b/.test(
+    folded,
+  );
+}
+
+const CARE_ACTION =
+  "(?:di\\s+kham|gap\\s+bac\\s+si|hoi\\s+bac\\s+si|den\\s+benh\\s+vien|toi\\s+benh\\s+vien|di\\s+benh\\s+vien|di\\s+vien|kham\\s+bac\\s+si|kiem\\s+tra(?:\\s+suc\\s+khoe)?|see\\s+(?:a\\s+|the\\s+)?doctor|go\\s+to\\s+(?:the\\s+|a\\s+)?hospital|get\\s+checked|visit\\s+(?:a\\s+)?doctor)";
+
+const CARE_NEGATOR =
+  "(?:khong\\s+can|khong\\s+nen|khong\\s+phai|chua\\s+can|chua\\s+phai|chang\\s+can|chang\\s+nen|co\\s+the\\s+khong(?:\\s+can)?|no\\s+need(?:\\s+to)?|not\\s+necessary(?:\\s+to)?|do\\s+not|dont)";
+
+const HAS_ACCENT =
+  /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/i;
+
+function clauseAvoidsCare(clause: string): boolean {
+  const folded = foldVietnamese(clause).replace(/['’]/g, "");
+  if (!new RegExp(CARE_ACTION).test(folded) && !/(?:o nha|wait at home|stay home|just wait)/.test(folded)) {
+    return false;
+  }
+  const phrase = new RegExp(
+    `(?:^|[^a-z0-9])${CARE_NEGATOR}(?:\\s+\\w+){0,4}\\s+${CARE_ACTION}`,
+  );
+  if (phrase.test(folded)) return true;
+  const careThenNeg = new RegExp(
+    `${CARE_ACTION}.{0,30}(?:khong can|khong nen|khong phai|no need|not necessary)`,
+  );
+  if (careThenNeg.test(folded)) return true;
+  // "đừng" and "dụng" both fold to "dung", so the bare word is accent-aware.
+  const bare =
+    /đừng|khỏi/i.test(clause) ||
+    (!HAS_ACCENT.test(clause) && /(?:^|[^a-z])(?:dung|khoi)(?:[^a-z]|$)/.test(folded));
+  if (
+    bare &&
+    new RegExp(`(?:^|[^a-z])(?:dung|khoi)(?:\\s+\\w+){0,3}\\s+${CARE_ACTION}`).test(folded)
+  ) {
+    return true;
+  }
+  if (/(?:^|[^a-z])(?:cu|chi can|hay cu)\s+(?:o nha|nghi o nha|cho|doi)/.test(folded))
+    return true;
+  if (/(?:^|[^a-z])hay\s+(?:cu\s+)?(?:cho|doi)\s+o\s+nha/.test(folded)) return true;
+  if (/(?:cho|doi)\s+(?:them\s+)?o\s+nha/.test(folded)) return true;
+  if (/(?:just wait|wait at home|stay home)/.test(folded)) return true;
+  if (/(?:de sau|de hom sau|hom sau)\s+(?:hay\s+)?(?:di kham|gap bac|den benh)/.test(folded))
+    return true;
+  if (/theo doi them o nha/.test(folded)) return true;
+  return false;
+}
+
+/**
+ * The model tells the user not to get checked, or to wait at home.
+ * Positive advice such as "hãy đi khám" and "nên gặp bác sĩ" does not match.
+ */
+export function postponesSeekingCare(sentence: string): boolean {
+  const parts = sentence
+    .split(/[,;]|(?:\s+nhưng\s+)/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return (parts.length > 0 ? parts : [sentence]).some(clauseAvoidsCare);
+}
+
+export function answerPostponesCare(answer: string): boolean {
+  return answerSentences(answer).some(
+    (sentence) => !isSystemSafetyLine(sentence) && postponesSeekingCare(sentence),
+  );
 }
 
 function isSystemSafetyLine(sentence: string): boolean {
@@ -457,7 +541,16 @@ function mentionsOutsideSource(
   for (const url of urls) {
     const clean = url.replace(/[.,;:!?)]+$/g, "");
     if (!isCompleteHttpUrl(clean)) return true;
-    if (!blob.includes(clean)) return true;
+    if (!blob.includes(clean) && !isHostOnlyUrl(clean)) return true;
+    if (isHostOnlyUrl(clean)) {
+      try {
+        const host = new URL(clean).hostname;
+        if (!blob.includes(host)) return true;
+      } catch {
+        return true;
+      }
+      continue;
+    }
     const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     if (new RegExp(`${escaped}\\S`).test(blob)) return true;
   }
@@ -491,9 +584,10 @@ function repairUrls(
     .filter((url): url is string => Boolean(url));
   const text = sentence.replace(/https?:\/\/[^\s)>\]]+/gi, (raw) => {
     const url = raw.replace(/[.,;:!?)]+$/g, "");
-    const cut =
-      !isCompleteHttpUrl(url) ||
+    const truncatedPath =
+      !isHostOnlyUrl(url) &&
       known.some((source) => source.length > url.length && source.startsWith(url));
+    const cut = !isCompleteHttpUrl(url) || truncatedPath;
     if (cut) {
       droppedUrl = true;
       return "";
@@ -532,6 +626,47 @@ function supportFailure(
   return null;
 }
 
+function echoesQuestion(sentence: string, question: string): boolean {
+  const sentenceTokens = contentTokens(sentence.replace(/\[s\d+\]/gi, " "));
+  const questionTokens = new Set(contentTokens(question));
+  if (sentenceTokens.length < 4 || questionTokens.size === 0) return false;
+  const extra = sentenceTokens.filter((token) => !questionTokens.has(token));
+  const hits = sentenceTokens.length - extra.length;
+  return extra.length <= 1 && hits / sentenceTokens.length >= 0.85;
+}
+
+function nonAnswerReason(
+  sentence: string,
+  question: string,
+): SentenceDropReason | null {
+  const stripped = sentence.replace(/\[S\d+\]/gi, " ").trim();
+  const folded = foldVietnamese(stripped);
+  if (
+    /(?:duoi day la|toi se tra loi|sau day la|cau tra loi|minh se giai thich|here is|i will answer)/.test(
+      folded,
+    )
+  ) {
+    return "meta";
+  }
+  if (/^(?:#{1,6}\s+)/.test(stripped)) return "header";
+  if (/^(?:nguon|sources?|references?|citations?)\s*:/.test(folded)) return "header";
+  const marks = stripped.match(/\*\*/g)?.length ?? 0;
+  if (marks % 2 === 1) return "header";
+  if (
+    /^(?:bo y te(?: viet nam)?|to chuc y te the gioi(?: \(who\))?|who|bao hiem xa hoi viet nam|ngan hang nha nuoc(?: viet nam)?)\.?$/.test(
+      folded.replace(/[.*]+/g, "").trim(),
+    )
+  ) {
+    return "issuer_tag";
+  }
+  if (echoesQuestion(sentence, question)) return "echo";
+  return null;
+}
+
+function isDanglingFragment(text: string): boolean {
+  return contentTokens(text.replace(/\[S\d+\]/gi, " ")).length === 0;
+}
+
 function assessSentence(
   sentence: string,
   sources: SupportSource[],
@@ -539,7 +674,10 @@ function assessSentence(
 ): { text: string; reason: SentenceDropReason | null } {
   const trimmed = sentence.trim();
   if (!trimmed || JUNK_TEXT.test(trimmed)) return { text: "", reason: "junk" };
-  // The model does not get to write 115. The system line is appended later.
+  const nonAnswer = nonAnswerReason(trimmed, question);
+  if (nonAnswer) return { text: "", reason: nonAnswer };
+  if (postponesSeekingCare(trimmed)) return { text: "", reason: "care_avoidance" };
+  // A model phone instruction is removed. A factual 115 in a reading can stay.
   if (mentionsEmergencyNumber(trimmed)) return { text: "", reason: "model_115" };
   if (isSourceRefusal(trimmed) && sources.length > 0) return { text: "", reason: "refusal" };
   if (/chưa tìm thấy đủ nguồn/.test(trimmed)) {
@@ -551,8 +689,8 @@ function assessSentence(
     return { text: trimmed, reason: null };
   }
   const repaired = repairUrls(trimmed, sources);
-  const working = repaired.text;
-  if (!working || isCitationOnly(working)) {
+  const working = collapseCitationMarkers(repaired.text);
+  if (!working || isCitationOnly(working) || (repaired.droppedUrl && isDanglingFragment(working))) {
     return {
       text: "",
       reason: repaired.droppedUrl ? "truncated_url" : "citation_only",
@@ -606,7 +744,9 @@ export function sentenceIsSupported(
   question: string,
 ): boolean {
   if (isAffirmativeSafetyTemplate(sentence, sources)) return true;
+  if (postponesSeekingCare(sentence)) return false;
   if (mentionsEmergencyNumber(sentence)) return false;
+  if (nonAnswerReason(sentence, question)) return false;
   const grounded = groundedSentence(sentence, sources, question);
   if (!grounded || isCitationOnly(grounded)) return false;
   return normalizeSpace(grounded) === normalizeSpace(sentence);
@@ -713,6 +853,7 @@ export async function readAnswerCache(
     if (!parsed?.answer || !Array.isArray(parsed.sources)) return null;
     if (!isGroundedOfficialAnswer(parsed)) return null;
     if (answerHasModelEmergency(parsed.answer)) return null;
+    if (answerPostponesCare(parsed.answer)) return null;
     const mode = parsed.mode === "answer_bank" ? "answer_bank" : "kv_cache";
     if (!cachedSourcesMatchQuestion(question, parsed.answer, parsed.sources, mode))
       return null;
@@ -734,6 +875,7 @@ export async function writeAnswerCache(
   if (payload.answer.includes("chưa tìm thấy đủ nguồn")) return;
   if (!isGroundedOfficialAnswer(payload)) return;
   if (answerHasModelEmergency(payload.answer)) return;
+  if (answerPostponesCare(payload.answer)) return;
   if (answerHasInvalidCitations(payload.answer, payload.sources)) return;
   if (
     !cachedSourcesMatchQuestion(

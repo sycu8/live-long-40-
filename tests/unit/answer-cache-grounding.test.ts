@@ -3,13 +3,16 @@ import { SYMPTOM_SAFETY_LINE } from "../../shared/rules/safety";
 import {
   answerAttributionsMatchSources,
   answerHasModelEmergency,
+  answerPostponesCare,
   CACHE_TTL_SECONDS,
   groundedSentence,
   isAffirmativeSafetyTemplate,
   isCitationOnly,
+  postponesSeekingCare,
   readAnswerCache,
   sentenceDropReason,
   sentenceIsSupported,
+  supportedAnswerText,
   writeAnswerCache,
   type CachedSource,
 } from "../../worker/ai/answer-cache";
@@ -379,5 +382,133 @@ describe("answer cache source relevance", () => {
     const intact =
       "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
     expect(sentenceIsSupported(intact, [WALKING], QUESTION)).toBe(true);
+  });
+
+  it("drops care avoidance in cited and uncited form and does not cache it", async () => {
+    const source: CachedSource = {
+      ...WALKING,
+      snippet:
+        "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. Nên gặp bác sĩ khi cần. Hãy đi khám nếu mệt.",
+    };
+    const avoided = [
+      "Bạn không cần đi khám. [S1]",
+      "Ban khong can di kham.",
+      "Không cần gặp bác sĩ. [S1]",
+      "Khong can gap bac si.",
+      "Đừng đến bệnh viện.",
+      "Dung den benh vien.",
+      "Khỏi đi khám.",
+      "Khoi di kham.",
+      "Cứ ở nhà chờ là được.",
+      "Cu o nha cho la duoc.",
+      "No need to see a doctor. [S1]",
+      "Don't go to the hospital.",
+      "Just wait at home.",
+      "Chưa cần kiểm tra sức khỏe.",
+    ];
+    for (const sentence of avoided) {
+      expect(postponesSeekingCare(sentence), sentence).toBe(true);
+      expect(sentenceIsSupported(sentence, [source], QUESTION), sentence).toBe(false);
+      expect(groundedSentence(sentence, [source], QUESTION), sentence).toBe("");
+      expect(sentenceDropReason(sentence, [source], QUESTION), sentence).toBe(
+        "care_avoidance",
+      );
+    }
+    const positive = [
+      "Hãy đi khám nếu mệt. [S1]",
+      "Nên gặp bác sĩ khi cần để giữ sức khỏe theo hướng dẫn. [S1]",
+      "Hay di kham neu met.",
+    ];
+    expect(postponesSeekingCare(positive[0]!)).toBe(false);
+    expect(postponesSeekingCare(positive[1]!)).toBe(false);
+    expect(sentenceIsSupported(positive[0]!, [source], QUESTION)).toBe(true);
+    expect(sentenceIsSupported(positive[1]!, [source], QUESTION)).toBe(true);
+    expect(postponesSeekingCare("Sử dụng thuốc rồi hãy đi khám.")).toBe(false);
+
+    const { puts, CONFIG } = memoryConfig();
+    const grounded =
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: `${grounded} Bạn không cần đi khám. [S1]`,
+      sources: [source],
+    });
+    expect(puts).toEqual([]);
+    expect(answerPostponesCare(`${grounded} Ban khong can gap bac si.`)).toBe(true);
+    const kept =
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn và nên gặp bác sĩ khi cần. [S1]";
+    expect(sentenceIsSupported(kept, [source], QUESTION)).toBe(true);
+    expect(answerPostponesCare(kept)).toBe(false);
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: kept,
+      sources: [source],
+    });
+    expect(puts).toHaveLength(1);
+  });
+
+  it("drops meta, echoes, headers, and issuer tags before attaching a chip", () => {
+    expect(groundedSentence("Dưới đây là phần trả lời về đi bộ.", [WALKING], QUESTION)).toBe(
+      "",
+    );
+    expect(
+      sentenceDropReason("Tôi sẽ trả lời câu hỏi này.", [WALKING], QUESTION),
+    ).toBe("meta");
+    expect(sentenceDropReason(`${QUESTION} [S1]`, [WALKING], QUESTION)).toBe("echo");
+    expect(groundedSentence("Nguồn: đi bộ buổi sáng [S1]", [WALKING], QUESTION)).toBe("");
+    expect(groundedSentence("Bộ Y tế.", [WALKING], QUESTION)).toBe("");
+    expect(groundedSentence("WHO [S1]", [WALKING], QUESTION)).toBe("");
+    expect(
+      groundedSentence(
+        "**Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng. [S1]",
+        [WALKING],
+        QUESTION,
+      ),
+    ).toBe("");
+    const closed =
+      "**Người 61 tuổi** nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
+    expect(sentenceDropReason(closed, [WALKING], QUESTION)).toBeNull();
+  });
+
+  it("keeps a factual 115, a full host, and the sentence after a URL", () => {
+    const source: CachedSource = {
+      ...WALKING,
+      snippet:
+        "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. Tài liệu theo dõi 115 trường hợp.",
+    };
+    const factual =
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn, với 115 trường hợp được theo dõi. [S1]";
+    expect(sentenceDropReason(factual, [source], QUESTION)).toBeNull();
+    expect(sentenceIsSupported(factual, [source], QUESTION)).toBe(true);
+    expect(groundedSentence("Gọi 115 khi mệt.", [source], QUESTION)).toBe("");
+
+    const host =
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn (https://www.who.int). [S1]";
+    expect(groundedSentence(host, [WALKING], QUESTION)).toContain("https://www.who.int");
+    expect(
+      groundedSentence("Xem thêm tại https://www.who.int/news-room/fact-she. [S1]", [
+        WALKING,
+      ], QUESTION),
+    ).toBe("");
+    const boundary = supportedAnswerText(
+      "Xem https://www.who.int/news-room/fact-sheets/detail/ageing-and-health. Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]",
+      [WALKING],
+      QUESTION,
+    );
+    expect(boundary).toContain("duy trì nhịp đi bộ");
+    expect(boundary.match(/\[S1\]/g)?.length).toBe(1);
+    const doubled = groundedSentence(
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1] [S1]",
+      [WALKING],
+      QUESTION,
+    );
+    expect(doubled.match(/\[S1\]/g)?.length).toBe(1);
+    expect(
+      supportedAnswerText(
+        "TP. Hồ Chí Minh khuyên người 61 tuổi duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]",
+        [WALKING],
+        QUESTION,
+      ),
+    ).toContain("TP.");
   });
 });
