@@ -16,7 +16,11 @@ export const WORKERS_AI_TEXT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8";
  */
 export const WORKERS_AI_MAX_TOKENS = 8192;
 
-/** Model ids Cloudflare retired on 2026-05-30 (Workers AI error 5028). */
+/**
+ * Model ids that must not be called. Includes the 2026-05-30 retirements
+ * (Workers AI error 5028) and `@cf/meta/llama-3.1-8b-instruct-fast`, whose
+ * docs page now redirects as unavailable.
+ */
 export const RETIRED_WORKERS_AI_MODELS = [
   "@cf/moonshotai/kimi-k2.5",
   "@hf/meta-llama/meta-llama-3-8b-instruct",
