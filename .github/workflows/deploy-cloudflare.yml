@@ -12,14 +12,14 @@ on:
           - staging
           - production
       seed:
-        description: Seed remote D1 with educational demo.sql
+        description: Seed remote D1 with educational demo.sql (explicit opt-in)
         required: true
-        default: true
+        default: false
         type: boolean
   push:
     branches:
       - main
-      - "cursor/**"
+  pull_request:
 
 concurrency:
   group: deploy-cloudflare-${{ github.ref }}
@@ -28,6 +28,7 @@ concurrency:
 jobs:
   deploy:
     name: Provision & deploy Worker
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -37,8 +38,8 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       ADMIN_SHARED_SECRET: ${{ secrets.ADMIN_SHARED_SECRET }}
       SESSION_SIGNING_SECRET: ${{ secrets.SESSION_SIGNING_SECRET }}
-      DEPLOY_ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
-      SEED_REMOTE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.seed || 'true' }}
+      INPUT_ENVIRONMENT: ${{ github.event.inputs.environment }}
+      INPUT_SEED: ${{ github.event.inputs.seed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -69,5 +70,53 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Resolve deploy policy
+        run: node scripts/deploy-policy.mjs
+
       - name: Deploy
-        run: node scripts/ci-deploy.mjs
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$DEPLOY_ENVIRONMENT" != "production" ]; then
+            echo "::error::Push deploys must use DEPLOY_ENVIRONMENT=production."
+            exit 1
+          fi
+          if [ "$SEED_REMOTE" = "true" ] || [ "$SEED_REMOTE" = "1" ]; then
+            if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
+              echo "::error::Remote seeding is only allowed on workflow_dispatch with an explicit seed input."
+              exit 1
+            fi
+          fi
+          node scripts/ci-deploy.mjs
+
+  pull-request:
+    name: Build and dry-run
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Dry-run Worker deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm exec wrangler deploy --dry-run
