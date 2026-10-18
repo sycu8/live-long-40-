@@ -233,9 +233,13 @@ function normalizeSpace(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
+/** A citation marker or a "Nguồn:" header, with no claim left beside it. */
 export function isCitationOnly(text: string): boolean {
-  if (!/\[S\d+\]/.test(text)) return false;
-  return normalizeSpace(text.replace(/\[S\d+\]/g, " ")).length === 0;
+  const folded = foldVietnamese(text);
+  const hasMarker = /\[s\d+\]/.test(folded);
+  const header = /\b(nguon|sources?|references?|citations?)\b/.test(folded);
+  if (!hasMarker && !header) return false;
+  return contentTokens(text).length === 0;
 }
 
 function hasMedicationChange(text: string): boolean {
@@ -253,19 +257,40 @@ function medicationChangeIsSupported(
   return MEDICATION_CHANGE.test(blob);
 }
 
-/** The 115 instruction, with no other claim riding in the same clause. */
+/**
+ * Negation and hedges. A safety clause has to be an affirmative call to 115.
+ * Short words and "không" are included on purpose: stripping "gọi 115" used to
+ * leave only those and the clause was treated as pure safety.
+ */
+function hasHedge(folded: string): boolean {
+  const plain = folded.replace(/['’]/g, "");
+  return (
+    /\b(khong|chang|chua|dung|khoi|unless|dont|not)\b/.test(plain) ||
+    /\bno need\b/.test(plain) ||
+    /\bnot necessary\b/.test(plain)
+  );
+}
+
+/** Words that can sit in "Hãy gọi ngay 115" without adding a claim. */
+const SAFETY_FUNCTION = new Set(["hay", "vui", "long", "xin", "ban", "nhe", "nha"]);
+
+/** The 115 instruction, with no other claim and no hedge in the same clause. */
 function isSafetyOnlyClause(clause: string): boolean {
   const folded = foldVietnamese(clause).replace(/\[s\d+\]/g, " ");
   const has115 = /goi\s+(?:ngay\s+)?115/.test(folded);
   const preamble = /neu co dau hieu nguy hiem/.test(folded);
   if (!has115 && !preamble) return false;
+  if (hasHedge(folded)) return false;
   const stripped = folded
     .replace(/goi\s+(?:ngay\s+)?115/g, " ")
     .replace(/neu co dau hieu nguy hiem/g, " ")
     .replace(/https?:\/\/\S+/g, " ");
   const tokens = stripped
     .split(/[^a-z0-9]+/)
-    .filter((token) => token.length >= 4 && !GENERIC_CLAIM.has(token));
+    .filter(
+      (token) =>
+        token.length >= 3 && !GENERIC_CLAIM.has(token) && !SAFETY_FUNCTION.has(token),
+    );
   return tokens.length === 0;
 }
 
@@ -294,11 +319,8 @@ function claimBackedByCited(
   sentence: string,
   cited: Array<{ title: string; snippet: string }>,
 ): boolean {
-  const foldedSentence = foldVietnamese(sentence.replace(/\[S\d+\]/g, " "));
-  const tokens = foldedSentence
-    .split(/[^a-z0-9]+/)
-    .filter((token) => token.length >= 4 && !GENERIC_CLAIM.has(token));
-  // A citation marker alone is not a claim.
+  const tokens = contentTokens(sentence);
+  // A citation marker or a source header alone is not a claim.
   if (tokens.length === 0) return false;
   const haystack = foldVietnamese(
     cited.map((source) => `${source.title}\n${source.snippet}`).join("\n"),
@@ -319,6 +341,35 @@ const GENERIC_CLAIM = new Set([
   "duoc",
   "nen",
 ]);
+
+/** Labels such as "Nguồn:" are not claims, even when the snippet repeats them. */
+const HEADER_TOKEN = new Set([
+  "nguon",
+  "source",
+  "sources",
+  "reference",
+  "references",
+  "citation",
+  "citations",
+]);
+
+function contentTokens(text: string): string[] {
+  return foldVietnamese(text)
+    .replace(/\[s\d+\]/g, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .split(/[^a-z0-9]+/)
+    .filter(
+      (token) =>
+        token.length >= 4 && !GENERIC_CLAIM.has(token) && !HEADER_TOKEN.has(token),
+    );
+}
+
+function isSourceRefusal(text: string): boolean {
+  const folded = foldVietnamese(text).replace(/['’]/g, "");
+  return /chua tim thay du nguon|khong du nguon|not enough|insufficient sources|cannot find|cant find/.test(
+    folded,
+  );
+}
 
 function mentionsOutsideSource(
   sentence: string,
@@ -393,6 +444,8 @@ export function groundedSentence(
 ): string {
   const trimmed = sentence.trim();
   if (!trimmed || JUNK_TEXT.test(trimmed)) return "";
+  // A refusal is not an answer when a snippet was already retrieved.
+  if (isSourceRefusal(trimmed) && sources.length > 0) return "";
   if (/chưa tìm thấy đủ nguồn/.test(trimmed)) {
     const citedKeys = [...trimmed.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
     const cited = sources.filter((source) => citedKeys.includes(source.key));

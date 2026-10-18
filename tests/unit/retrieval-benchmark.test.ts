@@ -270,6 +270,14 @@ describe("retrieval regressions from the 36-question QA set", () => {
       },
       { q: "What should I do if a parent falls at home?", expect: "who-falls" },
       { q: "How do I check blood pressure at home?", expect: "who-hypertension" },
+      {
+        q: "Where do I check my health insurance card?",
+        expect: "bhxh-bhyt-card-lookup",
+      },
+      {
+        q: "Where is the pension procedure explained?",
+        expect: "bhxh-pension-procedure",
+      },
     ];
     for (const item of english) {
       const ranked = rankLocalKnowledge(item.q, CHUNKS, [], 3);
@@ -309,6 +317,22 @@ describe("retrieval regressions from the 36-question QA set", () => {
     expect(missed).toEqual(["B14"]);
     expect(top1).toBe(35);
     expect(irrelevant).toBe(0);
+  });
+
+  it("does not cite the pension procedure for a BHYT card question", () => {
+    const question = "Làm sao tra cứu thời hạn thẻ BHYT?";
+    const poisoned = CHUNKS.map((chunk) =>
+      chunk.source_id === "bhxh-pension-procedure"
+        ? {
+            ...chunk,
+            content: `${chunk.content} Xem thêm bảo hiểm y tế trên cùng cổng tra cứu.`,
+          }
+        : chunk,
+    );
+    const ranked = rankLocalKnowledge(question, poisoned, [], 3);
+    const ids = ranked.map((source) => source.sourceId);
+    expect(ids).toContain("bhxh-bhyt-card-lookup");
+    expect(ids).not.toContain("bhxh-pension-procedure");
   });
 });
 

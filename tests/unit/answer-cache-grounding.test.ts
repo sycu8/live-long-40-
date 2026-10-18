@@ -4,6 +4,8 @@ import {
   answerAttributionsMatchSources,
   CACHE_TTL_SECONDS,
   groundedSentence,
+  isCitationOnly,
+  readAnswerCache,
   sentenceIsSupported,
   writeAnswerCache,
   type CachedSource,
@@ -159,7 +161,108 @@ describe("answer cache source relevance", () => {
     expect(kept).toMatch(/gọi 115/i);
     expect(kept).not.toMatch(/lancet|ngừng thuốc|example\.com/i);
     expect(sentenceIsSupported(SYMPTOM_SAFETY_LINE, [WALKING], QUESTION)).toBe(true);
+    expect(sentenceIsSupported("Hãy gọi ngay 115.", [WALKING], QUESTION)).toBe(true);
     expect(sentenceIsSupported("[S1]", [WALKING], QUESTION)).toBe(false);
+    expect(sentenceIsSupported("Gọi 115 khi bị sốt cao.", [WALKING], QUESTION)).toBe(
+      false,
+    );
+    expect(groundedSentence("Gọi 115 khi bị sốt cao.", [WALKING], QUESTION)).not.toMatch(
+      /sốt/i,
+    );
+  });
+
+  it("rejects a negated or hedged 115 line, with and without accents", async () => {
+    const negated = [
+      "Bạn không gọi 115.",
+      "Ban khong goi 115.",
+      "Bạn chẳng gọi 115.",
+      "Ban chang goi 115.",
+      "Bạn chưa gọi 115.",
+      "Ban chua goi 115.",
+      "Đừng gọi 115.",
+      "Dung goi 115.",
+      "Khỏi gọi 115.",
+      "Khoi goi 115.",
+      "Bạn không cần gọi ngay 115.",
+      "Ban khong can goi ngay 115.",
+      "Bạn không nên gọi 115.",
+      "Ban khong nen goi 115.",
+      "There is no need to call 115.",
+      "Don't call 115.",
+      "Dont goi 115.",
+      "It is not necessary to gọi 115.",
+      "Gọi 115 unless the pain has stopped.",
+    ];
+    for (const sentence of negated) {
+      expect(sentenceIsSupported(sentence, [WALKING], QUESTION), sentence).toBe(false);
+      expect(groundedSentence(sentence, [WALKING], QUESTION), sentence).toBe("");
+    }
+
+    const stored = "Bạn không cần gọi ngay 115. ".repeat(6);
+    const { puts, CONFIG } = memoryConfig();
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: stored,
+      sources: [WALKING],
+    });
+    expect(puts).toEqual([]);
+    const replay = await readAnswerCache(
+      {
+        CONFIG: {
+          async get() {
+            return JSON.stringify({
+              classification: "health_education",
+              answer: stored,
+              sources: [WALKING],
+              mode: "kv_cache",
+              cachedAt: "2026-10-18T00:00:00.000Z",
+            });
+          },
+          async put() {
+            return undefined;
+          },
+        },
+      } as unknown as Env,
+      QUESTION,
+    );
+    expect(replay).toBeNull();
+  });
+
+  it("treats a source header as empty even when the snippet says Nguồn", async () => {
+    const header = "Nguồn: [S1] ".repeat(8);
+    const source = {
+      ...WALKING,
+      snippet: "Nguồn tra cứu đi bộ buổi sáng cho người lớn tuổi theo hướng dẫn.",
+    };
+    expect(isCitationOnly(header)).toBe(true);
+    expect(sentenceIsSupported(header, [source], QUESTION)).toBe(false);
+    const { puts, CONFIG } = memoryConfig();
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: header,
+      sources: [source],
+    });
+    expect(puts).toEqual([]);
+    const replay = await readAnswerCache(
+      {
+        CONFIG: {
+          async get() {
+            return JSON.stringify({
+              classification: "health_education",
+              answer: header,
+              sources: [source],
+              mode: "kv_cache",
+              cachedAt: "2026-10-18T00:00:00.000Z",
+            });
+          },
+          async put() {
+            return undefined;
+          },
+        },
+      } as unknown as Env,
+      QUESTION,
+    );
+    expect(replay).toBeNull();
   });
 
   it("does not cache when any cited source is off topic", async () => {

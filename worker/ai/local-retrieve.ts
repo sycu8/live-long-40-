@@ -42,7 +42,9 @@ function rawQueryTokens(folded: string): string[] {
 
 function isMostlyEnglish(folded: string): boolean {
   // "thế nào" folds to "the nao", so a lone "the" is not an English question.
-  return /\b(what|how|should|does|about|many|older|adults|week)\b/.test(folded);
+  return /\b(what|how|should|does|about|many|older|adults|week|where|when|which)\b/.test(
+    folded,
+  );
 }
 
 /** Words the source is likely to use when the question uses a different phrase. */
@@ -66,7 +68,13 @@ function synonymTokens(folded: string): string[] {
   if (/\b(blood pressure|hypertension)\b/.test(folded)) extra.push("huyet", "ap");
   if (/\b(checkup|check up|screening)\b/.test(folded)) extra.push("kham", "dinh", "ky");
   if (/\b(pension|retirement|retire)\b/.test(folded)) extra.push("luong", "huu");
-  if (/\b(health insurance|insurance card)\b/.test(folded)) extra.push("bao", "hiem");
+  if (/\b(health insurance|insurance card|bhyt)\b/.test(folded))
+    extra.push("bhyt", "bao", "hiem");
+  if (/\b(saving|savings|budget|financial education)\b/.test(folded))
+    extra.push("tiet", "kiem", "tai", "chinh");
+  if (/\b(ageing|aging)\b/.test(folded)) extra.push("gia", "hoa");
+  if (/\b(drug registration|marketing authorisation|medicine licen[cs]e)\b/.test(folded))
+    extra.push("dang", "ky", "thuoc");
   return extra;
 }
 
@@ -344,6 +352,46 @@ const GENERIC_TOPIC = new Set([
 /** One of these words is not enough to call a source on-topic. */
 const WEAK_TOPIC = new Set(["than", "kinh", "hang", "tiem", "xin", "vac"]);
 
+/**
+ * Mutually exclusive subjects. A BHYT card and a pension procedure can share
+ * an issuer and still be different topics. The title decides when the body
+ * mentions a sibling subject in passing.
+ */
+const TOPIC_CLASSES: string[][] = [
+  ["bhyt", "bao hiem y te"],
+  ["luong huu"],
+  ["huyet ap"],
+  ["giac ngu", "mat ngu"],
+  ["van dong", "di bo"],
+  ["dang ky luu hanh"],
+  ["tiet kiem"],
+  ["gia hoa"],
+  ["kham dinh ky"],
+];
+
+function topicClassIds(folded: string): Set<number> {
+  const found = new Set<number>();
+  TOPIC_CLASSES.forEach((phrases, index) => {
+    if (phrases.some((phrase) => folded.includes(phrase))) found.add(index);
+  });
+  return found;
+}
+
+function topicClassesOverlap(
+  question: string,
+  source: { title: string; snippet: string },
+): boolean {
+  const qFold = foldVietnamese(question);
+  const asked = topicClassIds(qFold);
+  if (asked.size === 0) return true;
+  const titleTopics = topicClassIds(foldVietnamese(source.title));
+  const covered =
+    titleTopics.size > 0 ? titleTopics : topicClassIds(foldVietnamese(source.snippet));
+  if (covered.size === 0) return true;
+  for (const topic of asked) if (covered.has(topic)) return true;
+  return false;
+}
+
 /** True when the question's own topic words appear in this source, not only in the answer. */
 export function sourceMatchesQuestionTopic(
   question: string,
@@ -351,6 +399,7 @@ export function sourceMatchesQuestionTopic(
 ): boolean {
   const qFold = foldVietnamese(question);
   const haystack = foldVietnamese(`${source.title}\n${source.snippet}`);
+  if (!topicClassesOverlap(question, source)) return false;
   if (
     qFold.includes("di bo") &&
     (haystack.includes("di bo") || haystack.includes("van dong"))
@@ -432,12 +481,31 @@ export function rankLocalKnowledge(
 
   scored.sort((a, b) => b._score - a._score);
   const top = scored[0]?._score ?? 0;
-  const kept = scored
-    .filter((item) => item._score >= top * 0.97)
-    .filter((item) =>
-      sourceMatchesQuestionTopic(query, { title: item.title, snippet: item.snippet }),
-    )
-    .slice(0, limit);
+  const band = scored.filter((item) => item._score >= top * 0.97);
+  const topical = band.filter((item) =>
+    sourceMatchesQuestionTopic(query, { title: item.title, snippet: item.snippet }),
+  );
+  const withHits = topical.map((item) => ({
+    item,
+    hits: queryTokens(query).filter(
+      (token) =>
+        token.length >= 3 &&
+        !GENERIC_TOPIC.has(token) &&
+        !WEAK_TOPIC.has(token) &&
+        containsToken(foldVietnamese(`${item.title}\n${item.snippet}`), token),
+    ),
+  }));
+  // A sibling that only repeats the broader source's tokens is the same issuer
+  // boilerplate, not a second topic.
+  const specific = withHits.filter(
+    ({ hits }) =>
+      !withHits.some(
+        (other) =>
+          other.hits.length > hits.length &&
+          hits.every((token) => other.hits.includes(token)),
+      ),
+  );
+  const kept = specific.map((entry) => entry.item).slice(0, limit);
   return kept.map((item, index) => {
     const { _score: _, ...rest } = item;
     return { ...rest, key: `S${index + 1}`, score: rest.score };

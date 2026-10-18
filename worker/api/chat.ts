@@ -10,6 +10,7 @@ import { createId, nowIso } from "@shared/utils/id";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
 import { enforceRateLimit } from "../middleware/security";
+import { presentCitations } from "@shared/citations";
 import {
   logUpgradeTimeout,
   runChatPipeline,
@@ -564,6 +565,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             /* optional binding */
           }
         }
+        const presented = presentCitations(full, sources);
         await c.env.DB.prepare(
           `INSERT INTO chat_messages
            (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
@@ -573,7 +575,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             assistantMsgId,
             assistantPublicId,
             chat.id,
-            chat.history_opt_in ? full : null,
+            chat.history_opt_in ? presented.text : null,
             chat.history_opt_in ? 0 : 1,
             lateRisk ? "high_risk_health" : pipeline.classification,
             lateRisk ?? "none",
@@ -582,7 +584,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           )
           .run();
 
-        for (const s of sources) {
+        for (const s of presented.sources) {
           const realSourceId =
             s.sourceId &&
             !s.sourceId.startsWith("bank:") &&
@@ -622,22 +624,11 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           .bind(nowIso(), chat.id)
           .run();
 
-        const citedKeys = new Set(
-          [...full.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? ""),
-        );
-        const citedSources = sources.filter((source, index, list) => {
-          if (!citedKeys.has(source.key)) return false;
-          const id = (source.url || source.title || source.key).trim();
-          return (
-            list.findIndex(
-              (item) => (item.url || item.title || item.key).trim() === id,
-            ) === index
-          );
-        });
         send({
           type: "done",
           abstained: false,
-          sources: citedSources.map((s) => ({
+          text: presented.text,
+          sources: presented.sources.map((s) => ({
             key: s.key,
             title: s.title,
             issuer: s.issuer,

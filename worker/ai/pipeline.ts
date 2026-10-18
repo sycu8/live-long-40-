@@ -428,19 +428,56 @@ function withDeadline<T>(
   });
 }
 
+/** After an all-dropped sentence, do not sit on the model until the 30s deadline. */
+const DROP_GRACE_MS = 1_200;
+
+function nextOrStop<T>(
+  promise: Promise<T>,
+  abort: AbortController,
+  deadline: number,
+  timeoutMs: number,
+): Promise<T> {
+  if (abort.signal.aborted) {
+    return Promise.reject(
+      abort.signal.reason instanceof Error ? abort.signal.reason : new Error("aborted"),
+    );
+  }
+  return new Promise((resolve, reject) => {
+    const onAbort = () => {
+      reject(
+        abort.signal.reason instanceof Error ? abort.signal.reason : new Error("aborted"),
+      );
+    };
+    abort.signal.addEventListener("abort", onAbort, { once: true });
+    withDeadline(promise, deadline, timeoutMs, abort).then(
+      (value) => {
+        abort.signal.removeEventListener("abort", onAbort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        abort.signal.removeEventListener("abort", onAbort);
+        reject(error instanceof Error ? error : new Error("aborted"));
+      },
+    );
+  });
+}
+
 async function readAiStream(
   source: AsyncIterable<unknown>,
-  deadline: number,
+  deadlineFor: () => number,
   timeoutMs: number,
   abort: AbortController,
   onChunk: (chunk: unknown) => void,
+  shouldStop?: () => boolean,
 ): Promise<void> {
   const iterator = source[Symbol.asyncIterator]();
   try {
-    while (true) {
-      const next = await withDeadline(iterator.next(), deadline, timeoutMs, abort);
-      if (next.done) return;
+    while (!shouldStop?.()) {
+      const deadline = deadlineFor();
+      const next = await nextOrStop(iterator.next(), abort, deadline, timeoutMs);
+      if (next.done || shouldStop?.()) return;
       onChunk(next.value);
+      if (shouldStop?.()) return;
     }
   } finally {
     // Do not await cancel: a hung pull() would keep return() pending past the deadline.
@@ -1120,6 +1157,9 @@ export async function runChatPipeline(
         controller.close();
       };
       let pending = "";
+      let dropped = 0;
+      let kept = 0;
+      let stopEarly = false;
       try {
         const timeoutMs = options?.aiTimeoutMs ?? CHAT_AI_TIMEOUT_MS;
         const deadline = Date.now() + timeoutMs;
@@ -1140,10 +1180,20 @@ export async function runChatPipeline(
         );
 
         let droppedAny = false;
+        let firstDropAt = 0;
+        const dropRatioExceeded = () => kept === 0 && dropped >= 2;
         const emitSentence = (sentence: string) => {
           const grounded = groundedSentence(sentence, sources, question);
           if (!grounded || isCitationOnly(grounded)) {
-            if (sentence.trim()) droppedAny = true;
+            if (sentence.trim()) {
+              droppedAny = true;
+              dropped += 1;
+              if (firstDropAt === 0) firstDropAt = Date.now();
+            }
+            if (dropRatioExceeded()) {
+              stopEarly = true;
+              if (!abort.signal.aborted) abort.abort(new Error("drop_ratio"));
+            }
             return;
           }
           if (
@@ -1151,6 +1201,7 @@ export async function runChatPipeline(
           ) {
             droppedAny = true;
           }
+          kept += 1;
           const text = emitted ? ` ${grounded}` : grounded;
           emitted += text;
           controller.enqueue(text);
@@ -1170,9 +1221,21 @@ export async function runChatPipeline(
         let cutoff: "error" | "length" | null = null;
         if (isAsyncIterable(response)) {
           const reader = createAiStreamReader({ maxTokens: WORKERS_AI_MAX_TOKENS });
-          await readAiStream(response, deadline, timeoutMs, abort, (chunk) => {
-            for (const text of reader.push(chunk)) pushText(text);
-          });
+          await readAiStream(
+            response,
+            () => {
+              if (kept === 0 && dropped >= 1 && firstDropAt > 0) {
+                return Math.min(deadline, firstDropAt + DROP_GRACE_MS);
+              }
+              return deadline;
+            },
+            timeoutMs,
+            abort,
+            (chunk) => {
+              for (const text of reader.push(chunk)) pushText(text);
+            },
+            () => stopEarly,
+          );
           for (const text of reader.flush()) pushText(text);
           cutoff = reader.cutoff;
         } else {
@@ -1185,30 +1248,33 @@ export async function runChatPipeline(
         const hadInvalid = answerHasInvalidCitations(modelText, sources);
         const fallback = buildExtractiveAnswer(sources);
         const canCache = !hadInvalid && !droppedAny;
-        const citedCutoff =
-          cutoff != null && cleaned !== "" && answerHasCitations(cleaned);
-        if (isCitationOnly(modelText) || isCitationOnly(cleaned)) {
-          await closeWithSafety(ABSTENTION_MESSAGE, false);
-          return;
-        }
+        const usable =
+          cleaned !== "" &&
+          !isCitationOnly(cleaned) &&
+          !isCitationOnly(modelText) &&
+          answerHasCitations(cleaned);
+        const citedCutoff = cutoff != null && usable;
         if (citedCutoff) {
           const notice = TRUNCATED_ANSWER_NOTICE;
           controller.enqueue(notice);
           await closeWithSafety(`${cleaned}${notice}`, false);
           return;
         }
-        if (cleaned.includes("chưa tìm thấy đủ nguồn")) {
-          await closeWithSafety(cleaned, false);
-          return;
-        }
-        if (!cleaned || !answerHasCitations(cleaned)) {
-          await enqueueFallback(cleaned, fallback);
+        if (!usable) {
+          // A relevant snippet is already in hand. Show it instead of a refusal
+          // or a citation-only line such as "Nguồn: [S1]".
+          if (sources.length > 0) await enqueueFallback("", fallback);
+          else await closeWithSafety(ABSTENTION_MESSAGE, false);
           return;
         }
 
         // The 115 line is appended here, and the saved text includes it.
         await closeWithSafety(cleaned, canCache);
       } catch (err) {
+        if (stopEarly || (kept === 0 && dropped > 0 && sources.length > 0)) {
+          await enqueueFallback("", buildExtractiveAnswer(sources));
+          return;
+        }
         if (!abort.signal.aborted) abort.abort(err);
         console.error(
           JSON.stringify({
@@ -1226,7 +1292,9 @@ export async function runChatPipeline(
         }
         const shown = isCitationOnly(emitted) ? "" : emitted.trim();
         if (isCitationOnly(modelText) || isCitationOnly(shown)) {
-          await closeWithSafety(ABSTENTION_MESSAGE, false);
+          if (sources.length > 0)
+            await enqueueFallback("", buildExtractiveAnswer(sources));
+          else await closeWithSafety(ABSTENTION_MESSAGE, false);
           return;
         }
         await enqueueFallback(shown, buildExtractiveAnswer(sources));
