@@ -27,7 +27,7 @@ const chestVerdict = {
 
 describe("emergency rules r7", () => {
   it("bumps the ruleset", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.0");
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.1");
   });
 
   it("treats a spoken muốn chết plan as self-harm, including across a comma", () => {
@@ -38,7 +38,8 @@ describe("emergency rules r7", () => {
     ]) {
       const result = evaluateHighRisk(question);
       expect(result.riskClass, question).toBe("self_harm");
-      expect(result.message, question).toContain("1900 1267");
+      expect(result.message, question).toMatch(/gọi 115/i);
+      expect(result.message, question).not.toContain("1900");
       expect(result.message, question).toContain("Nên làm:");
     }
   });
@@ -67,17 +68,19 @@ describe("emergency rules r7", () => {
     }
     const hit = evaluateHighRisk("toi muon tu tu");
     expect(hit.riskClass).toBe("self_harm");
-    expect(hit.message).toContain("1900 1267");
+    expect(hit.message).toMatch(/gọi 115/i);
+    expect(hit.message).not.toContain("1900");
   });
 
-  it("keeps intentional self-poisoning on the self-harm route with 1900", () => {
+  it("keeps intentional self-poisoning on the self-harm route with 115", () => {
     for (const question of [
       "Em định uống thuốc chuột",
       "Anh ấy tự đầu độc bằng thuốc ngủ để không dậy",
     ]) {
       const result = evaluateHighRisk(question);
       expect(result.riskClass, question).toBe("self_harm");
-      expect(result.message, question).toContain("1900 1267");
+      expect(result.message, question).toMatch(/gọi 115/i);
+      expect(result.message, question).not.toContain("1900");
       expect(result.message, question).not.toContain("Không tự gây nôn");
       expect(refineClassifierRisk(question, "poisoning"), question).toBe("self_harm");
     }
@@ -116,7 +119,8 @@ describe("emergency rules r7", () => {
     if (result.kind !== "abstain") return;
     expect(result.message).not.toContain("Nên làm");
     expect(result.message).toContain(GENTLE_SUPPORT_LINE);
-    expect(result.message).toContain("1900 1267");
+    expect(result.message).not.toContain("1900");
+    expect(GENTLE_SUPPORT_LINE).toContain("115");
     expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
   });
 
@@ -214,7 +218,8 @@ describe("emergency rules r7", () => {
     expect(result.kind).toBe("high_risk");
     if (result.kind !== "high_risk") return;
     expect(result.riskClass).toBe("self_harm");
-    expect(result.message).toContain("1900 1267");
+    expect(result.message).toMatch(/gọi 115/i);
+    expect(result.message).not.toContain("1900");
     expect(calls).toBe(0);
   });
 

@@ -4,7 +4,22 @@ import type { Env } from "../env";
 import { WORKERS_AI_TEXT_MODEL } from "./models";
 import { readWorkersAiText, runWorkersAi } from "./run";
 
-export const ACUTE_CLASSIFIER_TIMEOUT_MS = 2_500;
+export const ACUTE_CLASSIFIER_TIMEOUT_MS = 4_000;
+/** First model attempt. A useful remainder of the budget gets one timeout retry. */
+const ACUTE_CLASSIFIER_ATTEMPT_MS = 2_500;
+const ACUTE_CLASSIFIER_TIMEOUT_RETRY_MS = 800;
+
+export function acuteClassifierAttemptPlan(totalMs: number): {
+  firstMs: number;
+  retryAfterTimeout: boolean;
+} {
+  const budget = Math.max(0, totalMs);
+  const firstMs = Math.min(ACUTE_CLASSIFIER_ATTEMPT_MS, budget);
+  return {
+    firstMs,
+    retryAfterTimeout: budget - firstMs >= ACUTE_CLASSIFIER_TIMEOUT_RETRY_MS,
+  };
+}
 export const ACUTE_CLASSIFIER_MAX_TOKENS = 180;
 /** Short on purpose. The key is a hash, and the value is only the verdict. */
 export const ACUTE_CLASSIFIER_CACHE_TTL_SECONDS = 15 * 60;
@@ -302,9 +317,10 @@ export async function classifyAcuteRisk(
     options?.timeoutMs ?? ACUTE_CLASSIFIER_TIMEOUT_MS,
   );
   const deadline = Date.now() + timeoutMs;
-  const first = await readModel(env, question, deadline - Date.now());
-  if ("fail" in first && (first.fail === "timeout" || first.fail === "unsupported")) {
-    return { status: "fail", reason: first.fail };
+  const plan = acuteClassifierAttemptPlan(deadline - Date.now());
+  const first = await readModel(env, question, plan.firstMs);
+  if ("fail" in first && first.fail === "unsupported") {
+    return { status: "fail", reason: "unsupported" };
   }
   const parsed = "raw" in first ? parseAcuteClassifierOutput(first.raw) : null;
   if (parsed) {
@@ -312,9 +328,11 @@ export async function classifyAcuteRisk(
     return { status: "ok", verdict: parsed, cached: false };
   }
 
+  const failReason = "fail" in first ? first.fail : "parse";
   const remaining = deadline - Date.now();
-  if (remaining < 50) {
-    return { status: "fail", reason: "fail" in first ? first.fail : "parse" };
+  const minRemaining = failReason === "timeout" ? ACUTE_CLASSIFIER_TIMEOUT_RETRY_MS : 50;
+  if (remaining < minRemaining) {
+    return { status: "fail", reason: failReason };
   }
   const second = await readModel(env, question, remaining);
   if ("fail" in second) return { status: "fail", reason: second.fail };

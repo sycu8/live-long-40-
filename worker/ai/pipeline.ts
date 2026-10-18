@@ -393,7 +393,7 @@ export function appendAcuteSafetyNet(
   let out = text;
   if (
     !figurative &&
-    !out.includes("1900 1267") &&
+    !out.includes(GENTLE_SUPPORT_LINE) &&
     (selfHarmLooksPastStable(question) ||
       selfHarmLooksInformational(question) ||
       (unsure && selfHarmLooksAmbiguous(question)))
@@ -425,7 +425,8 @@ function alertFromLayer(
   question: string,
   layer: AcuteLayerResult | null,
 ): Exclude<RiskClass, "none"> | null {
-  if (layer?.status === "fail" && layer.reason === "timeout") {
+  // A failed classifier, including a timeout, defers to the rules screen.
+  if (layer?.status === "fail") {
     const rules = evaluateHighRisk(question);
     if (!rules.matched || rules.riskClass === "none") return null;
     return rules.riskClass;

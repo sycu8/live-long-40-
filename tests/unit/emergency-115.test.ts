@@ -222,7 +222,8 @@ describe("QA emergency cases", () => {
       expect(result.matched, question).toBe(false);
     }
     expectEmergency("chán đời, tôi muốn chết", "self_harm");
-    expect(evaluateHighRisk("chán đời, tôi muốn chết").message).toContain("1900 1267");
+    expect(evaluateHighRisk("chán đời, tôi muốn chết").message).toMatch(/gọi 115/i);
+    expect(evaluateHighRisk("chán đời, tôi muốn chết").message).not.toContain("1900");
   });
 });
 

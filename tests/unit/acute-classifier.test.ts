@@ -10,6 +10,7 @@ import {
 import {
   ACUTE_CLASSIFIER_CACHE_TTL_SECONDS,
   ACUTE_CLASSIFIER_TIMEOUT_MS,
+  acuteClassifierAttemptPlan,
   acuteClassifierCacheKey,
   classifyAcuteRisk,
   clearAcuteClassifierCache,
@@ -102,7 +103,8 @@ describe("acute classifier JSON", () => {
     expect(result.kind).toBe("high_risk");
     if (result.kind !== "high_risk") return;
     expect(result.riskClass).toBe("self_harm");
-    expect(result.message).toContain("1900 1267");
+    expect(result.message).toMatch(/gọi 115/i);
+    expect(result.message).not.toContain("1900");
     expect(calls).toBe(0);
     expect(performance.now() - started).toBeLessThan(400);
   });
@@ -218,7 +220,7 @@ describe("acute classifier JSON", () => {
     expect(first).toEqual({ status: "ok", verdict: NONE, cached: false });
     expect(second).toEqual({ status: "ok", verdict: NONE, cached: true });
     expect(calls).toBe(1);
-    expect(ACUTE_CLASSIFIER_TIMEOUT_MS).toBeLessThanOrEqual(2500);
+    expect(ACUTE_CLASSIFIER_TIMEOUT_MS).toBe(4000);
   });
 
   it("fails immediately when Workers AI is not bound", async () => {
@@ -253,7 +255,8 @@ describe("acute classifier JSON", () => {
     expect(result.kind).toBe("high_risk");
     if (result.kind !== "high_risk") return;
     expect(result.riskClass).toBe("self_harm");
-    expect(result.message).toContain("1900 1267");
+    expect(result.message).toMatch(/gọi 115/i);
+    expect(result.message).not.toContain("1900");
     expect(result.message).toContain("Nên làm");
     expect(result.message).not.toContain(SYMPTOM_SAFETY_LINE);
   });
@@ -333,6 +336,32 @@ describe("acute classifier JSON", () => {
     });
     expect(timed).toEqual({ status: "fail", reason: "timeout" });
     expect(hung).toBe(1);
+    expect(acuteClassifierAttemptPlan(40)).toEqual({
+      firstMs: 40,
+      retryAfterTimeout: false,
+    });
+    expect(acuteClassifierAttemptPlan(4000)).toEqual({
+      firstMs: 2500,
+      retryAfterTimeout: true,
+    });
+  });
+
+  it("retries once when a timeout still leaves budget", async () => {
+    let calls = 0;
+    const env = {
+      AI: {
+        async run() {
+          calls += 1;
+          if (calls === 1) throw new Error("acute_classifier_timeout");
+          return { response: JSON.stringify(NONE) };
+        },
+      },
+    } as unknown as Env;
+    const parsed = await classifyAcuteRisk(env, "Người già nên uống nước lọc không?", {
+      timeoutMs: 4000,
+    });
+    expect(parsed).toEqual({ status: "ok", verdict: NONE, cached: false });
+    expect(calls).toBe(2);
   });
 
   it("does not retry when the model rejects JSON schema", async () => {
@@ -583,7 +612,8 @@ describe("acute classifier JSON", () => {
     expect(result.kind).toBe("abstain");
     if (result.kind !== "abstain") return;
     expect(result.message).toContain(GENTLE_SUPPORT_LINE);
-    expect(result.message).toContain("1900 1267");
+    expect(result.message).not.toContain("1900");
+    expect(GENTLE_SUPPORT_LINE).toContain("115");
     expect(result.message).not.toContain("Nên làm");
     expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
   });
@@ -592,7 +622,8 @@ describe("acute classifier JSON", () => {
     const question = "Anh ấy uống hết thuốc ngủ để chết";
     const result = evaluateHighRisk(question);
     expect(result.riskClass).toBe("self_harm");
-    expect(result.message).toContain("1900 1267");
+    expect(result.message).toMatch(/gọi 115/i);
+    expect(result.message).not.toContain("1900");
     expect(result.message).toContain("Nên làm");
   });
 

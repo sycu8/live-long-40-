@@ -33,9 +33,13 @@ Rules / Quy tắc:
   Cố ý uống thuốc chuột, thuốc trừ sâu, hóa chất, hoặc thuốc ngủ để chết là self_harm. Uống nhầm vẫn là poisoning.
 - Negation covers the list that follows, including items joined by hay or hoặc. A comma, nhưng, or mà starts a new clause that is not negated.
   Phủ định gồm cả các mục nối bằng hay hoặc bằng hoặc. Dấu phẩy, nhưng và mà bắt đầu một vế mới.
-- A seizure that has already stopped is category none and acute false.
-  Cơn co giật đã hết là category none, acute false.
-- When trouble breathing, a seizure, or anaphylaxis appears together with poison, fainting, or chest words, choose breathing, seizure, or allergy. Those outrank poisoning and unconscious. Chest pain with sweating, or pain spreading into the arm, stays chest.
+- A seizure that has already stopped is category none and acute false, in either word order. "hết co giật" and "co giật đã hết" are the same. An ongoing seizure is still seizure.
+  Cơn co giật đã hết, hoặc hết co giật, là category none, acute false. Cơn đang giật vẫn là seizure.
+- When the person intends to die, category is self_harm even if the message also names poison, fainting, or chest pain. A symptom idiom such as "đau muốn chết" stays figurative and is not self_harm.
+  Khi có ý định chết, chọn self_harm dù câu có nhắc thuốc độc, ngất, hoặc đau ngực. Thành ngữ đau muốn chết vẫn là figurative.
+- The only emergency number is 115. Do not name any other hotline.
+  Chỉ nhắc số 115. Không nêu số điện thoại hỗ trợ nào khác.
+- When trouble breathing, a seizure, or anaphylaxis appears together with poison, fainting, or chest words, choose breathing, seizure, or allergy. Those outrank poisoning and unconscious. Chest pain with sweating, or pain spreading into the arm, stays chest. A real self-harm intent still outranks those.
   Khó thở nặng, co giật, hoặc phản vệ đi cùng ngộ độc, ngất, hoặc tức ngực: chọn breathing, seizure, hoặc allergy. Đau ngực kèm vã mồ hôi hoặc lan ra tay vẫn là chest.
 - Prevention or general information about suicide, with no first-person plan, is category none and acute false. Examples of the class: how to prevent it, what warning signs look like. Do not treat that as a crisis.
   Hỏi phòng ngừa hoặc dấu hiệu chung về tự hại, không có kế hoạch của chính người nói: category none, acute false.
