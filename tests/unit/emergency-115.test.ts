@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { ANSWER_BANK } from "../../shared/content/answer-bank";
 import { ABSTENTION_MESSAGE } from "../../shared/constants/product";
 import { classifyQuestion } from "../../shared/rules/classification";
-import { evaluateHighRisk, type RiskClass } from "../../shared/rules/safety";
+import {
+  evaluateHighRisk,
+  isRedFlagAdjacent,
+  type RiskClass,
+} from "../../shared/rules/safety";
+import { PREVENTION_26, QA_RED_FLAG_CASES, SUFFIX_RED_FLAGS } from "./emergency-qa-cases";
 import { runChatPipeline } from "../../worker/ai/pipeline";
 import type { Env } from "../../worker/env";
 
@@ -142,6 +147,71 @@ describe("emergency 115 routing", () => {
     expect(result.kind).toBe("abstain");
     if (result.kind !== "abstain") return;
     expect(result.message).toContain("chưa tìm thấy đủ nguồn");
+    expect(result.message).not.toMatch(/115/);
+  });
+
+  it("keeps gọi 115 when a red flag asks phải làm sao", () => {
+    expectEmergency("đau ngực dữ dội lan ra cánh tay trái, phải làm sao?", "chest_pain");
+  });
+
+  it("sends QA's 133 red-flag cases to 115", () => {
+    expect(QA_RED_FLAG_CASES).toHaveLength(133);
+    for (const question of QA_RED_FLAG_CASES) expectEmergency(question);
+  });
+
+  it("still sends 115 after the phải làm sao suffix on 59 variants", () => {
+    expect(SUFFIX_RED_FLAGS).toHaveLength(59);
+    for (const question of SUFFIX_RED_FLAGS) {
+      expectEmergency(question);
+      expectEmergency(`${question.replace(/\?$/, "")}, phải làm sao?`);
+    }
+  });
+
+  it("does not put the suicide message on the 26 prevention cases", () => {
+    expect(PREVENTION_26).toHaveLength(26);
+    for (const question of PREVENTION_26) {
+      const result = evaluateHighRisk(question);
+      expect(result.matched, question).toBe(false);
+      expect(result.riskClass, question).not.toBe("self_harm");
+      expect(result.message, question).not.toContain("1900 1267");
+      expect(result.message, question).not.toMatch(/tự làm hại|tự tử/i);
+    }
+  });
+
+  it("classifies the reported mix-ups", () => {
+    expectEmergency("nói không thiết sống nữa", "self_harm");
+    expectEmergency("Bố bị hóc xương, không nói được", "choking");
+    expectEmergency("Đột nhiên nói không thành câu và méo miệng", "stroke");
+    expect(evaluateHighRisk("nói không thành câu").matched).toBe(false);
+    expect(evaluateHighRisk("nói không thành câu").riskClass).not.toBe("stroke");
+    expect(evaluateHighRisk("tập luyện từ từ").riskClass).not.toBe("self_harm");
+    expect(evaluateHighRisk("không muốn sống chung").matched).toBe(false);
+    expectEmergency("Mẹ hạ đường huyết, lú lẫn và vã mồ hôi", "low_blood_sugar");
+    expectEmergency("Dị ứng nặng, phù môi và khó thở", "severe_allergy");
+    expectEmergency("Bà vừa té, đau hông, không đứng dậy được", "fall_emergency");
+    expectEmergency("Bố bị ngất giữa đường", "unconscious");
+    expectEmergency("Bị xỉu và không tỉnh", "unconscious");
+    expectEmergency("Bố nôn ra máu", "bleeding");
+    expectEmergency("Mẹ đi ngoài ra máu", "bleeding");
+    expectEmergency("Thở không nổi, môi tím", "breathing");
+    expectEmergency("Nhói ngực bên trái", "chest_pain");
+    expectEmergency("Đột nhiên nói lắp và mặt lệch", "stroke");
+    expectEmergency("Uống nhầm thuốc trừ sâu", "poisoning");
+    expectEmergency("Uống cả vỉ thuốc", "poisoning");
+    expectEmergency("Tôi chán sống và muốn kết thúc tất cả", "self_harm");
+    expectEmergency("Không thiết sống nữa", "self_harm");
+    expectEmergency("Muốn đi theo mẹ cho xong", "self_harm");
+  });
+
+  it("adds a 115 line when a red-flag-adjacent question has no sources", async () => {
+    const question = "Dấu hiệu đau ngực là gì?";
+    expect(evaluateHighRisk(question).matched).toBe(false);
+    expect(isRedFlagAdjacent(question)).toBe(true);
+    const result = await runChatPipeline({} as Env, question);
+    expect(result.kind).toBe("abstain");
+    if (result.kind !== "abstain") return;
+    expect(result.message).toContain("chưa tìm thấy đủ nguồn");
+    expect(result.message).toMatch(/gọi 115/i);
   });
 
   it("uses gọi 115 in the prepared falls answer", () => {

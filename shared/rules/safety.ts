@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.1.0";
+export const SAFETY_RULESET_VERSION = "v1.2.0";
 
 export type RiskClass =
   | "chest_pain"
@@ -14,6 +14,8 @@ export type RiskClass =
   | "seizure"
   | "self_harm"
   | "poisoning"
+  | "low_blood_sugar"
+  | "severe_allergy"
   | "none";
 
 export type SafetyMatch = {
@@ -24,46 +26,75 @@ export type SafetyMatch = {
 };
 
 /**
- * NFC, lowercase, diacritics stripped. Patterns below are written once
- * against this form so accented and unaccented questions share a match.
+ * NFC, lowercase, diacritics stripped. Symptom patterns are written once
+ * against this form. Self-harm, "hóc", and "té" stay on the accented text
+ * when the question has tones, because folding collides with "từ từ", "học", and "tê".
  */
 export function normalizeSafetyText(question: string): string {
   return foldVietnamese(question.normalize("NFC")).replace(/\s+/g, " ").trim();
 }
 
-const PREVENTION =
-  /\b(phong|ngan ngua|lam sao|cach nao|dinh ky|man tinh|lau nam|nhieu nam|thuong xuyen|hay bi|tu nho|la gi|tim hieu|kham dinh ky)\b/;
+const TONE = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
 
-const HAPPENING_NOW =
-  /\b(dang|vua|hom nay|luc nay|bay gio|nua tieng|may phut|dot ngot|dot nhien|tu nua|tu sang|tu chieu|ngay lap tuc)\b/;
+/** Explicit prevention or past markers. "làm sao / là gì / hay bị" are not in this list. */
+const PAST_OR_PREVENTION =
+  /\b(ngan ngua|dau hieu|nam ngoai|tung bi|lau nam|man tinh|on dinh|dinh ky|gang suc|tim hieu|tu nho|nhieu nam)\b/;
+
+/** A real crisis word. Prevention wording must not hide these. */
+const ACUTE =
+  /\b(du doi|va mo hoi|lan ra|khong tho duoc|dot nhien|khong dung day|khong tu dung|khong day duoc|tho khong noi|moi tim)\b/;
+
+function accentedText(question: string): string {
+  return question.normalize("NFC").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function hasTone(question: string): boolean {
+  return TONE.test(question.normalize("NFC"));
+}
+
+function hasPhrase(text: string, phrase: string): boolean {
+  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|[^\\p{L}\\p{N}_])${escaped}(?=$|[^\\p{L}\\p{N}_])`, "iu").test(
+    text,
+  );
+}
+
+/** "phòng ngã / đề phòng / cách phòng đột quỵ", not "phòng khách" or "phòng khám". */
+function hasPreventionPhong(text: string): boolean {
+  return /\b((?:de|cach)\s+phong|phong\s+(?:nga|benh|ngua|chong|tranh|dot|di|te|ung))\b/.test(
+    text,
+  );
+}
+
+function definitionOnly(text: string): boolean {
+  if (!/\bla gi\b/.test(text)) return false;
+  return !/\b(dang|vua|bi|hom nay|luc nay|bay gio|nua tieng|tu nay|tu sang|ngay lap tuc)\b/.test(
+    text,
+  );
+}
+
+function preventionOnly(text: string): boolean {
+  if (ACUTE.test(text)) return false;
+  if (PAST_OR_PREVENTION.test(text)) return true;
+  if (hasPreventionPhong(text)) return true;
+  if (definitionOnly(text)) return true;
+  return false;
+}
 
 function mildFallOnly(text: string): boolean {
+  if (ACUTE.test(text)) return false;
   const fell = /\b(bi nga|vua nga|nga)\b/.test(text);
   const mild = /\b(nhe|van tinh|tinh tao)\b/.test(text);
   const red =
-    /\b(te|liet|khong cu dong|khong nhac|dap dau|buon non|lo mo|lu lan|chay mau|bat tinh|kho tho|mat y thuc)\b/.test(
+    /\b(te|liet|khong cu dong|khong nhac|khong dung|dap dau|buon non|lo mo|lu lan|chay mau|bat tinh|kho tho|mat y thuc|dau hong)\b/.test(
       text,
     );
   return fell && mild && !red;
 }
 
-/** Education or prevention wording, with no sign the problem is happening now. */
-function preventionOnly(text: string): boolean {
-  return PREVENTION.test(text) && !HAPPENING_NOW.test(text);
-}
-
-function hasActualFall(text: string): boolean {
-  if (
-    /\bphong nga\b/.test(text) &&
-    !/\b(bi nga|vua nga|moi nga|nga xong|nga dap|nga cau|nga xuong|sau khi nga)\b/.test(
-      text,
-    )
-  ) {
-    return false;
-  }
-  return /\b(bi nga|vua nga|moi nga|nga cau|nga o cau|nga xuong|nga dap|sau khi nga|nga xong)\b/.test(
-    text,
-  );
+/** "té" only. Folded "te" is also "tê", so unaccented text cannot use this word. */
+function mentionsTe(question: string, accented: string): boolean {
+  return hasTone(question) && hasPhrase(accented, "té");
 }
 
 const CALL =
@@ -156,121 +187,271 @@ const MESSAGES: Record<Exclude<RiskClass, "none">, string> = {
     ],
     ["Không tự gây nôn.", "Không tự cho uống thêm sữa, nước hay thuốc."],
   ),
+  low_blood_sugar: advice(
+    [
+      "Gọi 115 ngay.",
+      "Nếu người bệnh còn tỉnh và nuốt được, cho uống nước ngọt. Làm theo hướng dẫn của tổng đài 115.",
+    ],
+    [
+      "Không đổ nước hoặc nhét thức ăn vào miệng nếu lơ mơ hoặc không nuốt được.",
+      "Không bỏ mặc một mình.",
+    ],
+  ),
+  severe_allergy: advice(
+    [
+      "Gọi 115 ngay.",
+      "Ngừng tiếp xúc với thứ vừa gây phản ứng. Nếu đã có bút epinephrine và biết cách dùng, dùng theo hướng dẫn sẵn có rồi nói với tổng đài 115.",
+    ],
+    ["Không cho thêm thức ăn, thuốc khác, hoặc nước nếu đang khó thở."],
+  ),
 };
 
-function hit(text: string, pattern: RegExp): boolean {
-  return pattern.test(text);
+function cantStand(text: string): boolean {
+  return (
+    /\bkhong\s+(?:tu\s+|the\s+)?dung\s+(?:day|len)(?:\s+duoc)?\b/.test(text) ||
+    /\bkhong\s+(?:ngoi\s+)?day\s+duoc\b/.test(text)
+  );
 }
 
-function matchSymptoms(text: string): Exclude<RiskClass, "none"> | null {
-  if (hit(text, /(?:dau|tuc|that|nong|siet)\s+nguc/)) {
-    return "chest_pain";
+function hasActualFall(text: string): boolean {
+  if (
+    /\bphong nga\b/.test(text) &&
+    !/\b(bi nga|vua nga|moi nga|nga xong|nga dap|nga cau|nga xuong|sau khi nga)\b/.test(
+      text,
+    )
+  ) {
+    return false;
+  }
+  return /\b(bi nga|vua nga|moi nga|nga cau|nga o cau|nga xuong|nga dap|sau khi nga|nga xong)\b/.test(
+    text,
+  );
+}
+
+function matchSelfHarm(question: string, accented: string, folded: string): boolean {
+  const follow = hasTone(question)
+    ? /(?:^|[^\p{L}\p{N}_])đi theo[\s\S]{0,40}?cho xong/u
+    : /\bdi theo[\s\S]{0,40}?cho xong/;
+  if (follow.test(hasTone(question) ? accented : folded)) return true;
+
+  if (hasTone(question)) {
+    const phrases = [
+      "tự tử",
+      "tự sát",
+      "tự làm hại",
+      "tự gây thương",
+      "chán sống",
+      "kết thúc tất cả",
+    ];
+    if (phrases.some((phrase) => hasPhrase(accented, phrase))) return true;
+    if (hasPhrase(accented, "chán đời")) return true;
+    if (/(?:^|[^\p{L}\p{N}_])không(?:\s+còn)?\s+thiết sống/u.test(accented)) return true;
+    if (hasPhrase(accented, "muốn chết") && !hasPhrase(accented, "không muốn chết")) {
+      return true;
+    }
+    if (
+      hasPhrase(accented, "không muốn sống") &&
+      !/\bkhông muốn sống\s+chung\b/u.test(accented)
+    ) {
+      return true;
+    }
+    return false;
   }
 
+  const foldedPhrases = [
+    "tu tu",
+    "tu sat",
+    "tu lam hai",
+    "tu gay thuong",
+    "chan song",
+    "ket thuc tat ca",
+  ];
+  if (foldedPhrases.some((phrase) => hasPhrase(folded, phrase))) return true;
+  if (/\bkhong(?:\s+con)?\s+thiet song\b/.test(folded)) return true;
+  if (hasPhrase(folded, "muon chet") && !hasPhrase(folded, "khong muon chet"))
+    return true;
   if (
-    hit(text, /kho\s+tho/) &&
-    hit(
-      text,
-      /nang|du\s+doi|khong\s+tho\s+duoc|ngat|mo\s+hoi|dot\s+nhien|nua\s+tieng|\bdang\b/,
+    hasPhrase(folded, "khong muon song") &&
+    !/\bkhong muon song\s+chung\b/.test(folded)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function matchChoking(question: string, accented: string, folded: string): boolean {
+  if (hasTone(question) && (hasPhrase(accented, "hóc") || hasPhrase(accented, "sặc"))) {
+    return true;
+  }
+  if (
+    !hasTone(question) &&
+    /\b(bi hoc|dang hoc|hoc xuong|hoc di vat|hoc thuc|hoc com|hoc keo|hoc phai)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  return /\b(bi nghen|dang nghen|nghen dac|mac di vat|mac xuong|mac thuc an|hac xuong|bi hac)\b/.test(
+    folded,
+  );
+}
+
+function matchStroke(folded: string): boolean {
+  if (
+    /\b(meo mieng|mieng meo|meo mom|mom meo|cuoi meo|liet mat|noi ngong|kho noi|noi kho|khong noi duoc|noi khong ro|dot quy|noi lap|mat lech|lech mieng|meo mat|noi do|noi liu|liu luoi)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(yeu|liet)\s+(nua|mot ben|nua nguoi)\b/.test(folded) ||
+    /\bte liet\b/.test(folded) ||
+    /\b(tay|chan)\s+(?:trai|phai|ben\s+)?khong\s+nhac\b/.test(folded) ||
+    /\bkhong\s+nhac(?:\s+(?:len|noi|duoc)){0,2}\s+(?:tay|chan)\b/.test(folded) ||
+    /\bkhong\s+nhac\s+len\s+duoc\b/.test(folded) ||
+    (/\bkhong\s+cu\s+dong(?:\s+duoc)?\b/.test(folded) &&
+      /\b(nua nguoi|mot ben|ben trai|ben phai)\b/.test(folded))
+  ) {
+    return true;
+  }
+  if (
+    /\bte\b.{0,48}\b(mot ben|nua nguoi|ben trai|ben phai)\b/.test(folded) ||
+    /\b(mot ben|nua nguoi|ben trai|ben phai)\b.{0,48}\bte\b/.test(folded)
+  ) {
+    return true;
+  }
+  // "nói không…" is not "nói khó". Require a stroke context for this phrasing.
+  if (/\bnoi khong thanh cau\b/.test(folded)) {
+    return /\b(dot nhien|dot ngot|meo mieng|mat lech|meo mat|liet|mot ben|nua nguoi|ben trai|ben phai|khong nhac|yeu nua|yeu mot)\b/.test(
+      folded,
+    );
+  }
+  return false;
+}
+
+function matchGated(
+  question: string,
+  accented: string,
+  folded: string,
+): Exclude<RiskClass, "none"> | null {
+  if (matchChoking(question, accented, folded)) return "choking";
+  if (/\b(co giat|len con co giat|len con dong kinh|sui bot mep)\b/.test(folded)) {
+    return "seizure";
+  }
+  if (
+    /\b(ngo doc|uong nham|qua lieu|overdose|thuoc tru sau|thuoc diet co|thuoc chuot|thuoc diet con trung|ca vi thuoc|uong ca vi|uong het vi|nuot ca vi|het vi thuoc)\b/.test(
+      folded,
+    )
+  ) {
+    return "poisoning";
+  }
+  if (/\bsoc phan ve\b/.test(folded) || /\bdi ung nang\b/.test(folded)) {
+    return "severe_allergy";
+  }
+  const swelling = /\b(phu mat|phu moi|phu hong|sung hong|noi me|phat ban)\b/.test(
+    folded,
+  );
+  const airway = /\b(kho tho|khong tho duoc|tho khong noi)\b/.test(folded);
+  const allergen = /\b(di ung|ong dot|hai san|an tom)\b/.test(folded);
+  if ((swelling && airway) || (allergen && (swelling || airway))) return "severe_allergy";
+  if (
+    /\b(ha duong huyet|ha duong mau|duong huyet thap|tut duong huyet|ha duong)\b/.test(
+      folded,
+    ) &&
+    /\b(lu lan|lo mo|khong tinh|bat tinh|hon me|noi lung tung|khong nhan ra|mo hoi|ngat|xiu|run)\b/.test(
+      folded,
+    )
+  ) {
+    return "low_blood_sugar";
+  }
+  if (
+    /\b(tho khong noi|khong tho noi|moi tim|tim moi|tim tai|ngat tho|khong tho duoc)\b/.test(
+      folded,
     )
   ) {
     return "breathing";
   }
-  if (hit(text, /khong\s+tho\s+duoc|ngat\s+tho/)) {
+  if (
+    /\bkho tho\b/.test(folded) &&
+    /\b(nang|du doi|ngat|mo hoi|dot nhien|nua tieng|dang)\b/.test(folded)
+  ) {
     return "breathing";
   }
 
-  if (
-    hit(
-      text,
-      /meo\s+mieng|noi\s+ngong|kho\s+noi|noi\s+kho|khong\s+noi\s+duoc|noi\s+khong\s+ro|dot\s+quy/,
-    ) ||
-    hit(
-      text,
-      /yeu\s+(nua|mot\s+ben|nua\s+nguoi)|liet\s+(nua|mot\s+ben|nua\s+nguoi)|te\s+liet/,
-    ) ||
-    hit(text, /(tay|chan)\s+khong\s+nhac|khong\s+nhac\s+(tay|chan|len)/) ||
-    hit(text, /\bte\b.{0,48}\b(mot\s+ben|nua\s+nguoi|ben\s+trai|ben\s+phai)\b/) ||
-    hit(text, /\b(mot\s+ben|nua\s+nguoi|ben\s+trai|ben\s+phai)\b.{0,48}\bte\b/)
-  ) {
-    return "stroke";
-  }
+  const headTrauma = /\b(dap dau|va dau|dau bi dap|bi dap dau)\b/.test(folded);
+  const headSymptoms =
+    /\b(lu lan|buon non|non|lo mo|hon me|khong tinh|mat y thuc)\b/.test(folded);
+  if (headTrauma && headSymptoms) return "head_injury";
 
-  const headTrauma = hit(text, /dap\s+dau|va\s+dau|dau\s+bi\s+dap|bi\s+dap\s+dau/);
-  const headSymptoms = hit(
-    text,
-    /lu\s+lan|buon\s+non|\bnon\b|lo\s+mo|hon\s+me|khong\s+tinh/,
-  );
-  if (
-    (headTrauma && headSymptoms) ||
-    (hasActualFall(text) && headTrauma && headSymptoms)
-  ) {
-    return "head_injury";
+  if (/\b(bat tinh|mat y thuc|khong danh thuc|khong tinh lai)\b/.test(folded)) {
+    return "unconscious";
   }
-  if (hasActualFall(text) && headSymptoms && hit(text, /\bdau\b/)) {
-    return "head_injury";
+  if (hasTone(question) && (hasPhrase(accented, "ngất") || hasPhrase(accented, "xỉu"))) {
+    return "unconscious";
   }
+  if (!hasTone(question) && /\bxiu\b/.test(folded)) return "unconscious";
+  if (!hasTone(question) && /\bngat\b/.test(folded) && !/\bngat tho\b/.test(folded)) {
+    return "unconscious";
+  }
+  if (/\bngat xiu\b/.test(folded)) return "unconscious";
+  if (/\bkhong tinh\b/.test(folded) && !/\bvan tinh\b/.test(folded)) return "unconscious";
 
+  if (/\b(?:dau|tuc|that|nong|siet|nhoi|nang)\s+nguc\b/.test(folded)) return "chest_pain";
+
+  if (matchStroke(folded)) return "stroke";
+
+  const fell = hasActualFall(folded) || mentionsTe(question, accented);
+  const hip = /\b(dau hong|dau khop hang|dau xuong hong|dau xuong chau)\b/.test(folded);
+  if (cantStand(folded)) return "fall_emergency";
+  if (fell && hip) return "fall_emergency";
   if (
-    hasActualFall(text) &&
-    hit(
-      text,
-      /khong\s+cu\s+dong|khong\s+nhac|\bte\b|\bliet\b|dap\s+dau|lu\s+lan|lo\s+mo|buon\s+non|mat\s+y\s+thuc/,
+    fell &&
+    /\b(khong cu dong|khong nhac|te|liet|dap dau|lu lan|lo mo|buon non|mat y thuc)\b/.test(
+      folded,
     )
   ) {
     return "fall_emergency";
   }
 
-  return null;
-}
-
-/** Signs that stay emergencies even inside a “how do I prevent” sentence. */
-function matchAlways(text: string): Exclude<RiskClass, "none"> | null {
   if (
-    hit(
-      text,
-      /muon\s+(chet|tu\s+tu\b)|(?<![a-z])tu\s+tu\b|(?<![a-z])tu\s+sat\b|(?<![a-z])tu\s+lam\s+hai|(?<![a-z])khong\s+muon\s+song|(?<![a-z])tu\s+gay\s+thuong/,
-    )
-  ) {
-    return "self_harm";
-  }
-  if (hit(text, /bat\s+tinh|mat\s+y\s+thuc|khong\s+danh\s+thuc|khong\s+tinh\s+lai/)) {
-    return "unconscious";
-  }
-  if (
-    hit(
-      text,
-      /chay\s+mau\s+(nhieu|khong\s+cam|khong\s+dung|o\s+at)|xuat\s+huyet\s+(nang|nhieu)|mau\s+chay\s+(nhieu|khong\s+cam)/,
+    /\b(non ra mau|oi ra mau|ho ra mau|di ngoai ra mau|ia ra mau|phan ra mau|dai ra mau|dai tien ra mau|tieu chay ra mau|phan den|chay mau nhieu|chay mau khong cam|chay mau khong dung|chay mau o at|xuat huyet nang|xuat huyet nhieu|mau chay nhieu|mau chay khong cam)\b/.test(
+      folded,
     )
   ) {
     return "bleeding";
   }
+
   return null;
 }
 
-function matchAcuteUnlessPrevention(text: string): Exclude<RiskClass, "none"> | null {
-  if (
-    hit(
-      text,
-      /bi\s+nghen|dang\s+nghen|bi\s+hac|mac\s+(di\s+vat|xuong|thuc\s+an)|nghen\s+dac|hac\s+xuong/,
-    )
-  ) {
-    return "choking";
-  }
-  if (hit(text, /co\s+giat|len\s+con\s+(co\s+giat|dong\s+kinh)/)) {
-    return "seizure";
-  }
-  if (hit(text, /ngat\s+xiu/)) return "unconscious";
-  if (hit(text, /ngo\s+doc|uong\s+nham|qua\s+lieu|overdose/)) return "poisoning";
-  return null;
+export const RED_FLAG_ADJACENT_LINE =
+  "Nếu các dấu hiệu này đang xảy ra, hãy gọi 115 ngay.";
+
+const ADJACENT_STEM =
+  /\b(dau nguc|tuc nguc|that nguc|nhoi nguc|nang nguc|siet nguc|kho tho|tho khong noi|khong tho duoc|ngat tho|meo mieng|noi ngong|noi lap|mat lech|noi khong thanh cau|dot quy|chay mau|non ra mau|di ngoai ra mau|co giat|bat tinh|ngat xiu|dap dau|khong dung day|dau hong|dau khop hang|di ung nang|soc phan ve|ha duong|duong huyet thap|tut duong|thuoc tru sau|ca vi thuoc|uong ca vi|moi tim)\b/;
+
+/** Symptom wording that missed the full emergency template. Abstention still names 115. */
+export function isRedFlagAdjacent(question: string): boolean {
+  const folded = normalizeSafetyText(question);
+  if (ADJACENT_STEM.test(folded)) return true;
+  if (!hasTone(question)) return false;
+  const accented = accentedText(question);
+  return (
+    hasPhrase(accented, "hóc") ||
+    hasPhrase(accented, "xỉu") ||
+    hasPhrase(accented, "ngất")
+  );
 }
 
 export function evaluateHighRisk(question: string): SafetyMatch {
-  const text = normalizeSafetyText(question);
-  const blocked = mildFallOnly(text) || preventionOnly(text);
-  const riskClass =
-    matchAlways(text) ??
-    (blocked ? null : (matchAcuteUnlessPrevention(text) ?? matchSymptoms(text)));
+  const folded = normalizeSafetyText(question);
+  const accented = accentedText(question);
+  const blocked = mildFallOnly(folded) || preventionOnly(folded);
+  const riskClass = matchSelfHarm(question, accented, folded)
+    ? "self_harm"
+    : blocked
+      ? null
+      : matchGated(question, accented, folded);
 
   if (!riskClass) {
     return {

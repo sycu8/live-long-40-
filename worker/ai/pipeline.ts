@@ -1,6 +1,10 @@
 import { ABSTENTION_MESSAGE } from "@shared/constants/product";
 import { classifyQuestion, normalizeQuery } from "@shared/rules/classification";
-import { evaluateHighRisk } from "@shared/rules/safety";
+import {
+  evaluateHighRisk,
+  isRedFlagAdjacent,
+  RED_FLAG_ADJACENT_LINE,
+} from "@shared/rules/safety";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@shared/rules/prompt";
 import { answerHasCitations, sourceLooksOfficial } from "@shared/rules/sources";
 import type { Env } from "../env";
@@ -358,9 +362,12 @@ export async function runChatPipeline(
 
   const { sources, mode } = await retrieveSources(env, question);
   if (sources.length === 0) {
+    const message = isRedFlagAdjacent(question)
+      ? `${ABSTENTION_MESSAGE}\n\n${RED_FLAG_ADJACENT_LINE}`
+      : ABSTENTION_MESSAGE;
     return {
       kind: "abstain",
-      message: ABSTENTION_MESSAGE,
+      message,
       classification,
       sources: [],
       mode,
