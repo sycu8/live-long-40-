@@ -2,8 +2,8 @@ import { ABSTENTION_MESSAGE } from "@shared/constants/product";
 import { classifyQuestion, normalizeQuery } from "@shared/rules/classification";
 import {
   evaluateHighRisk,
-  isRedFlagAdjacent,
-  RED_FLAG_ADJACENT_LINE,
+  questionMentionsSymptom,
+  SYMPTOM_SAFETY_LINE,
 } from "@shared/rules/safety";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@shared/rules/prompt";
 import { answerHasCitations, sourceLooksOfficial } from "@shared/rules/sources";
@@ -313,16 +313,28 @@ async function readAiStream(
   }
 }
 
+/** Short 115 line for a non-emergency answer whose question names a symptom. */
+export function appendSymptomSafetyLine(question: string, text: string): string {
+  if (!questionMentionsSymptom(question)) return text;
+  if (text.includes(SYMPTOM_SAFETY_LINE)) return text;
+  if (/gọi\s+(?:ngay\s+)?115/i.test(text)) return text;
+  return `${text.replace(/\s+$/, "")}\n\n${SYMPTOM_SAFETY_LINE}`;
+}
+
 function enqueueFallback(
   controller: ReadableStreamDefaultController<string>,
   resolveFull: (value: string) => void,
+  question: string,
   partial: string,
   fallback: string,
 ): void {
   const separator = partial ? PARTIAL_FALLBACK_SEPARATOR : "";
+  const body = `${partial}${separator}${fallback}`;
+  const full = appendSymptomSafetyLine(question, body);
   if (separator) controller.enqueue(separator);
   controller.enqueue(fallback);
-  resolveFull(`${partial}${separator}${fallback}`);
+  if (full !== body) controller.enqueue(full.slice(body.replace(/\s+$/, "").length));
+  resolveFull(full);
   controller.close();
 }
 
@@ -347,8 +359,10 @@ export async function runChatPipeline(
   if (classification === "unsupported") {
     return {
       kind: "abstain",
-      message:
+      message: appendSymptomSafetyLine(
+        question,
         "Tôi chưa thể hỗ trợ yêu cầu này. VivaAge không khuyên mua bán đầu tư, không kê đơn thuốc và không tư vấn luật cho từng người.",
+      ),
       classification,
       sources: [],
       mode: "policy",
@@ -357,17 +371,17 @@ export async function runChatPipeline(
 
   const prepared = await resolvePreparedAnswer(env, question);
   if (prepared) {
-    return streamPreparedAnswer(prepared, prepared.classification || classification);
+    return streamPreparedAnswer(
+      { ...prepared, answer: appendSymptomSafetyLine(question, prepared.answer) },
+      prepared.classification || classification,
+    );
   }
 
   const { sources, mode } = await retrieveSources(env, question);
   if (sources.length === 0) {
-    const message = isRedFlagAdjacent(question)
-      ? `${ABSTENTION_MESSAGE}\n\n${RED_FLAG_ADJACENT_LINE}`
-      : ABSTENTION_MESSAGE;
     return {
       kind: "abstain",
-      message,
+      message: appendSymptomSafetyLine(question, ABSTENTION_MESSAGE),
       classification,
       sources: [],
       mode,
@@ -400,7 +414,7 @@ export async function runChatPipeline(
   };
 
   if (!env.AI) {
-    const fallback = buildExtractiveAnswer(sources);
+    const fallback = appendSymptomSafetyLine(question, buildExtractiveAnswer(sources));
     let resolveFull!: (v: string) => void;
     const fullTextPromise = new Promise<string>((r) => {
       resolveFull = r;
@@ -458,6 +472,15 @@ export async function runChatPipeline(
           controller.enqueue(text);
         };
 
+        const closeWithSafety = (text: string) => {
+          const full = appendSymptomSafetyLine(question, text);
+          if (full !== text) {
+            controller.enqueue(full.slice(text.replace(/\s+$/, "").length));
+          }
+          resolveFull(full);
+          controller.close();
+        };
+
         let cutoff: "error" | "length" | null = null;
         if (isAsyncIterable(response)) {
           const reader = createAiStreamReader({ maxTokens: WORKERS_AI_MAX_TOKENS });
@@ -479,8 +502,7 @@ export async function runChatPipeline(
         if (citedCutoff) {
           // The user already saw these tokens. Keep that text, and do not
           // cache a cut-off answer or append a second reply.
-          resolveFull(modelText);
-          controller.close();
+          closeWithSafety(modelText);
           return;
         }
         if (
@@ -492,17 +514,18 @@ export async function runChatPipeline(
           enqueueFallback(
             controller,
             resolveFull,
+            question,
             modelText.trim() ? modelText : "",
             fallback,
           );
           return;
         }
 
-        // Persist the streamed text. Stripping mixed invalid citations
-        // here would make the saved answer differ from what was displayed.
-        cacheGenerated(modelText);
-        resolveFull(modelText);
-        controller.close();
+        // Persist the streamed text, including the symptom safety line when
+        // it was added, so a later cache hit matches what was displayed.
+        const full = appendSymptomSafetyLine(question, modelText);
+        cacheGenerated(full);
+        closeWithSafety(modelText);
       } catch (err) {
         if (!abort.signal.aborted) abort.abort(err);
         console.error(
@@ -516,6 +539,7 @@ export async function runChatPipeline(
         enqueueFallback(
           controller,
           resolveFull,
+          question,
           modelText,
           buildExtractiveAnswer(sources),
         );

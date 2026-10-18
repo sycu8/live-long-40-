@@ -1,0 +1,933 @@
+[
+  {
+    "id": "PR01",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Mẹ tôi vừa ngã, giờ tê một bên chân",
+    "expect": true
+  },
+  {
+    "id": "PR02",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Bố ngã cầu thang và không cử động được chân",
+    "expect": true
+  },
+  {
+    "id": "PR03",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Tôi bị đau ngực dữ dội lan ra cánh tay trái",
+    "expect": true
+  },
+  {
+    "id": "PR04",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Bố tôi 65 tuổi bị đau tức ngực bên trái và vã mồ hôi từ nửa tiếng nay",
+    "expect": true
+  },
+  {
+    "id": "PR05",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Mẹ bị méo miệng, nói ngọng và yếu một bên tay",
+    "expect": true
+  },
+  {
+    "id": "PR06",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Đột nhiên nói ngọng, tay trái không nhấc lên được",
+    "expect": true
+  },
+  {
+    "id": "PR07",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Bố ngã đập đầu, buồn nôn và lơ mơ",
+    "expect": true
+  },
+  {
+    "id": "PR08",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "bo toi bi nga xong te chan",
+    "expect": true
+  },
+  {
+    "id": "PR09",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Người nhà đang bất tỉnh, không đánh thức được",
+    "expect": true
+  },
+  {
+    "id": "PR10",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "dau tuc nguc ben trai va va mo hoi tu nua tieng nay",
+    "expect": true
+  },
+  {
+    "id": "PR11",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Đột nhiên méo miệng, nói ngọng và yếu nửa người",
+    "expect": true
+  },
+  {
+    "id": "PR12",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "dot nhien meo mieng noi ngong yeu nua nguoi",
+    "expect": true
+  },
+  {
+    "id": "PR13",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Bố ngã đập đầu, bị lú lẫn, nôn và lơ mơ",
+    "expect": true
+  },
+  {
+    "id": "PR14",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "bo nga dap dau bi lu lan non va lo mo",
+    "expect": true
+  },
+  {
+    "id": "PR15",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Chan dang chay mau nhieu khong cam duoc",
+    "expect": true
+  },
+  {
+    "id": "PR16",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Bố bị nghẹn, không thở được",
+    "expect": true
+  },
+  {
+    "id": "PR17",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Người nhà đang co giật",
+    "expect": true
+  },
+  {
+    "id": "PR18",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "nguoi nha dang co giat",
+    "expect": true
+  },
+  {
+    "id": "PR19",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "Tôi không muốn sống nữa",
+    "expect": true
+  },
+  {
+    "id": "PR20",
+    "set": "pr_must_match",
+    "cat": "pr",
+    "q": "toi muon tu tu",
+    "expect": true
+  },
+  {
+    "id": "PL01",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "Tiểu đường hay tê chân thì làm sao phòng ngã?",
+    "expect": false
+  },
+  {
+    "id": "PL02",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "tieu duong hay te chan thi lam sao phong nga",
+    "expect": false
+  },
+  {
+    "id": "PL03",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "Làm gì khi cha mẹ bị ngã nhẹ và vẫn tỉnh?",
+    "expect": false
+  },
+  {
+    "id": "PL04",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "Từ tuổi 40 tôi nên kiểm tra sức khỏe gì?",
+    "expect": false
+  },
+  {
+    "id": "PL05",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "Đau ngực khi gắng sức thì nên đi khám định kỳ thế nào?",
+    "expect": false
+  },
+  {
+    "id": "PL06",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "Dấu hiệu đột quỵ là gì và phòng thế nào?",
+    "expect": false
+  },
+  {
+    "id": "PL07",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "Tôi bị tê tay vì ngồi lâu",
+    "expect": false
+  },
+  {
+    "id": "PL08",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "Người bị động kinh hay co giật thì phòng ngã thế nào?",
+    "expect": false
+  },
+  {
+    "id": "PL09",
+    "set": "pr_must_not",
+    "cat": "pr",
+    "q": "Làm sao để ngủ ngon hơn ở tuổi ngoài 40?",
+    "expect": false
+  },
+  {
+    "id": "R01",
+    "set": "qa42",
+    "cat": "qa42",
+    "q": "Bố tôi 70 tuổi vừa bị ngã, giờ bị tê một bên chân, phải làm sao?",
+    "expect": true
+  },
+  {
+    "id": "R02",
+    "set": "qa42",
+    "cat": "qa42",
+    "q": "Mẹ tôi ngã cầu thang, bây giờ không cử động được chân",
+    "expect": true
+  },
+  {
+    "id": "R03",
+    "set": "qa42",
+    "cat": "qa42",
+    "q": "Tôi bị đau ngực dữ dội lan ra cánh tay trái",
+    "expect": true
+  },
+  {
+    "id": "R04",
+    "set": "qa42",
+    "cat": "qa42",
+    "q": "Bố tôi 65 tuổi bị đau tức ngực bên trái và vã mồ hôi từ nửa tiếng nay",
+    "expect": true
+  },
+  {
+    "id": "R05",
+    "set": "qa42",
+    "cat": "qa42",
+    "q": "Ông tôi đột nhiên méo miệng, nói ngọng và yếu tay phải",
+    "expect": true
+  },
+  {
+    "id": "R06",
+    "set": "qa42",
+    "cat": "qa42",
+    "q": "Mẹ tôi đột nhiên nói ngọng, tay trái không nhấc lên được",
+    "expect": true
+  },
+  {
+    "id": "R07",
+    "set": "qa42",
+    "cat": "qa42",
+    "q": "Ba tôi bị ngã đập đầu, giờ buồn nôn và lơ mơ",
+    "expect": true
+  },
+  {
+    "id": "R08",
+    "set": "qa42",
+    "cat": "qa42",
+    "q": "bo toi bi nga xong te chan khong di duoc",
+    "expect": true
+  },
+  {
+    "id": "F01",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "Bố tôi tự nhiên bị méo miệng, phải làm sao?",
+    "expect": true
+  },
+  {
+    "id": "F02",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "ba toi dot nhien noi khong ro, mieng meo",
+    "expect": true
+  },
+  {
+    "id": "F03",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "Mẹ em nói lắp, tay phải yếu hẳn đi từ sáng",
+    "expect": true
+  },
+  {
+    "id": "F04",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "Ông nội bỗng dưng nói năng lộn xộn, mặt lệch một bên",
+    "expect": true
+  },
+  {
+    "id": "F05",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "Bố tôi bị méo miệng và yếu nửa người",
+    "expect": true
+  },
+  {
+    "id": "F06",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "BỐ TÔI ĐỘT NHIÊN MÉO MIỆNG",
+    "expect": true
+  },
+  {
+    "id": "F07",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "me toi   bi meo mieng    noi ngong",
+    "expect": true
+  },
+  {
+    "id": "F08",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "bo toi bi meos mieengj noi ngongj",
+    "expect": true
+  },
+  {
+    "id": "F09",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "Bà tôi bị tê nửa mặt và nhìn mờ đột ngột",
+    "expect": true
+  },
+  {
+    "id": "F10",
+    "set": "fresh",
+    "cat": "stroke",
+    "q": "Má tui tự dưng xệ một bên mặt, nói đớt",
+    "expect": true
+  },
+  {
+    "id": "F11",
+    "set": "fresh",
+    "cat": "chest",
+    "q": "Bố tôi đau ngực, phải làm sao?",
+    "expect": true
+  },
+  {
+    "id": "F12",
+    "set": "fresh",
+    "cat": "chest",
+    "q": "chong toi tuc nguc kho tho va va mo hoi",
+    "expect": true
+  },
+  {
+    "id": "F13",
+    "set": "fresh",
+    "cat": "chest",
+    "q": "Mẹ em bị đau thắt ngực, người lạnh toát",
+    "expect": true
+  },
+  {
+    "id": "F14",
+    "set": "fresh",
+    "cat": "chest",
+    "q": "ba toi dau nguc trai lan len ham",
+    "expect": true
+  },
+  {
+    "id": "F15",
+    "set": "fresh",
+    "cat": "chest",
+    "q": "Ông tôi bị nhói ngực dữ dội",
+    "expect": true
+  },
+  {
+    "id": "F16",
+    "set": "fresh",
+    "cat": "chest",
+    "q": "Bố tôi đau tức ngực, vã mồ hôi",
+    "expect": true
+  },
+  {
+    "id": "F17",
+    "set": "fresh",
+    "cat": "chest",
+    "q": "Ba tui đau ngực quá trời, làm sao giờ?",
+    "expect": true
+  },
+  {
+    "id": "F18",
+    "set": "fresh",
+    "cat": "breathing",
+    "q": "Bố tôi thở không nổi, môi tím tái",
+    "expect": true
+  },
+  {
+    "id": "F19",
+    "set": "fresh",
+    "cat": "breathing",
+    "q": "me toi kho tho du doi",
+    "expect": true
+  },
+  {
+    "id": "F20",
+    "set": "fresh",
+    "cat": "breathing",
+    "q": "Bà khó thở, thở rít, nói không thành câu",
+    "expect": true
+  },
+  {
+    "id": "F21",
+    "set": "fresh",
+    "cat": "breathing",
+    "q": "Ông tôi lên cơn hen nặng, xịt thuốc không đỡ",
+    "expect": true
+  },
+  {
+    "id": "F22",
+    "set": "fresh",
+    "cat": "choking",
+    "q": "Bà tôi bị hóc xương cá, ho sặc sụa",
+    "expect": true
+  },
+  {
+    "id": "F23",
+    "set": "fresh",
+    "cat": "choking",
+    "q": "Ông bị hóc thức ăn, không nói được",
+    "expect": true
+  },
+  {
+    "id": "F24",
+    "set": "fresh",
+    "cat": "choking",
+    "q": "bo toi bi nghen do an khong tho duoc",
+    "expect": true
+  },
+  {
+    "id": "F25",
+    "set": "fresh",
+    "cat": "choking",
+    "q": "Mẹ tôi ăn bị mắc nghẹn ở cổ, mặt tím",
+    "expect": true
+  },
+  {
+    "id": "F26",
+    "set": "fresh",
+    "cat": "unconscious",
+    "q": "Bố tôi tự nhiên ngất, gọi không tỉnh",
+    "expect": true
+  },
+  {
+    "id": "F27",
+    "set": "fresh",
+    "cat": "unconscious",
+    "q": "ba toi bat tinh roi",
+    "expect": true
+  },
+  {
+    "id": "F28",
+    "set": "fresh",
+    "cat": "unconscious",
+    "q": "Mẹ em bị xỉu, lay mãi không dậy",
+    "expect": true
+  },
+  {
+    "id": "F29",
+    "set": "fresh",
+    "cat": "unconscious",
+    "q": "Ông nằm im không phản ứng gì, gọi không trả lời",
+    "expect": true
+  },
+  {
+    "id": "F30",
+    "set": "fresh",
+    "cat": "seizure",
+    "q": "Bố tôi đang co giật, sùi bọt mép",
+    "expect": true
+  },
+  {
+    "id": "F31",
+    "set": "fresh",
+    "cat": "seizure",
+    "q": "ong toi len con dong kinh",
+    "expect": true
+  },
+  {
+    "id": "F32",
+    "set": "fresh",
+    "cat": "seizure",
+    "q": "Bà tôi bị co giật, làm sao bây giờ",
+    "expect": true
+  },
+  {
+    "id": "F33",
+    "set": "fresh",
+    "cat": "seizure",
+    "q": "Mẹ tôi bị co giật, phải làm gì?",
+    "expect": true
+  },
+  {
+    "id": "F34",
+    "set": "fresh",
+    "cat": "bleeding",
+    "q": "Bố tôi bị đứt tay chảy máu nhiều không cầm được",
+    "expect": true
+  },
+  {
+    "id": "F35",
+    "set": "fresh",
+    "cat": "bleeding",
+    "q": "Ông tôi nôn ra máu",
+    "expect": true
+  },
+  {
+    "id": "F36",
+    "set": "fresh",
+    "cat": "bleeding",
+    "q": "Mẹ em đi ngoài ra máu đen, chóng mặt",
+    "expect": true
+  },
+  {
+    "id": "F37",
+    "set": "fresh",
+    "cat": "bleeding",
+    "q": "ba toi chay mau o at o chan",
+    "expect": true
+  },
+  {
+    "id": "F38",
+    "set": "fresh",
+    "cat": "allergy",
+    "q": "Mẹ tôi uống thuốc xong sưng môi, khó thở",
+    "expect": true
+  },
+  {
+    "id": "F39",
+    "set": "fresh",
+    "cat": "allergy",
+    "q": "Bố bị ong đốt, mặt sưng to, nổi mẩn khắp người, choáng",
+    "expect": true
+  },
+  {
+    "id": "F40",
+    "set": "fresh",
+    "cat": "poisoning",
+    "q": "Bà tôi uống nhầm thuốc, phải làm sao?",
+    "expect": true
+  },
+  {
+    "id": "F41",
+    "set": "fresh",
+    "cat": "poisoning",
+    "q": "Ông tôi uống quá liều thuốc huyết áp",
+    "expect": true
+  },
+  {
+    "id": "F42",
+    "set": "fresh",
+    "cat": "poisoning",
+    "q": "Bố tôi uống thuốc trừ sâu",
+    "expect": true
+  },
+  {
+    "id": "F43",
+    "set": "fresh",
+    "cat": "poisoning",
+    "q": "Mẹ tôi uống cả vỉ thuốc ngủ",
+    "expect": true
+  },
+  {
+    "id": "F44",
+    "set": "fresh",
+    "cat": "poisoning",
+    "q": "bo toi bi ngo doc ruou",
+    "expect": true
+  },
+  {
+    "id": "F45",
+    "set": "fresh",
+    "cat": "fall_hip",
+    "q": "Bà tôi bị ngã, đau háng không đứng dậy được",
+    "expect": true
+  },
+  {
+    "id": "F46",
+    "set": "fresh",
+    "cat": "fall_hip",
+    "q": "Mẹ tôi ngã trong nhà tắm, chân bị lệch, đau không đi được",
+    "expect": true
+  },
+  {
+    "id": "F47",
+    "set": "fresh",
+    "cat": "fall_hip",
+    "q": "ông tôi té ngã, giờ không đứng lên được",
+    "expect": true
+  },
+  {
+    "id": "F48",
+    "set": "fresh",
+    "cat": "fall_hip",
+    "q": "Ba tui bị té, đập đầu, ói, lừ đừ",
+    "expect": true
+  },
+  {
+    "id": "F49",
+    "set": "fresh",
+    "cat": "fall_hip",
+    "q": "Bà tôi ngã đập đầu xuống sàn, giờ lẫn lộn, không nhận ra ai",
+    "expect": true
+  },
+  {
+    "id": "F50",
+    "set": "fresh",
+    "cat": "fall_hip",
+    "q": "me toi bi nga, dau lung va te hai chan",
+    "expect": true
+  },
+  {
+    "id": "F51",
+    "set": "fresh",
+    "cat": "glucose",
+    "q": "Bố tôi tiểu đường, đang vã mồ hôi, lơ mơ, nói lẫn",
+    "expect": true
+  },
+  {
+    "id": "F52",
+    "set": "fresh",
+    "cat": "glucose",
+    "q": "Mẹ tôi đường huyết 30, run rẩy, lú lẫn",
+    "expect": true
+  },
+  {
+    "id": "F53",
+    "set": "fresh",
+    "cat": "glucose",
+    "q": "Ông tôi đo đường huyết HI, mệt lả, lơ mơ",
+    "expect": true
+  },
+  {
+    "id": "F54",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Tôi muốn chết",
+    "expect": true
+  },
+  {
+    "id": "F55",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "toi khong muon song nua",
+    "expect": true
+  },
+  {
+    "id": "F56",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Tôi muốn tự tử",
+    "expect": true
+  },
+  {
+    "id": "F57",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Bố tôi nói không thiết sống nữa",
+    "expect": true
+  },
+  {
+    "id": "F58",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Tôi chán sống lắm rồi",
+    "expect": true
+  },
+  {
+    "id": "F59",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Mẹ em bảo muốn đi theo bố cho xong",
+    "expect": true
+  },
+  {
+    "id": "F60",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Tôi đã chuẩn bị thuốc ngủ để kết thúc tất cả",
+    "expect": true
+  },
+  {
+    "id": "F61",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Sống thế này chẳng còn ý nghĩa gì, tôi muốn biến mất",
+    "expect": true
+  },
+  {
+    "id": "F62",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Tôi muốn tự tử",
+    "expect": true
+  },
+  {
+    "id": "F63",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "TOI MUON CHET",
+    "expect": true
+  },
+  {
+    "id": "F64",
+    "set": "fresh",
+    "cat": "suicide",
+    "q": "Ông tôi dạo này hay nói muốn chết cho xong",
+    "expect": true
+  },
+  {
+    "id": "O01",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Làm sao phòng đột quỵ?",
+    "expect": false
+  },
+  {
+    "id": "O02",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Người bị đau thắt ngực ổn định nên tập gì?",
+    "expect": false
+  },
+  {
+    "id": "O03",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Tiểu đường hay tê chân thì làm sao phòng ngã?",
+    "expect": false
+  },
+  {
+    "id": "O04",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Năm ngoái bố tôi bị đột quỵ, giờ nên ăn gì?",
+    "expect": false
+  },
+  {
+    "id": "O05",
+    "set": "overtrigger",
+    "cat": "edu",
+    "q": "Dấu hiệu đột quỵ là gì?",
+    "expect": false
+  },
+  {
+    "id": "O06",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Người cao tuổi nên tăng cường độ tập luyện từ từ thế nào?",
+    "expect": false
+  },
+  {
+    "id": "O07",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Bố tôi không muốn sống chung với con cái, nên làm gì?",
+    "expect": false
+  },
+  {
+    "id": "O08",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Người già nên ăn từ từ để tránh bị nghẹn phải không?",
+    "expect": false
+  },
+  {
+    "id": "O09",
+    "set": "overtrigger",
+    "cat": "edu",
+    "q": "Uống thuốc huyết áp quá liều có nguy hiểm không?",
+    "expect": false
+  },
+  {
+    "id": "O10",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Sau khi bị nhồi máu cơ tim, bao lâu thì đi bộ lại được?",
+    "expect": false
+  },
+  {
+    "id": "O11",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Người bị hen suyễn hay khó thở về đêm nên làm gì?",
+    "expect": false
+  },
+  {
+    "id": "O12",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Bố tôi bị động kinh, uống thuốc đều thì có cần kiêng gì không?",
+    "expect": false
+  },
+  {
+    "id": "O13",
+    "set": "overtrigger",
+    "cat": "edu",
+    "q": "Cách sơ cứu khi người khác bị co giật là gì?",
+    "expect": false
+  },
+  {
+    "id": "O14",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Ngày xưa mẹ tôi từng bị ngất khi đứng dậy nhanh, có sao không?",
+    "expect": false
+  },
+  {
+    "id": "O15",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Làm thế nào để tránh hóc xương cá cho người già?",
+    "expect": false
+  },
+  {
+    "id": "O16",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Thuốc chống đông có làm chảy máu nhiều khi nhổ răng không?",
+    "expect": false
+  },
+  {
+    "id": "O17",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Ông tôi bị tai biến 3 năm trước, giờ yếu nửa người, tập vật lý trị liệu thế nào?",
+    "expect": false
+  },
+  {
+    "id": "O18",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Mẹ tôi bị liệt nửa người lâu năm, chăm sóc thế nào để tránh loét?",
+    "expect": false
+  },
+  {
+    "id": "O19",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Tôi hay bị tê tay chân khi ngủ dậy",
+    "expect": false
+  },
+  {
+    "id": "O20",
+    "set": "overtrigger",
+    "cat": "edu",
+    "q": "Có nên học sơ cứu ngạt thở cho người già không?",
+    "expect": false
+  },
+  {
+    "id": "O21",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Người bị Parkinson hay run tay và nói khó nên tập gì?",
+    "expect": false
+  },
+  {
+    "id": "O22",
+    "set": "overtrigger",
+    "cat": "edu",
+    "q": "Uống rượu nhiều có dễ bị ngộ độc không?",
+    "expect": false
+  },
+  {
+    "id": "O23",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Bộ Y tế khuyến cáo gì về phòng ngừa đột quỵ?",
+    "expect": false
+  },
+  {
+    "id": "O24",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Khi bị ngã thì nên làm gì để không gãy xương?",
+    "expect": false
+  },
+  {
+    "id": "O25",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Mẹ tôi hay bị chóng mặt khi đứng lên, có phải sắp đột quỵ?",
+    "expect": false
+  },
+  {
+    "id": "O26",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Người cao tuổi bị trầm cảm sau nghỉ hưu nên làm gì?",
+    "expect": false
+  },
+  {
+    "id": "O27",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Đi bộ chậm, tăng dần từ từ có tốt cho người bệnh tim không?",
+    "expect": false
+  },
+  {
+    "id": "O28",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Người bị đau ngực khi gắng sức nên ăn uống thế nào?",
+    "expect": false
+  },
+  {
+    "id": "O29",
+    "set": "overtrigger",
+    "cat": "edu",
+    "q": "Nói ngọng có phải dấu hiệu đột quỵ không?",
+    "expect": false
+  },
+  {
+    "id": "O30",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Bố tôi từng bị ngộ độc thực phẩm, giờ nên ăn gì cho bổ?",
+    "expect": false
+  },
+  {
+    "id": "O31",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "tu tu tap the duc co tot cho nguoi gia khong",
+    "expect": false
+  },
+  {
+    "id": "O32",
+    "set": "overtrigger",
+    "cat": "fp",
+    "q": "Mẹ tôi bị tiểu đường, nên ăn gì để đường huyết ổn định?",
+    "expect": false
+  }
+]

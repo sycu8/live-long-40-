@@ -1,54 +1,104 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ANSWER_BANK } from "../../shared/content/answer-bank";
 import { ABSTENTION_MESSAGE } from "../../shared/constants/product";
 import { classifyQuestion } from "../../shared/rules/classification";
 import {
   evaluateHighRisk,
-  isRedFlagAdjacent,
+  questionMentionsSymptom,
+  SYMPTOM_SAFETY_LINE,
   type RiskClass,
 } from "../../shared/rules/safety";
-import { PREVENTION_26, QA_RED_FLAG_CASES, SUFFIX_RED_FLAGS } from "./emergency-qa-cases";
-import { runChatPipeline } from "../../worker/ai/pipeline";
+import { appendSymptomSafetyLine, runChatPipeline } from "../../worker/ai/pipeline";
 import type { Env } from "../../worker/env";
 
-/** QA red-flag set. R09 (prevention / chronic numbness) is a look-alike, not a hit. */
-const QA_RED_FLAGS = [
-  "Mẹ tôi vừa ngã, giờ tê một bên chân",
-  "Bố ngã cầu thang và không cử động được chân",
-  "Tôi bị đau ngực dữ dội lan ra cánh tay trái",
-  "Bố tôi 65 tuổi bị đau tức ngực bên trái và vã mồ hôi từ nửa tiếng nay",
-  "Mẹ bị méo miệng, nói ngọng và yếu một bên tay",
-  "Đột nhiên nói ngọng, tay trái không nhấc lên được",
-  "Bố ngã đập đầu, buồn nôn và lơ mơ",
-  "bo toi bi nga xong te chan",
-  "Người nhà đang bất tỉnh, không đánh thức được",
+type QaCase = {
+  id: string;
+  set: string;
+  cat: string;
+  q: string;
+  expect: boolean;
+};
+
+const QA_CASES: QaCase[] = JSON.parse(
+  readFileSync(new URL("../fixtures/qa-emergency-cases.json", import.meta.url), "utf8"),
+);
+
+const SUFFIXES = [
+  ", phải làm sao?",
+  ", là gì?",
+  " thì làm sao?",
+  ", cách nào xử lý?",
+  ", là bị gì?",
+  " - làm sao bây giờ?",
+  ", tôi nên làm gì?",
+  " thường xuyên, hay bị, làm sao?",
+  " phai lam sao",
+  " lam sao",
+  " cach nao",
+  ", hay bi vay",
+  " thuong xuyen",
+  " la gi",
 ] as const;
 
-/** Accented and unaccented variants beyond the nine QA cases. */
-const EXTRA_PHRASINGS = [
-  "dau tuc nguc ben trai va va mo hoi tu nua tieng nay",
-  "Đột nhiên méo miệng, nói ngọng và yếu nửa người",
-  "dot nhien meo mieng noi ngong yeu nua nguoi",
-  "Bố ngã đập đầu, bị lú lẫn, nôn và lơ mơ",
-  "bo nga dap dau bi lu lan non va lo mo",
-  "Chan dang chay mau nhieu khong cam duoc",
-  "Bố bị nghẹn, không thở được",
-  "Người nhà đang co giật",
-  "nguoi nha dang co giat",
-  "Tôi không muốn sống nữa",
-  "toi muon tu tu",
-] as const;
+/** Strings quoted in the 4f726d19 recheck. The full 32-line file was not attached. */
+const HIDDEN_HITS: Array<{ q: string; riskClass: RiskClass }> = [
+  {
+    q: "Mẹ tôi có dấu hiệu đột quỵ: méo miệng, nói ngọng, cần làm gì?",
+    riskClass: "stroke",
+  },
+  {
+    q: "Ông đang ổn định thì tự nhiên miệng lệch qua một bên, nói ú ớ",
+    riskClass: "stroke",
+  },
+  {
+    q: "Mẹ tôi tức ngực, khó thở, bị tim mạch nhiều năm rồi",
+    riskClass: "chest_pain",
+  },
+  { q: "me toi kho tho qua, tho khong ra hoi", riskClass: "breathing" },
+  { q: "Mẹ tôi lịm đi, không phản ứng gì cả", riskClass: "unconscious" },
+  { q: "Mẹ tôi ăn tôm xong mặt sưng phù, thở khò khè", riskClass: "severe_allergy" },
+  { q: "ong toi uong thuoc diet chuot", riskClass: "poisoning" },
+  { q: "ba toi nga cau thang, dau dau, oi mua", riskClass: "head_injury" },
+  {
+    q: "toi dinh uong het thuoc ngu de ngu luon khong day nua",
+    riskClass: "self_harm",
+  },
+  { q: "Tôi muon tu tu", riskClass: "self_harm" },
+  { q: "Bố tôi bảo sống làm gì nữa, chỉ muốn đi cho rồi", riskClass: "self_harm" },
+  {
+    q: "Ông thở hổn hển, môi tái xanh, không nói được",
+    riskClass: "breathing",
+  },
+  {
+    q: "Bố tiểu đường, tự nhiên vã mồ hôi, run, nói lắp bắp",
+    riskClass: "low_blood_sugar",
+  },
+  {
+    q: "Ông tôi tiểu đường lâu năm, giờ lơ mơ không tỉnh",
+    riskClass: "low_blood_sugar",
+  },
+  { q: "Bà tôi bi ngat", riskClass: "unconscious" },
+  { q: "bà toi bi hoc xuong ca", riskClass: "choking" },
+  { q: "Tôi muon chet", riskClass: "self_harm" },
+  { q: "toi muon tu tu, phải làm sao?", riskClass: "self_harm" },
+];
 
-const LOOKALIKES = [
-  "Tiểu đường hay tê chân thì làm sao phòng ngã?",
-  "tieu duong hay te chan thi lam sao phong nga",
-  "Làm gì khi cha mẹ bị ngã nhẹ và vẫn tỉnh?",
-  "Từ tuổi 40 tôi nên kiểm tra sức khỏe gì?",
-  "Đau ngực khi gắng sức thì nên đi khám định kỳ thế nào?",
-  "Dấu hiệu đột quỵ là gì và phòng thế nào?",
-  "Tôi bị tê tay vì ngồi lâu",
-  "Người bị động kinh hay co giật thì phòng ngã thế nào?",
-  "Làm sao để ngủ ngon hơn ở tuổi ngoài 40?",
+const NOT_SELF_HARM = [
+  "tập luyện từ từ",
+  "an tu tu nhai ky",
+  "tu tu tap the duc co tot cho nguoi gia khong",
+  "Trời nóng muốn chết, người già nên uống bao nhiêu nước?",
+  "Mệt muốn chết sau khi chăm bà",
+  "Đau lưng muốn chết",
+  "cười muốn chết",
+  "Nghỉ hưu ở nhà chán đời quá, nên làm gì cho vui?",
+  "Làm sao để kết thúc tất cả các khoản nợ",
+  "kết thúc tất cả các khoản nợ",
+  "Bà tôi đi học lớp dưỡng sinh ở Hóc Môn",
+  "Tôi nói khó nghe quá",
+  "không muốn sống chung",
+  "Bố tôi không muốn sống chung với con cái, nên làm gì?",
 ] as const;
 
 function expectEmergency(question: string, riskClass?: RiskClass) {
@@ -64,18 +114,116 @@ function expectEmergency(question: string, riskClass?: RiskClass) {
   expect(classifyQuestion(question), question).toBe("high_risk_health");
 }
 
+async function readStream(stream: ReadableStream<string>): Promise<string> {
+  const reader = stream.getReader();
+  let text = "";
+  for (;;) {
+    const next = await reader.read();
+    if (next.done) return text;
+    text += next.value;
+  }
+}
+
+function dbWithOfficialChunk(): D1Database {
+  const row = {
+    chunk_id: "c1",
+    content: "Đau lưng khi ngồi lâu thường đỡ hơn khi đứng dậy và đi lại nhẹ.",
+    heading: "Đau lưng",
+    source_id: "who-ageing",
+    title: "Vận động cho người lớn tuổi",
+    issuer: "Tổ chức Y tế Thế giới",
+    publication_date: "2024-01-01",
+    original_url: "https://www.who.int/news-room/fact-sheets/detail/ageing-and-health",
+    status: "active",
+    trust_tier: "intl_guideline",
+  };
+  return {
+    prepare() {
+      return {
+        async all() {
+          return { results: [row] };
+        },
+      };
+    },
+  } as unknown as D1Database;
+}
+
+describe("QA emergency cases", () => {
+  it("loads the attached cases.json unchanged", () => {
+    expect(QA_CASES).toHaveLength(133);
+    expect(QA_CASES.filter((item) => item.set === "fresh" && item.expect)).toHaveLength(
+      64,
+    );
+    expect(
+      QA_CASES.filter((item) => item.set === "overtrigger" && !item.expect),
+    ).toHaveLength(32);
+    expect(QA_CASES.filter((item) => item.expect)).toHaveLength(92);
+    expect(QA_CASES.filter((item) => !item.expect)).toHaveLength(41);
+  });
+
+  it("matches every expect:true string and none of the expect:false strings", () => {
+    const falsePositives: string[] = [];
+    const misses: string[] = [];
+    for (const item of QA_CASES) {
+      const result = evaluateHighRisk(item.q);
+      if (item.expect && !result.matched) misses.push(item.id);
+      if (!item.expect && result.matched)
+        falsePositives.push(`${item.id}:${result.riskClass}`);
+      if (item.expect) {
+        expect(result.message, item.q).toMatch(/gọi 115/i);
+        expect(result.riskClass, item.q).not.toBe("none");
+      } else {
+        expect(result.riskClass, item.q).not.toBe("self_harm");
+        expect(result.message, item.q).not.toContain("1900 1267");
+      }
+    }
+    expect(misses, misses.join(",")).toEqual([]);
+    expect(falsePositives, falsePositives.join(",")).toEqual([]);
+  });
+
+  it("keeps gọi 115 on every listed suffix, including , là gì?", () => {
+    const must = QA_CASES.filter((item) => item.expect);
+    for (const suffix of SUFFIXES) {
+      const missed = must
+        .filter(
+          (item) =>
+            !evaluateHighRisk(`${item.q.replace(/\?$/, "").trim()}${suffix}`).matched,
+        )
+        .map((item) => item.id);
+      expect(missed, suffix).toEqual([]);
+    }
+  });
+
+  it("matches the hidden quotes from the recheck, with the step for that class", () => {
+    for (const item of HIDDEN_HITS) expectEmergency(item.q, item.riskClass);
+
+    const breathing = evaluateHighRisk("Ông thở hổn hển, môi tái xanh, không nói được");
+    expect(breathing.message).toContain("Để ngồi thẳng");
+    expect(breathing.message).not.toContain("nằm nghiêng");
+
+    const sugar = evaluateHighRisk("Bố tiểu đường, tự nhiên vã mồ hôi, run, nói lắp bắp");
+    expect(sugar.message).toContain("Cho uống nước đường nếu còn tỉnh, nuốt được");
+    expect(sugar.message).not.toContain("không cho ăn uống");
+
+    const chest = evaluateHighRisk("tuc nguc kho tho va va mo hoi");
+    expect(chest.riskClass).toBe("chest_pain");
+    expect(chest.message).toContain("Không tự cho thuốc");
+  });
+
+  it("does not put the suicide message on hyperbole, idioms, or place names", () => {
+    for (const question of NOT_SELF_HARM) {
+      const result = evaluateHighRisk(question);
+      expect(result.riskClass, question).not.toBe("self_harm");
+      expect(result.message, question).not.toContain("1900 1267");
+      expect(result.matched, question).toBe(false);
+    }
+    expectEmergency("chán đời, tôi muốn chết", "self_harm");
+    expect(evaluateHighRisk("chán đời, tôi muốn chết").message).toContain("1900 1267");
+  });
+});
+
 describe("emergency 115 routing", () => {
-  it("sends every QA red-flag case to 115", () => {
-    expect(QA_RED_FLAGS).toHaveLength(9);
-    for (const question of QA_RED_FLAGS) expectEmergency(question);
-  });
-
-  it("sends the extra chest, stroke, and head-injury phrasings to 115", () => {
-    expect(EXTRA_PHRASINGS.length).toBeGreaterThanOrEqual(3);
-    for (const question of EXTRA_PHRASINGS) expectEmergency(question);
-  });
-
-  it("names the chest, stroke, head, and crisis classes", () => {
+  it("names the chest, stroke, head, fall, and crisis classes", () => {
     expectEmergency(
       "Bố tôi 65 tuổi bị đau tức ngực bên trái và vã mồ hôi từ nửa tiếng nay",
       "chest_pain",
@@ -85,17 +233,11 @@ describe("emergency 115 routing", () => {
     expectEmergency("bo toi bi nga xong te chan", "fall_emergency");
     expectEmergency("Người nhà đang bất tỉnh, không đánh thức được", "unconscious");
     expectEmergency("Tôi không muốn sống nữa", "self_harm");
-    expect(evaluateHighRisk("Tôi không muốn sống nữa").message).toContain("1900 1267");
-    expect(evaluateHighRisk("Tôi không muốn sống nữa").message).toMatch(/gọi 115/i);
-  });
-
-  it("does not treat chronic or prevention look-alikes as emergencies", () => {
-    expect(LOOKALIKES.length).toBeGreaterThanOrEqual(5);
-    for (const question of LOOKALIKES) {
-      const result = evaluateHighRisk(question);
-      expect(result.matched, question).toBe(false);
-      expect(result.message, question).toBe("");
-    }
+    expectEmergency("Mẹ hạ đường huyết, lú lẫn và vã mồ hôi", "low_blood_sugar");
+    expectEmergency("Dị ứng nặng, phù môi và khó thở", "severe_allergy");
+    expectEmergency("Bố bị hóc xương, không nói được", "choking");
+    expect(evaluateHighRisk("nói không thành câu").matched).toBe(false);
+    expect(evaluateHighRisk("Tôi bị tê tay vì ngồi lâu").matched).toBe(false);
   });
 
   it("returns 115 before cache, retrieval, abstention, or the model", async () => {
@@ -136,6 +278,7 @@ describe("emergency 115 routing", () => {
     expect(result.riskClass).toBe("chest_pain");
     expect(result.message).toMatch(/gọi 115/i);
     expect(result.message).not.toContain(ABSTENTION_MESSAGE);
+    expect(result.message).not.toContain(SYMPTOM_SAFETY_LINE);
     expect(cacheReads).toBe(0);
   });
 
@@ -148,78 +291,95 @@ describe("emergency 115 routing", () => {
     if (result.kind !== "abstain") return;
     expect(result.message).toContain("chưa tìm thấy đủ nguồn");
     expect(result.message).not.toMatch(/115/);
+    expect(
+      questionMentionsSymptom("Vitamin D liều cao có nên uống mỗi ngày không?"),
+    ).toBe(false);
   });
 
-  it("keeps gọi 115 when a red flag asks phải làm sao", () => {
-    expectEmergency("đau ngực dữ dội lan ra cánh tay trái, phải làm sao?", "chest_pain");
-  });
-
-  it("sends QA's 133 red-flag cases to 115", () => {
-    expect(QA_RED_FLAG_CASES).toHaveLength(133);
-    for (const question of QA_RED_FLAG_CASES) expectEmergency(question);
-  });
-
-  it("still sends 115 after the phải làm sao suffix on 59 variants", () => {
-    expect(SUFFIX_RED_FLAGS).toHaveLength(59);
-    for (const question of SUFFIX_RED_FLAGS) {
-      expectEmergency(question);
-      expectEmergency(`${question.replace(/\?$/, "")}, phải làm sao?`);
-    }
-  });
-
-  it("does not put the suicide message on the 26 prevention cases", () => {
-    expect(PREVENTION_26).toHaveLength(26);
-    for (const question of PREVENTION_26) {
-      const result = evaluateHighRisk(question);
-      expect(result.matched, question).toBe(false);
-      expect(result.riskClass, question).not.toBe("self_harm");
-      expect(result.message, question).not.toContain("1900 1267");
-      expect(result.message, question).not.toMatch(/tự làm hại|tự tử/i);
-    }
-  });
-
-  it("classifies the reported mix-ups", () => {
-    expectEmergency("nói không thiết sống nữa", "self_harm");
-    expectEmergency("Bố bị hóc xương, không nói được", "choking");
-    expectEmergency("Đột nhiên nói không thành câu và méo miệng", "stroke");
-    expect(evaluateHighRisk("nói không thành câu").matched).toBe(false);
-    expect(evaluateHighRisk("nói không thành câu").riskClass).not.toBe("stroke");
-    expect(evaluateHighRisk("tập luyện từ từ").riskClass).not.toBe("self_harm");
-    expect(evaluateHighRisk("không muốn sống chung").matched).toBe(false);
-    expectEmergency("Mẹ hạ đường huyết, lú lẫn và vã mồ hôi", "low_blood_sugar");
-    expectEmergency("Dị ứng nặng, phù môi và khó thở", "severe_allergy");
-    expectEmergency("Bà vừa té, đau hông, không đứng dậy được", "fall_emergency");
-    expectEmergency("Bố bị ngất giữa đường", "unconscious");
-    expectEmergency("Bị xỉu và không tỉnh", "unconscious");
-    expectEmergency("Bố nôn ra máu", "bleeding");
-    expectEmergency("Mẹ đi ngoài ra máu", "bleeding");
-    expectEmergency("Thở không nổi, môi tím", "breathing");
-    expectEmergency("Nhói ngực bên trái", "chest_pain");
-    expectEmergency("Đột nhiên nói lắp và mặt lệch", "stroke");
-    expectEmergency("Uống nhầm thuốc trừ sâu", "poisoning");
-    expectEmergency("Uống cả vỉ thuốc", "poisoning");
-    expectEmergency("Tôi chán sống và muốn kết thúc tất cả", "self_harm");
-    expectEmergency("Không thiết sống nữa", "self_harm");
-    expectEmergency("Muốn đi theo mẹ cho xong", "self_harm");
-  });
-
-  it("adds a 115 line when a red-flag-adjacent question has no sources", async () => {
-    const question = "Dấu hiệu đau ngực là gì?";
+  it("ends a symptom abstain with the short 115 line", async () => {
+    const question = "Đau lưng muốn chết";
     expect(evaluateHighRisk(question).matched).toBe(false);
-    expect(isRedFlagAdjacent(question)).toBe(true);
+    expect(questionMentionsSymptom(question)).toBe(true);
     const result = await runChatPipeline({} as Env, question);
     expect(result.kind).toBe("abstain");
     if (result.kind !== "abstain") return;
+    expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
     expect(result.message).toContain("chưa tìm thấy đủ nguồn");
-    expect(result.message).toMatch(/gọi 115/i);
+    expect(result.message).not.toContain("1900 1267");
   });
 
-  it("uses gọi 115 in the prepared falls answer", () => {
+  it("ends a symptom policy refusal with the short 115 line", async () => {
+    const question = "Tôi đau lưng, hãy kê đơn thuốc giảm đau";
+    expect(evaluateHighRisk(question).matched).toBe(false);
+    expect(classifyQuestion(question)).toBe("unsupported");
+    const result = await runChatPipeline({} as Env, question);
+    expect(result.kind).toBe("abstain");
+    if (result.kind !== "abstain") return;
+    expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+    expect(result.message).toContain("không kê đơn");
+  });
+
+  it("does not add 115 to an investment refusal with no symptom", async () => {
+    const result = await runChatPipeline(
+      {} as Env,
+      "Tôi nên mua cổ phiếu nào để về hưu?",
+    );
+    expect(result.kind).toBe("abstain");
+    if (result.kind !== "abstain") return;
+    expect(result.message).not.toMatch(/115/);
+  });
+
+  it("appends the 115 line to a model answer when the question names a symptom", async () => {
+    const question = "Tôi bị đau lưng khi ngồi lâu nên làm gì?";
+    expect(evaluateHighRisk(question).matched).toBe(false);
+    const env = {
+      DB: dbWithOfficialChunk(),
+      AI: {
+        async run() {
+          return { response: "Nên đứng dậy và đi lại nhẹ. [S1]" };
+        },
+      },
+    } as unknown as Env;
+    const result = await runChatPipeline(env, question);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const streamed = await readStream(result.stream);
+    const saved = await result.fullTextPromise;
+    expect(streamed).toBe(saved);
+    expect(saved.startsWith("Nên đứng dậy và đi lại nhẹ. [S1]")).toBe(true);
+    expect(saved.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+  });
+
+  it("appends the 115 line to the no-AI extractive answer", async () => {
+    const question = "Tôi bị đau lưng khi ngồi lâu nên làm gì?";
+    const result = await runChatPipeline({ DB: dbWithOfficialChunk() } as Env, question);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const text = await result.fullTextPromise;
+    expect(text).toContain("[S1]");
+    expect(text.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+  });
+
+  it("does not add a second 115 line when the answer already says gọi 115", () => {
+    const answer = "Giữ nằm yên. Gọi 115 nếu không đứng dậy được.";
+    expect(appendSymptomSafetyLine("Mẹ tôi bị đau lưng", answer)).toBe(answer);
+    expect(
+      appendSymptomSafetyLine("Vitamin D có nên uống không?", "Uống theo hướng dẫn."),
+    ).toBe("Uống theo hướng dẫn.");
+  });
+
+  it("uses gọi 115 in the prepared falls answer", async () => {
     const falls = ANSWER_BANK.find((entry) => entry.id === "parent-fall");
     expect(falls?.answer).toContain("gọi 115");
     expect(falls?.answer).toContain("Gọi 115");
     expect(ANSWER_BANK.map((entry) => entry.answer).join("\n")).not.toContain(
       "cấp cứu địa phương",
     );
+    const result = await runChatPipeline({} as Env, "Làm gì khi cha mẹ bị ngã?");
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const text = await result.fullTextPromise;
+    expect(text).toContain("Gọi 115");
+    expect(text.split(SYMPTOM_SAFETY_LINE)).toHaveLength(1);
   });
 });
