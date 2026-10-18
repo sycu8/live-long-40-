@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
 import { readAiText, runWorkersAi, workersAiRunOptions } from "../../worker/ai/run";
 import { generateEditorialPostWithAi } from "../../worker/blog/generate-ai";
 import { generateAndStoreBlogCover } from "../../worker/blog/images";
 import type { Env } from "../../worker/env";
 
-const MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const MODEL = WORKERS_AI_TEXT_MODEL;
 
 /**
  * workerd `AiGateway.run` (universal endpoint) does `Object.entries(req.headers)`.

@@ -11,7 +11,8 @@ import {
 } from "@shared/content/blog-theme-sources";
 import { OFFICIAL_SOURCES } from "@shared/content/official-sources";
 import { createId, nowIso } from "@shared/utils/id";
-import { readAiText, runWorkersAi } from "../ai/run";
+import { WORKERS_AI_TEXT_MODEL } from "../ai/models";
+import { formatWorkersAiError, readWorkersAiText, runWorkersAi } from "../ai/run";
 import type { Env } from "../env";
 import { generateAndStoreBlogCover } from "./images";
 import type { BlogEditorialPost } from "./types";
@@ -41,13 +42,27 @@ function slugifyTitle(title: string, isoDate: string, slot = 0): string {
 }
 
 function parseJsonObject(text: string): Record<string, unknown> | null {
+  if (!text) return null;
   const fenced = text.match(/\{[\s\S]*\}/);
-  if (!fenced) return null;
+  if (!fenced?.[0]) return null;
   try {
-    return JSON.parse(fenced[0]) as Record<string, unknown>;
+    const value: unknown = JSON.parse(fenced[0]);
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    return value as Record<string, unknown>;
   } catch {
     return null;
   }
+}
+
+function logBlogAiFailure(error: string): void {
+  console.error(
+    JSON.stringify({
+      level: "error",
+      message: "blog_ai_generate_failed",
+      model: WORKERS_AI_TEXT_MODEL,
+      error,
+    }),
+  );
 }
 
 function allowlistForPrompt(theme: BlogTheme): string {
@@ -95,10 +110,8 @@ ${allowlistForPrompt(theme)}
 Trả về ĐÚNG một JSON (không markdown ngoài JSON):
 {"title":"...","excerpt":"1-2 câu","minutes":8,"sourceIds":["..."],"body":"markdown"}`;
 
-  const model = "@cf/meta/llama-3.1-8b-instruct";
-
   try {
-    const response = await runWorkersAi(env, model, {
+    const response = await runWorkersAi(env, WORKERS_AI_TEXT_MODEL, {
       messages: [
         {
           role: "system",
@@ -110,8 +123,12 @@ Trả về ĐÚNG một JSON (không markdown ngoài JSON):
       stream: false,
       max_tokens: 3200,
     });
-    const text = readAiText(response);
-    const parsed = parseJsonObject(text);
+    const read = readWorkersAiText(response);
+    if (!read.ok) {
+      logBlogAiFailure(read.error);
+      return null;
+    }
+    const parsed = parseJsonObject(read.text);
     if (!parsed) return null;
     const title = String(parsed.title ?? "").trim();
     const excerpt = String(parsed.excerpt ?? "").trim();
@@ -158,13 +175,7 @@ Bạn cũng có thể [kiểm tra mức độ sẵn sàng](/danh-gia) hoặc xem
       coverAlt: cover?.alt,
     };
   } catch (err) {
-    console.error(
-      JSON.stringify({
-        level: "error",
-        message: "blog_ai_generate_failed",
-        error: String(err),
-      }),
-    );
+    logBlogAiFailure(formatWorkersAiError(err));
     return null;
   }
 }
