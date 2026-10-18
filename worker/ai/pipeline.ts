@@ -58,6 +58,7 @@ import {
   answerHasInvalidCitations,
   groundedSentence,
   isCitationOnly,
+  mentionsEmergencyNumber,
   resolvePreparedAnswer,
   supportedAnswerText,
   writeAnswerCache,
@@ -365,6 +366,7 @@ function splitReadySentences(
   for (let i = 0; i < buffer.length; i += 1) {
     const ch = buffer[i];
     if (ch !== "." && ch !== "!" && ch !== "?" && ch !== "…" && ch !== "\n") continue;
+    if (ch === "." && /https?:\/\/[^\s)\]>"']*$/.test(buffer.slice(0, i))) continue;
     let j = i + 1;
     while (j < buffer.length) {
       const mark = /^\s*\[S\d+\]/.exec(buffer.slice(j));
@@ -1180,6 +1182,7 @@ export async function runChatPipeline(
         );
 
         let droppedAny = false;
+        let modelWrote115 = false;
         let firstDropAt = 0;
         const dropRatioExceeded = () => kept === 0 && dropped >= 2;
         const emitSentence = (sentence: string) => {
@@ -1210,9 +1213,18 @@ export async function runChatPipeline(
           const split = splitReadySentences(pending, flush);
           pending = split.rest;
           for (const sentence of split.ready) emitSentence(sentence);
+          if (flush || !pending.trim()) return;
+          if (/https?:\/\/\S*$/.test(pending)) return;
+          if (!/[.!?…](?:\s*\[S\d+\])*\s*$/.test(pending)) return;
+          const candidate = pending.trim();
+          const grounded = groundedSentence(candidate, sources, question);
+          if (!grounded || isCitationOnly(grounded)) return;
+          pending = "";
+          emitSentence(candidate);
         };
         const pushText = (text: string) => {
           if (!text) return;
+          if (mentionsEmergencyNumber(text)) modelWrote115 = true;
           modelText += text;
           pending += text;
           release(false);
@@ -1246,8 +1258,9 @@ export async function runChatPipeline(
 
         const cleaned = emitted.trim();
         const hadInvalid = answerHasInvalidCitations(modelText, sources);
+        if (mentionsEmergencyNumber(modelText)) modelWrote115 = true;
         const fallback = buildExtractiveAnswer(sources);
-        const canCache = !hadInvalid && !droppedAny;
+        const canCache = !hadInvalid && !droppedAny && !modelWrote115;
         const usable =
           cleaned !== "" &&
           !isCitationOnly(cleaned) &&

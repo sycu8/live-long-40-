@@ -774,6 +774,31 @@ describe("chat Workers AI fallback", () => {
     }
     expect(rest).not.toContain("Câu sau không có nguồn");
   });
+
+  it("strips a model either/or 115 sentence and does not cache it", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return {
+            response: `${MODEL_ANSWER} Gọi 115 hay đến bệnh viện. Có thể gọi 115 hoặc nhờ người nhà.`,
+          };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toContain(MODEL_ANSWER);
+    expect(saved).not.toMatch(/hay đến bệnh viện|hoặc nhờ người nhà/i);
+    expect(saved.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
 });
 
 async function readDisplayed(stream: ReadableStream<string>): Promise<string> {

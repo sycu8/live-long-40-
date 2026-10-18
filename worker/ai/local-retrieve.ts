@@ -3,6 +3,51 @@ import { foldVietnamese } from "@shared/utils/vietnamese";
 
 export { foldVietnamese };
 
+const HTTP_URL = /https?:\/\/[^\s)>\]]+/gi;
+
+/** A URL that parses and was not cut off mid-host or mid-encoding. */
+export function isCompleteHttpUrl(raw: string): boolean {
+  const url = raw.replace(/[.,;:!?)]+$/g, "");
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    if (!parsed.hostname.includes(".")) return false;
+    const tld = parsed.hostname.split(".").pop() ?? "";
+    if (!/^[a-z]{2,}$/i.test(tld)) return false;
+    if (/%(?:$|[0-9a-f]$)/i.test(url)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Remove a URL that does not parse as a finished http(s) address. */
+export function stripIncompleteUrls(text: string): string {
+  return text
+    .replace(HTTP_URL, (raw) => {
+      const url = raw.replace(/[.,;:!?)]+$/g, "");
+      return isCompleteHttpUrl(url) ? url : "";
+    })
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\(\s*\)/g, "")
+    .trim();
+}
+
+/**
+ * Shorten text without cutting a URL. A URL that would be sliced is dropped
+ * whole, including one that is already incomplete.
+ */
+export function clipSnippet(text: string, max = 500): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return stripIncompleteUrls(clean);
+  let end = max;
+  const open = clean.slice(0, end).search(/https?:\/\/\S*$/);
+  if (open >= 0) end = open;
+  let cut = clean.slice(0, end).trimEnd();
+  if (open < 0 && end < clean.length) cut = cut.replace(/\s+\S+$/, "").trimEnd();
+  return stripIncompleteUrls(cut);
+}
+
 const STOP = new Set([
   "la",
   "va",
@@ -452,7 +497,7 @@ export function rankLocalKnowledge(
       issuer: row.issuer,
       publicationDate: row.publication_date ?? undefined,
       url: row.original_url ?? undefined,
-      snippet: row.content.slice(0, 500),
+      snippet: clipSnippet(row.content),
       score,
       status: row.status ?? "active",
       trustTier: row.trust_tier ?? undefined,
@@ -463,7 +508,7 @@ export function rankLocalKnowledge(
     const blob = `${lesson.title}\n${lesson.summary}\n${lesson.body_markdown}`;
     const score = scoreTextInCorpus(blob, query, corpus);
     if (score < MIN_RETRIEVAL_SCORE) continue;
-    const snippet = (lesson.summary || lesson.body_markdown).slice(0, 500);
+    const snippet = clipSnippet(lesson.summary || lesson.body_markdown);
     scored.push({
       _score: score * 0.95, // slight preference for curated source_chunks
       key: "",

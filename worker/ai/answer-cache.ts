@@ -1,8 +1,14 @@
 import { ANSWER_BANK, type AnswerBankEntry } from "@shared/content/answer-bank";
 import { isGenericHomepageUrl } from "@shared/content/official-sources";
+import {
+  GENTLE_SUPPORT_LINE,
+  POST_SEIZURE_CHECK_LINE,
+  SYMPTOM_SAFETY_LINE,
+} from "@shared/rules/safety";
 import { foldVietnamese } from "@shared/utils/vietnamese";
 import {
   containsToken,
+  isCompleteHttpUrl,
   MIN_RETRIEVAL_SCORE,
   sourceMatchesQuestionTopic,
 } from "./local-retrieve";
@@ -159,7 +165,12 @@ const ISSUER_MENTIONS: Array<{ kind: IssuerKind; pattern: RegExp }> = [
 ];
 
 function answerSentences(answer: string): string[] {
-  const parts = answer
+  const urls: string[] = [];
+  const masked = answer.replace(/https?:\/\/[^\s)>\]]+/gi, (url) => {
+    urls.push(url);
+    return ` URL${urls.length - 1}TOKEN `;
+  });
+  const parts = masked
     .split(/(?<=[.!?…])\s+|\n+/)
     .map((part) => part.trim())
     .filter(Boolean);
@@ -171,7 +182,9 @@ function answerSentences(answer: string): string[] {
       merged.push(part);
     }
   }
-  return merged;
+  return merged.map((part) =>
+    part.replace(/URL(\d+)TOKEN/g, (_, index: string) => urls[Number(index)] ?? ""),
+  );
 }
 
 function claimNumbers(sentence: string): string[] {
@@ -257,50 +270,100 @@ function medicationChangeIsSupported(
   return MEDICATION_CHANGE.test(blob);
 }
 
-/**
- * Negation and hedges. A safety clause has to be an affirmative call to 115.
- * Short words and "không" are included on purpose: stripping "gọi 115" used to
- * leave only those and the clause was treated as pure safety.
- */
-function hasHedge(folded: string): boolean {
-  const plain = folded.replace(/['’]/g, "");
-  return (
-    /\b(khong|chang|chua|dung|khoi|unless|dont|not)\b/.test(plain) ||
-    /\bno need\b/.test(plain) ||
-    /\bnot necessary\b/.test(plain)
+/** Share of content words a paraphrase must share with the cited snippet. */
+export const PARAPHRASE_OVERLAP = 0.34;
+
+export type SentenceDropReason =
+  | "junk"
+  | "refusal"
+  | "model_115"
+  | "citation_only"
+  | "invalid_citation"
+  | "outside_source"
+  | "truncated_url"
+  | "medication"
+  | "number"
+  | "low_overlap"
+  | "uncited";
+
+/** Whitespace and surrounding punctuation only. Diacritics stay, so "hay" ≠ "hãy". */
+function normalizeClause(text: string): string {
+  return text
+    .normalize("NFC")
+    .replace(/\[S\d+\]/gi, " ")
+    .replace(/[“”«»"'`]/g, "")
+    .replace(/[.!?…]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/** Any 115 in model text. The system appends its own line after filtering. */
+export function mentionsEmergencyNumber(text: string): boolean {
+  return /(?:^|[^\d])115(?:[^\d]|$)/.test(text);
+}
+
+function isSystemSafetyLine(sentence: string): boolean {
+  const norm = normalizeClause(sentence);
+  return [SYMPTOM_SAFETY_LINE, POST_SEIZURE_CHECK_LINE, GENTLE_SUPPORT_LINE].some(
+    (line) => normalizeClause(line) === norm,
   );
 }
 
-/** Words that can sit in "Hãy gọi ngay 115" without adding a claim. */
-const SAFETY_FUNCTION = new Set(["hay", "vui", "long", "xin", "ban", "nhe", "nha"]);
+const AFFIRMATIVE_TEMPLATES = [
+  "hãy gọi 115 ngay",
+  "hãy gọi ngay 115",
+  "gọi 115 ngay",
+  "gọi ngay 115",
+];
 
-/** The 115 instruction, with no other claim and no hedge in the same clause. */
-function isSafetyOnlyClause(clause: string): boolean {
-  const folded = foldVietnamese(clause).replace(/\[s\d+\]/g, " ");
-  const has115 = /goi\s+(?:ngay\s+)?115/.test(folded);
-  const preamble = /neu co dau hieu nguy hiem/.test(folded);
-  if (!has115 && !preamble) return false;
-  if (hasHedge(folded)) return false;
-  const stripped = folded
-    .replace(/goi\s+(?:ngay\s+)?115/g, " ")
-    .replace(/neu co dau hieu nguy hiem/g, " ")
-    .replace(/https?:\/\/\S+/g, " ");
-  const tokens = stripped
-    .split(/[^a-z0-9]+/)
-    .filter(
-      (token) =>
-        token.length >= 3 && !GENERIC_CLAIM.has(token) && !SAFETY_FUNCTION.has(token),
-    );
-  return tokens.length === 0;
+/** Unaccented forms that do not contain "hay", so they cannot collide with "hãy". */
+const PLAIN_TEMPLATES = [
+  "goi 115 ngay",
+  "goi ngay 115",
+  "neu co dau hieu nguy hiem, goi ngay 115",
+];
+
+const CONDITION_HEDGE =
+  /(?:^|[\s,])(?:hoặc|hay|có thể|co the|không|khong|chẳng|chang|chưa|chua|đừng|đưng|dung|khỏi|khoi|unless|don't|dont)(?:[\s,]|$)/i;
+
+function conditionalBacked(
+  norm: string,
+  sources: Array<{ title: string; snippet: string }>,
+): boolean {
+  const match = /^(?:gọi 115 ngay nếu|goi 115 ngay neu)\s+(.+)$/.exec(norm);
+  if (!match) return false;
+  const condition = match[1] ?? "";
+  if (CONDITION_HEDGE.test(condition)) return false;
+  const tokens = contentTokens(condition);
+  if (tokens.length === 0) return false;
+  const blob = foldVietnamese(
+    sources.map((source) => `${source.title}\n${source.snippet}`).join("\n"),
+  );
+  return tokens.every((token) => containsToken(blob, token));
 }
 
-function splitClaimsAndSafety(sentence: string): string[] {
-  if (!/gọi\s+(?:ngay\s+)?115/i.test(sentence)) return [sentence];
-  const parts = sentence
-    .split(/(?<!\d)\s*[,;]\s*(?!\d)|\s+(?:và|nhưng)\s+/i)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return parts.length > 0 ? parts : [sentence];
+/**
+ * Exact affirmative 115 wording. Accent-sensitive on purpose: folding "hãy"
+ * and "hay" together is what let an either/or sentence through.
+ */
+export function isAffirmativeSafetyTemplate(
+  sentence: string,
+  sources: Array<{ title: string; snippet: string }> = [],
+): boolean {
+  if (isSystemSafetyLine(sentence)) return true;
+  const norm = normalizeClause(sentence);
+  if (AFFIRMATIVE_TEMPLATES.includes(norm)) return true;
+  const folded = foldVietnamese(norm);
+  if (norm === folded && PLAIN_TEMPLATES.includes(folded)) return true;
+  return conditionalBacked(norm, sources);
+}
+
+/** A cached answer may include only the 115 line the system itself appended. */
+export function answerHasModelEmergency(answer: string): boolean {
+  return answerSentences(answer).some(
+    (sentence) => mentionsEmergencyNumber(sentence) && !isSystemSafetyLine(sentence),
+  );
 }
 
 function citedBlob(
@@ -326,7 +389,20 @@ function claimBackedByCited(
     cited.map((source) => `${source.title}\n${source.snippet}`).join("\n"),
   );
   const hits = tokens.filter((token) => containsToken(haystack, token));
-  return hits.length / tokens.length >= 0.5;
+  return hits.length / tokens.length >= PARAPHRASE_OVERLAP;
+}
+
+function overlapRatio(
+  sentence: string,
+  cited: Array<{ title: string; snippet: string }>,
+): number {
+  const tokens = contentTokens(sentence);
+  if (tokens.length === 0) return 0;
+  const haystack = foldVietnamese(
+    cited.map((source) => `${source.title}\n${source.snippet}`).join("\n"),
+  );
+  const hits = tokens.filter((token) => containsToken(haystack, token));
+  return hits.length / tokens.length;
 }
 
 const GENERIC_CLAIM = new Set([
@@ -379,8 +455,11 @@ function mentionsOutsideSource(
   const foldedBlob = foldVietnamese(blob);
   const urls = sentence.match(/https?:\/\/[^\s)\]]+/gi) ?? [];
   for (const url of urls) {
-    const clean = url.replace(/[.,]+$/g, "");
+    const clean = url.replace(/[.,;:!?)]+$/g, "");
+    if (!isCompleteHttpUrl(clean)) return true;
     if (!blob.includes(clean)) return true;
+    const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`${escaped}\\S`).test(blob)) return true;
   }
   const foldedSentence = foldVietnamese(sentence);
   for (const marker of OUTSIDE_MARKERS) {
@@ -402,80 +481,123 @@ type SupportSource = {
   url?: string;
 };
 
-function citationsIn(text: string): string {
-  const keys = [...text.matchAll(/\[(S\d+)\]/g)].map((match) => `[${match[1] ?? ""}]`);
-  return [...new Set(keys)].join("");
-}
-
-function clauseIsSupported(
-  clause: string,
+function repairUrls(
   sentence: string,
   sources: SupportSource[],
+): { text: string; droppedUrl: boolean } {
+  let droppedUrl = false;
+  const known = sources
+    .map((source) => source.url)
+    .filter((url): url is string => Boolean(url));
+  const text = sentence.replace(/https?:\/\/[^\s)>\]]+/gi, (raw) => {
+    const url = raw.replace(/[.,;:!?)]+$/g, "");
+    const cut =
+      !isCompleteHttpUrl(url) ||
+      known.some((source) => source.length > url.length && source.startsWith(url));
+    if (cut) {
+      droppedUrl = true;
+      return "";
+    }
+    return url;
+  });
+  return {
+    text: text
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/\(\s*\)/g, "")
+      .trim(),
+    droppedUrl,
+  };
+}
+
+function supportFailure(
+  probe: string,
+  sources: SupportSource[],
   question: string,
-): boolean {
-  if (JUNK_TEXT.test(clause) || isCitationOnly(clause)) return false;
-  const probe = /\[S\d+\]/.test(clause)
-    ? clause
-    : `${clause} ${citationsIn(sentence)}`.trim();
-  if (answerHasInvalidCitations(probe, sources)) return false;
+): SentenceDropReason | null {
+  if (JUNK_TEXT.test(probe) || isCitationOnly(probe)) return "citation_only";
+  if (answerHasInvalidCitations(probe, sources)) return "invalid_citation";
   const citedKeys = [...probe.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
   const cited = sources.filter((source) => citedKeys.includes(source.key));
-  if (cited.length === 0) return false;
-  if (mentionsOutsideSource(probe, cited)) return false;
-  if (!medicationChangeIsSupported(probe, cited)) return false;
+  if (cited.length === 0) return "uncited";
+  if (mentionsOutsideSource(probe, cited)) return "outside_source";
+  if (!medicationChangeIsSupported(probe, cited)) return "medication";
   if (
     !claimNumbers(probe).every((number) =>
       numberIsSupported(number, probe, sources, question),
     )
   ) {
-    return false;
+    return "number";
   }
-  return claimBackedByCited(probe, cited);
+  if (!claimBackedByCited(probe, cited)) return "low_overlap";
+  return null;
 }
 
-/**
- * Keep a cited claim and a bare 115 clause. Drop everything else in the sentence,
- * including a 115 sentence that also carries an unsupported claim.
- */
+function assessSentence(
+  sentence: string,
+  sources: SupportSource[],
+  question: string,
+): { text: string; reason: SentenceDropReason | null } {
+  const trimmed = sentence.trim();
+  if (!trimmed || JUNK_TEXT.test(trimmed)) return { text: "", reason: "junk" };
+  // The model does not get to write 115. The system line is appended later.
+  if (mentionsEmergencyNumber(trimmed)) return { text: "", reason: "model_115" };
+  if (isSourceRefusal(trimmed) && sources.length > 0) return { text: "", reason: "refusal" };
+  if (/chưa tìm thấy đủ nguồn/.test(trimmed)) {
+    const citedKeys = [...trimmed.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
+    const cited = sources.filter((source) => citedKeys.includes(source.key));
+    const pool = cited.length > 0 ? cited : sources;
+    if (mentionsOutsideSource(trimmed, pool)) return { text: "", reason: "outside_source" };
+    if (!medicationChangeIsSupported(trimmed, pool)) return { text: "", reason: "medication" };
+    return { text: trimmed, reason: null };
+  }
+  const repaired = repairUrls(trimmed, sources);
+  const working = repaired.text;
+  if (!working || isCitationOnly(working)) {
+    return {
+      text: "",
+      reason: repaired.droppedUrl ? "truncated_url" : "citation_only",
+    };
+  }
+  if (/\[S\d+\]/.test(working)) {
+    const reason = supportFailure(working, sources, question);
+    return reason ? { text: "", reason } : { text: working, reason: null };
+  }
+  let best: { key: string; ratio: number } | null = null;
+  let fallback: SentenceDropReason = "uncited";
+  for (const source of sources) {
+    const ratio = overlapRatio(working, [source]);
+    if (ratio < PARAPHRASE_OVERLAP) {
+      fallback = "low_overlap";
+      continue;
+    }
+    const probe = `${working} [${source.key}]`;
+    const reason = supportFailure(probe, sources, question);
+    if (reason) {
+      fallback = reason;
+      continue;
+    }
+    if (!best || ratio > best.ratio) best = { key: source.key, ratio };
+  }
+  if (!best) return { text: "", reason: fallback };
+  return { text: `${normalizeSpace(working)} [${best.key}]`, reason: null };
+}
+
+/** Why a model sentence was dropped, or null when it is shown. */
+export function sentenceDropReason(
+  sentence: string,
+  sources: SupportSource[],
+  question: string,
+): SentenceDropReason | null {
+  return assessSentence(sentence, sources, question).reason;
+}
+
+/** Keep a cited claim or a paraphrase of the snippet. Drop every model 115 sentence. */
 export function groundedSentence(
   sentence: string,
   sources: SupportSource[],
   question: string,
 ): string {
-  const trimmed = sentence.trim();
-  if (!trimmed || JUNK_TEXT.test(trimmed)) return "";
-  // A refusal is not an answer when a snippet was already retrieved.
-  if (isSourceRefusal(trimmed) && sources.length > 0) return "";
-  if (/chưa tìm thấy đủ nguồn/.test(trimmed)) {
-    const citedKeys = [...trimmed.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
-    const cited = sources.filter((source) => citedKeys.includes(source.key));
-    const pool = cited.length > 0 ? cited : sources;
-    if (mentionsOutsideSource(trimmed, pool)) return "";
-    if (!medicationChangeIsSupported(trimmed, pool)) return "";
-    return trimmed;
-  }
-  const parts = splitClaimsAndSafety(trimmed);
-  const kept = parts.filter((part) => {
-    if (!isSafetyOnlyClause(part))
-      return clauseIsSupported(part, trimmed, sources, question);
-    const citedKeys = [...trimmed.matchAll(/\[(S\d+)\]/g)].map((match) => match[1] ?? "");
-    const cited = sources.filter((source) => citedKeys.includes(source.key));
-    return !mentionsOutsideSource(part, cited);
-  });
-  if (kept.length === 0) return "";
-  if (kept.length === parts.length) return trimmed;
-  if (kept.every((part) => isSafetyOnlyClause(part))) {
-    return normalizeSpace(kept.join(", ").replace(/\[S\d+\]/g, " "));
-  }
-  const body = normalizeSpace(
-    kept
-      .map((part) => part.replace(/\[S\d+\]/g, " "))
-      .join(", ")
-      .replace(/\s+([,.;])/g, "$1"),
-  );
-  const markers = citationsIn(trimmed);
-  const grounded = markers ? `${body} ${markers}` : body;
-  return isCitationOnly(grounded) ? "" : grounded;
+  return assessSentence(sentence, sources, question).text;
 }
 
 export function sentenceIsSupported(
@@ -483,12 +605,14 @@ export function sentenceIsSupported(
   sources: SupportSource[],
   question: string,
 ): boolean {
+  if (isAffirmativeSafetyTemplate(sentence, sources)) return true;
+  if (mentionsEmergencyNumber(sentence)) return false;
   const grounded = groundedSentence(sentence, sources, question);
   if (!grounded || isCitationOnly(grounded)) return false;
   return normalizeSpace(grounded) === normalizeSpace(sentence);
 }
 
-/** Drop unsupported sentences. A 115 clause stays; other claims in that sentence do not. */
+/** Drop unsupported sentences. Model 115 sentences are removed. */
 export function supportedAnswerText(
   answer: string,
   sources: SupportSource[],
@@ -588,6 +712,7 @@ export async function readAnswerCache(
     const parsed = JSON.parse(raw) as CachedAnswer;
     if (!parsed?.answer || !Array.isArray(parsed.sources)) return null;
     if (!isGroundedOfficialAnswer(parsed)) return null;
+    if (answerHasModelEmergency(parsed.answer)) return null;
     const mode = parsed.mode === "answer_bank" ? "answer_bank" : "kv_cache";
     if (!cachedSourcesMatchQuestion(question, parsed.answer, parsed.sources, mode))
       return null;
@@ -608,6 +733,7 @@ export async function writeAnswerCache(
   if (!payload.answer || payload.answer.length < 80) return;
   if (payload.answer.includes("chưa tìm thấy đủ nguồn")) return;
   if (!isGroundedOfficialAnswer(payload)) return;
+  if (answerHasModelEmergency(payload.answer)) return;
   if (answerHasInvalidCitations(payload.answer, payload.sources)) return;
   if (
     !cachedSourcesMatchQuestion(

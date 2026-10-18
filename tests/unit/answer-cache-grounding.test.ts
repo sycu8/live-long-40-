@@ -2,14 +2,18 @@ import { describe, expect, it } from "vitest";
 import { SYMPTOM_SAFETY_LINE } from "../../shared/rules/safety";
 import {
   answerAttributionsMatchSources,
+  answerHasModelEmergency,
   CACHE_TTL_SECONDS,
   groundedSentence,
+  isAffirmativeSafetyTemplate,
   isCitationOnly,
   readAnswerCache,
+  sentenceDropReason,
   sentenceIsSupported,
   writeAnswerCache,
   type CachedSource,
 } from "../../worker/ai/answer-cache";
+import { clipSnippet } from "../../worker/ai/local-retrieve";
 import type { Env } from "../../worker/env";
 
 const QUESTION = "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe";
@@ -157,17 +161,52 @@ describe("answer cache source relevance", () => {
     const invented =
       "Theo một nghiên cứu Lancet (https://example.com/study), hãy ngừng thuốc tiểu đường, gọi 115. [S1]";
     expect(sentenceIsSupported(invented, [WALKING], QUESTION)).toBe(false);
-    const kept = groundedSentence(invented, [WALKING], QUESTION);
-    expect(kept).toMatch(/gọi 115/i);
-    expect(kept).not.toMatch(/lancet|ngừng thuốc|example\.com/i);
+    expect(groundedSentence(invented, [WALKING], QUESTION)).toBe("");
+    expect(sentenceDropReason(invented, [WALKING], QUESTION)).toBe("model_115");
     expect(sentenceIsSupported(SYMPTOM_SAFETY_LINE, [WALKING], QUESTION)).toBe(true);
     expect(sentenceIsSupported("Hãy gọi ngay 115.", [WALKING], QUESTION)).toBe(true);
+    expect(sentenceIsSupported("Hãy gọi 115 ngay.", [WALKING], QUESTION)).toBe(true);
     expect(sentenceIsSupported("[S1]", [WALKING], QUESTION)).toBe(false);
     expect(sentenceIsSupported("Gọi 115 khi bị sốt cao.", [WALKING], QUESTION)).toBe(
       false,
     );
-    expect(groundedSentence("Gọi 115 khi bị sốt cao.", [WALKING], QUESTION)).not.toMatch(
-      /sốt/i,
+    expect(groundedSentence("Gọi 115 khi bị sốt cao.", [WALKING], QUESTION)).toBe("");
+    expect(groundedSentence(SYMPTOM_SAFETY_LINE, [WALKING], QUESTION)).toBe("");
+  });
+
+  it("drops either/or, hedges, and negators without folding hay into hãy", () => {
+    const rejected = [
+      "Gọi 115 hay đến bệnh viện.",
+      "Goi 115 hay den benh vien.",
+      "Hãy gọi 115 hay đến nhà.",
+      "Hay gọi 115 ngay.",
+      "Hay goi 115 ngay.",
+      "Có thể gọi 115 hoặc nhờ người nhà.",
+      "Co the goi 115 hoac nho nguoi nha.",
+      "Gọi 115 ngay nếu bạn muốn, hoặc đến nhà.",
+      "Bạn không cần gọi 115.",
+      "Ban khong can goi 115.",
+      "Đừng gọi 115.",
+      "Dung goi 115.",
+    ];
+    for (const sentence of rejected) {
+      expect(isAffirmativeSafetyTemplate(sentence, [WALKING]), sentence).toBe(false);
+      expect(sentenceIsSupported(sentence, [WALKING], QUESTION), sentence).toBe(false);
+      expect(groundedSentence(sentence, [WALKING], QUESTION), sentence).toBe("");
+      expect(sentenceDropReason(sentence, [WALKING], QUESTION), sentence).toBe(
+        "model_115",
+      );
+    }
+    expect(isAffirmativeSafetyTemplate("Hãy gọi 115 ngay.", [WALKING])).toBe(true);
+    expect(isAffirmativeSafetyTemplate("Goi 115 ngay.", [WALKING])).toBe(true);
+    expect(isAffirmativeSafetyTemplate(SYMPTOM_SAFETY_LINE, [WALKING])).toBe(true);
+    const backed = "Gọi 115 ngay nếu người 61 tuổi đi bộ buổi sáng.";
+    expect(isAffirmativeSafetyTemplate(backed, [WALKING])).toBe(true);
+    expect(sentenceIsSupported(backed, [WALKING], QUESTION)).toBe(true);
+    expect(groundedSentence(backed, [WALKING], QUESTION)).toBe("");
+    expect(answerHasModelEmergency(`Đi bộ buổi sáng. ${backed}`)).toBe(true);
+    expect(answerHasModelEmergency(`Đi bộ buổi sáng.\n\n${SYMPTOM_SAFETY_LINE}`)).toBe(
+      false,
     );
   });
 
@@ -281,5 +320,64 @@ describe("answer cache source relevance", () => {
       sources: [WALKING, offTopic],
     });
     expect(puts).toEqual([]);
+  });
+
+  it("does not cache a grounded answer that also carries a model 115 sentence", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const answer = `${SUPPORTED} Hãy gọi 115 ngay.`;
+    expect(answer.length).toBeGreaterThan(80);
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer,
+      sources: [WALKING],
+    });
+    expect(puts).toEqual([]);
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: `${SUPPORTED}\n\n${SYMPTOM_SAFETY_LINE}`,
+      sources: [WALKING],
+    });
+    expect(puts).toHaveLength(1);
+  });
+
+  it("keeps a paraphrase of the snippet and records why other sentences drop", () => {
+    const paraphrase =
+      "Người 61 tuổi giữ sức khỏe khi duy trì nhịp đi bộ vào buổi sáng, theo hướng dẫn. [S1]";
+    expect(sentenceDropReason(paraphrase, [WALKING], QUESTION)).toBeNull();
+    expect(sentenceIsSupported(paraphrase, [WALKING], QUESTION)).toBe(true);
+    const loose =
+      "Người 61 tuổi nên giữ sức bằng nhịp đi bộ buổi sáng theo hướng dẫn.";
+    expect(groundedSentence(loose, [WALKING], QUESTION)).toContain("[S1]");
+    const invented = "Kháng sinh chữa khỏi bệnh cúm sau ba ngày. [S1]";
+    expect(sentenceDropReason(invented, [WALKING], QUESTION)).toBe("low_overlap");
+    const generated = [
+      paraphrase,
+      loose,
+      "Duy trì nhịp đi bộ buổi sáng giúp người 61 tuổi giữ sức khỏe. [S1]",
+      "Theo hướng dẫn, người 61 tuổi nên đi bộ buổi sáng để giữ sức khỏe. [S1]",
+      "Nhịp đi bộ buổi sáng là cách người 61 tuổi giữ sức khỏe theo hướng dẫn. [S1]",
+      invented,
+      "Một nghiên cứu Lancet năm 2019 chứng minh giảm 40% nguy cơ. [S1]",
+      "Uống thuốc nam mỗi sáng sẽ khỏi bệnh hoàn toàn. [S1]",
+      "Bệnh viện tư nhân cam kết chữa dứt điểm. [S1]",
+      "Vitamin liều cao thay cho việc đi khám. [S1]",
+    ];
+    const kept = generated.filter(
+      (sentence) => sentenceDropReason(sentence, [WALKING], QUESTION) === null,
+    );
+    expect(kept.length / generated.length).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("drops a URL that was cut off and never slices one in half", () => {
+    const full = `${"Đi bộ buổi sáng. ".repeat(20)} Xem https://www.who.int/news-room/fact-sheets/detail/ageing-and-health để đọc tiếp.`;
+    const clipped = clipSnippet(full, 80);
+    expect(clipped).not.toMatch(/https?:\/\/\S*/);
+    expect(clipped.startsWith("https")).toBe(false);
+    const cut = "Xem https://www.who.int/news-room/fact-she để biết thêm. [S1]";
+    expect(sentenceDropReason(cut, [WALKING], QUESTION)).not.toBeNull();
+    expect(groundedSentence(cut, [WALKING], QUESTION)).not.toMatch(/https?:\/\//);
+    const intact =
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
+    expect(sentenceIsSupported(intact, [WALKING], QUESTION)).toBe(true);
   });
 });
