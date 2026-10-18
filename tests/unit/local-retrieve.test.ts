@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   foldVietnamese,
+  isCompleteHttpUrl,
+  MIN_RETRIEVAL_SCORE,
+  OFFICIAL_TOPIC_FLOOR,
   rankLocalKnowledge,
   scoreTextAgainstQuery,
+  scoreTextInCorpus,
+  type LocalChunkRow,
 } from "../../worker/ai/local-retrieve";
 
 describe("foldVietnamese", () => {
@@ -73,5 +78,104 @@ describe("rankLocalKnowledge", () => {
       3,
     );
     expect(ranked[0]?.title).toMatch(/giấy tờ/i);
+  });
+
+  it("keeps a topical official source the 97% band would hide behind an off-topic hit", () => {
+    const query = "Người lớn nên vận động thể chất bao nhiêu phút mỗi tuần";
+    const activity: LocalChunkRow = {
+      chunk_id: "activity",
+      content: `${"Lời mở đầu không nói tới chủ đề này. ".repeat(40)} Người lớn nên vận động thể chất mỗi tuần và bớt ngồi lâu.`,
+      heading: "Vận động",
+      source_id: "who-physical-activity",
+      title: "Vận động thể chất — Tổ chức Y tế Thế giới",
+      issuer: "Tổ chức Y tế Thế giới (WHO)",
+      trust_tier: "intl_guideline",
+      status: "active",
+    };
+    const distractor: LocalChunkRow = {
+      chunk_id: "pressure",
+      content: `${query}. ${query}. Huyết áp cao cần được theo dõi tại nhà mỗi ngày.`,
+      heading: "Huyết áp",
+      source_id: "who-hypertension",
+      title: "Huyết áp cao — tờ hướng dẫn",
+      issuer: "Tổ chức Y tế Thế giới (WHO)",
+      trust_tier: "intl_guideline",
+      status: "active",
+    };
+    const ranked = rankLocalKnowledge(query, [activity, distractor], [], 3);
+    expect(ranked.map((source) => source.sourceId)).toContain("who-physical-activity");
+    expect(ranked.map((source) => source.sourceId)).not.toContain("who-hypertension");
+  });
+
+  it("uses the 0.25 floor for WHO, Bộ Y tế, and CDC only after the topic gate", () => {
+    expect(OFFICIAL_TOPIC_FLOOR).toBe(0.25);
+    expect(MIN_RETRIEVAL_SCORE).toBe(0.28);
+    const query = "cholesterol vận động lipoprotein statin fibrate insulin metformin";
+    const body = "cholesterol. lipoprotein. statin. fibrate. insulin. metformin.";
+    const shared = {
+      chunk_id: "chol",
+      content: body,
+      heading: "Ghi chú",
+      title: "Ghi chú lâm sàng",
+      status: "active" as const,
+    };
+    const official: LocalChunkRow = {
+      ...shared,
+      source_id: "who-cholesterol",
+      issuer: "Tổ chức Y tế Thế giới (WHO)",
+      trust_tier: "intl_guideline",
+    };
+    const ministry: LocalChunkRow = {
+      ...shared,
+      chunk_id: "byt",
+      source_id: "byt-cholesterol",
+      issuer: "Bộ Y tế Việt Nam",
+      trust_tier: "official_vn",
+    };
+    const cdc: LocalChunkRow = {
+      ...shared,
+      chunk_id: "cdc",
+      source_id: "cdc-cholesterol",
+      issuer: "Centers for Disease Control and Prevention",
+      trust_tier: "official_vn",
+    };
+    const blog: LocalChunkRow = {
+      ...shared,
+      chunk_id: "blog",
+      source_id: "blog-cholesterol",
+      issuer: "Trang tin sức khỏe",
+      trust_tier: "community",
+    };
+    const corpus = [foldVietnamese(`${official.title}\n${official.heading ?? ""}\n${official.content}`)];
+    const titleScore = scoreTextInCorpus(`${official.title}\n${official.heading}`, query, corpus);
+    const bodyScore = scoreTextInCorpus(official.content, query, corpus);
+    const score = Math.max(titleScore * 1.25, bodyScore, (titleScore + bodyScore) / 2);
+    expect(score, `score ${score}`).toBeGreaterThanOrEqual(OFFICIAL_TOPIC_FLOOR);
+    expect(score, `score ${score}`).toBeLessThan(MIN_RETRIEVAL_SCORE);
+    expect(rankLocalKnowledge(query, [official], [], 3).map((source) => source.sourceId)).toContain(
+      "who-cholesterol",
+    );
+    expect(rankLocalKnowledge(query, [ministry], [], 3).map((source) => source.sourceId)).toContain(
+      "byt-cholesterol",
+    );
+    expect(rankLocalKnowledge(query, [cdc], [], 3).map((source) => source.sourceId)).toContain(
+      "cdc-cholesterol",
+    );
+    expect(rankLocalKnowledge(query, [blog], [], 3)).toEqual([]);
+  });
+});
+
+describe("isCompleteHttpUrl", () => {
+  it("rejects a token that ends in a hyphen or a dot", () => {
+    expect(isCompleteHttpUrl("https://www.who.int/news-room/fact-sheets/detail/ageing-")).toBe(
+      false,
+    );
+    expect(isCompleteHttpUrl("https://www.who.int/news-room/fact-sheets/detail/ageing.")).toBe(
+      false,
+    );
+    expect(
+      isCompleteHttpUrl("https://www.who.int/news-room/fact-sheets/detail/ageing-and-health"),
+    ).toBe(true);
+    expect(isCompleteHttpUrl("https://www.who.int")).toBe(true);
   });
 });

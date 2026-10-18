@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SYMPTOM_SAFETY_LINE } from "../../shared/rules/safety";
 import {
   answerAttributionsMatchSources,
+  answerEchoesQuestion,
   answerHasModelEmergency,
   answerPostponesCare,
   CACHE_TTL_SECONDS,
@@ -16,7 +17,7 @@ import {
   writeAnswerCache,
   type CachedSource,
 } from "../../worker/ai/answer-cache";
-import { clipSnippet } from "../../worker/ai/local-retrieve";
+import { clipSnippet, isCompleteHttpUrl } from "../../worker/ai/local-retrieve";
 import type { Env } from "../../worker/env";
 
 const QUESTION = "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe";
@@ -356,7 +357,7 @@ describe("answer cache source relevance", () => {
     const generated = [
       paraphrase,
       loose,
-      "Duy trì nhịp đi bộ buổi sáng giúp người 61 tuổi giữ sức khỏe. [S1]",
+      "Duy trì nhịp đi bộ buổi sáng giúp người 61 tuổi giữ sức khỏe theo hướng dẫn. [S1]",
       "Theo hướng dẫn, người 61 tuổi nên đi bộ buổi sáng để giữ sức khỏe. [S1]",
       "Nhịp đi bộ buổi sáng là cách người 61 tuổi giữ sức khỏe theo hướng dẫn. [S1]",
       invented,
@@ -405,6 +406,20 @@ describe("answer cache source relevance", () => {
       "Don't go to the hospital.",
       "Just wait at home.",
       "Chưa cần kiểm tra sức khỏe.",
+      "Không cần gọi cấp cứu.",
+      "Khong can goi cap cuu.",
+      "Không cần gọi xe cấp cứu.",
+      "Khong can xe cap cuu.",
+      "No need to take to emergency.",
+      "Tự theo dõi không cần khám.",
+      "Tu theo doi khong can kham.",
+      "Self-monitor without an exam.",
+      "Đợi vài ngày rồi khám.",
+      "Doi vai ngay roi kham.",
+      "Wait a few days before an exam.",
+      "Không cần trợ giúp y tế.",
+      "Khong can tro giup y te.",
+      "Medical help is unnecessary.",
     ];
     for (const sentence of avoided) {
       expect(postponesSeekingCare(sentence), sentence).toBe(true);
@@ -423,7 +438,14 @@ describe("answer cache source relevance", () => {
     expect(postponesSeekingCare(positive[1]!)).toBe(false);
     expect(sentenceIsSupported(positive[0]!, [source], QUESTION)).toBe(true);
     expect(sentenceIsSupported(positive[1]!, [source], QUESTION)).toBe(true);
+    for (const sentence of ["Không cần gọi 115.", "Khong can goi 115."]) {
+      expect(postponesSeekingCare(sentence), sentence).toBe(true);
+      expect(sentenceDropReason(sentence, [source], QUESTION), sentence).toBe("model_115");
+      expect(groundedSentence(sentence, [source], QUESTION), sentence).toBe("");
+    }
     expect(postponesSeekingCare("Sử dụng thuốc rồi hãy đi khám.")).toBe(false);
+    expect(postponesSeekingCare("Su dung thuoc roi hay di kham.")).toBe(false);
+    expect(postponesSeekingCare("Không cần lo, hãy gặp bác sĩ khi cần.")).toBe(false);
 
     const { puts, CONFIG } = memoryConfig();
     const grounded =
@@ -435,6 +457,14 @@ describe("answer cache source relevance", () => {
     });
     expect(puts).toEqual([]);
     expect(answerPostponesCare(`${grounded} Ban khong can gap bac si.`)).toBe(true);
+    expect(answerPostponesCare(`${grounded} Khong can goi cap cuu.`)).toBe(true);
+    expect(answerPostponesCare(`${grounded} Doi vai ngay roi kham.`)).toBe(true);
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: `${grounded} Không cần trợ giúp y tế.`,
+      sources: [source],
+    });
+    expect(puts).toEqual([]);
     const kept =
       "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn và nên gặp bác sĩ khi cần. [S1]";
     expect(sentenceIsSupported(kept, [source], QUESTION)).toBe(true);
@@ -455,6 +485,7 @@ describe("answer cache source relevance", () => {
       sentenceDropReason("Tôi sẽ trả lời câu hỏi này.", [WALKING], QUESTION),
     ).toBe("meta");
     expect(sentenceDropReason(`${QUESTION} [S1]`, [WALKING], QUESTION)).toBe("echo");
+    expect(answerEchoesQuestion(`${QUESTION} [S1]`, QUESTION, [WALKING])).toBe(true);
     expect(groundedSentence("Nguồn: đi bộ buổi sáng [S1]", [WALKING], QUESTION)).toBe("");
     expect(groundedSentence("Bộ Y tế.", [WALKING], QUESTION)).toBe("");
     expect(groundedSentence("WHO [S1]", [WALKING], QUESTION)).toBe("");
@@ -468,6 +499,25 @@ describe("answer cache source relevance", () => {
     const closed =
       "**Người 61 tuổi** nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
     expect(sentenceDropReason(closed, [WALKING], QUESTION)).toBeNull();
+    const unclosedClaim =
+      "**Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
+    const opened = groundedSentence(unclosedClaim, [WALKING], QUESTION);
+    expect(opened).toContain("hướng dẫn");
+    expect(opened).not.toContain("**");
+    expect(sentenceDropReason(unclosedClaim, [WALKING], QUESTION)).toBeNull();
+  });
+
+  it("does not cache a cited echo of the question", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const echo = `${QUESTION}. [S1] ${SUPPORTED}`;
+    expect(answerEchoesQuestion(echo, QUESTION, [WALKING])).toBe(true);
+    expect(sentenceDropReason(`${QUESTION} [S1]`, [WALKING], QUESTION)).toBe("echo");
+    await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
+      classification: "health_education",
+      answer: echo,
+      sources: [WALKING],
+    });
+    expect(puts).toEqual([]);
   });
 
   it("keeps a factual 115, a full host, and the sentence after a URL", () => {
@@ -490,6 +540,36 @@ describe("answer cache source relevance", () => {
         WALKING,
       ], QUESTION),
     ).toBe("");
+    expect(isCompleteHttpUrl("https://www.who.int/news-room/fact-sheets/detail/ageing-")).toBe(
+      false,
+    );
+    expect(isCompleteHttpUrl("https://www.who.int/news-room/fact-sheets/detail/ageing.")).toBe(
+      false,
+    );
+    expect(
+      isCompleteHttpUrl(
+        "https://www.who.int/news-room/fact-sheets/detail/ageing-and-health",
+      ),
+    ).toBe(true);
+    expect(
+      groundedSentence(
+        "… xem thêm tại https://www.who.int/news-room/fact-sheets/detail/ageing- [S1]",
+        [WALKING],
+        QUESTION,
+      ),
+    ).toBe("");
+    expect(
+      groundedSentence(
+        "… xem thêm tại https://www.who.int/news-room/fact-sheets/detail/ageing. [S1]",
+        [WALKING],
+        QUESTION,
+      ),
+    ).toBe("");
+    const finished =
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn (https://www.who.int/news-room/fact-sheets/detail/ageing-and-health). [S1]";
+    expect(groundedSentence(finished, [WALKING], QUESTION)).toContain(
+      "https://www.who.int/news-room/fact-sheets/detail/ageing-and-health",
+    );
     const boundary = supportedAnswerText(
       "Xem https://www.who.int/news-room/fact-sheets/detail/ageing-and-health. Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]",
       [WALKING],

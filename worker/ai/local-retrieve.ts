@@ -5,9 +5,14 @@ export { foldVietnamese };
 
 const HTTP_URL = /https?:\/\/[^\s)>\]]+/gi;
 
-/** A URL that parses and was not cut off mid-host or mid-encoding. */
+/** A URL that parses and was not cut off mid-host, mid-path, or mid-encoding. */
 export function isCompleteHttpUrl(raw: string): boolean {
-  const url = raw.replace(/[.,;:!?)]+$/g, "");
+  const trimmed = raw.trim();
+  // A token that still ends in "-" or "." is incomplete. Callers that own the
+  // sentence may strip one final "." and ask again.
+  if (!trimmed || /[-.]$/.test(trimmed)) return false;
+  const url = trimmed.replace(/[),;:!?]+$/g, "");
+  if (!url || /[-.]$/.test(url)) return false;
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
@@ -15,10 +20,24 @@ export function isCompleteHttpUrl(raw: string): boolean {
     const tld = parsed.hostname.split(".").pop() ?? "";
     if (!/^[a-z]{2,}$/i.test(tld)) return false;
     if (/%(?:$|[0-9a-f]$)/i.test(url)) return false;
+    if (/[-.]$/.test(parsed.pathname)) return false;
     return true;
   } catch {
     return false;
   }
+}
+
+/**
+ * The URL to keep, or null when the token was cut.
+ * One sentence period after a finished URL is not part of the URL.
+ */
+export function completeHttpUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (isCompleteHttpUrl(trimmed)) return trimmed.replace(/[),;:!?]+$/g, "");
+  if (trimmed.endsWith(".") && isCompleteHttpUrl(trimmed.slice(0, -1))) {
+    return trimmed.slice(0, -1);
+  }
+  return null;
 }
 
 /** Scheme and host only, such as https://www.who.int, with no document path. */
@@ -35,10 +54,7 @@ export function isHostOnlyUrl(raw: string): boolean {
 /** Remove a URL that does not parse as a finished http(s) address. */
 export function stripIncompleteUrls(text: string): string {
   return text
-    .replace(HTTP_URL, (raw) => {
-      const url = raw.replace(/[.,;:!?)]+$/g, "");
-      return isCompleteHttpUrl(url) ? url : "";
-    })
+    .replace(HTTP_URL, (raw) => completeHttpUrl(raw) ?? "")
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\(\s*\)/g, "")
     .trim();
@@ -182,6 +198,34 @@ export function containsToken(folded: string, token: string): boolean {
  * Embedding scores use a separate floor in retrieval-filter.ts.
  */
 export const MIN_RETRIEVAL_SCORE = 0.28;
+
+/**
+ * WHO, Bộ Y tế, and CDC may sit just under the global floor when the topic
+ * gate has already passed. Every other source still uses {@link MIN_RETRIEVAL_SCORE}.
+ */
+export const OFFICIAL_TOPIC_FLOOR = 0.25;
+
+function isLenientOfficial(row: {
+  issuer?: string;
+  trust_tier?: string | null;
+  trustTier?: string;
+}): boolean {
+  const tier = (row.trust_tier ?? row.trustTier ?? "").toLowerCase();
+  if (tier === "intl_guideline") return true;
+  const issuer = foldVietnamese(row.issuer ?? "");
+  if (/(?:^|[^a-z])cdc(?:[^a-z]|$)|centers for disease/.test(issuer)) return true;
+  if (/bo y te/.test(issuer)) return true;
+  if (/(?:^|[^a-z])who(?:[^a-z]|$)|y te the gioi|world health organization/.test(issuer))
+    return true;
+  return false;
+}
+
+function admissionFloor(
+  row: { issuer?: string; trust_tier?: string | null; trustTier?: string },
+  topicOk: boolean,
+): number {
+  return topicOk && isLenientOfficial(row) ? OFFICIAL_TOPIC_FLOOR : MIN_RETRIEVAL_SCORE;
+}
 
 /** How many sources may be shown as citations. */
 export const MAX_CITED_SOURCES = 3;
@@ -434,6 +478,7 @@ const TOPIC_CLASSES: string[][] = [
   ["bhyt", "bao hiem y te"],
   ["luong huu"],
   ["huyet ap"],
+  ["duong huyet"],
   ["giac ngu", "mat ngu"],
   ["van dong", "di bo"],
   ["dang ky luu hanh"],
@@ -507,10 +552,11 @@ function logRetrievalMiss(query: string, chunks: LocalChunkRow[]): void {
         title: row.title,
         snippet: row.content,
       });
+      const floor = admissionFloor(row, topic);
       const reason =
         score === 0
           ? "no_token"
-          : score < MIN_RETRIEVAL_SCORE
+          : score < floor
             ? "below_floor"
             : topic
               ? "filtered_after_score"
@@ -549,7 +595,7 @@ export function rankLocalKnowledge(
       foldVietnamese(`${lesson.title}\n${lesson.summary}\n${lesson.body_markdown}`),
     ),
   ];
-  const scored: Array<RankedLocalSource & { _score: number }> = [];
+  const scored: Array<RankedLocalSource & { _score: number; _body: string }> = [];
 
   for (const row of chunks) {
     const titleScore = scoreTextInCorpus(
@@ -559,9 +605,14 @@ export function rankLocalKnowledge(
     );
     const bodyScore = scoreTextInCorpus(row.content, query, corpus);
     const score = Math.max(titleScore * 1.25, bodyScore, (titleScore + bodyScore) / 2);
-    if (score < MIN_RETRIEVAL_SCORE) continue;
+    const topicOk = sourceMatchesQuestionTopic(query, {
+      title: row.title,
+      snippet: row.content,
+    });
+    if (score < admissionFloor(row, topicOk)) continue;
     scored.push({
       _score: score,
+      _body: row.content,
       key: "",
       sourceId: row.source_id,
       chunkId: row.chunk_id,
@@ -579,10 +630,15 @@ export function rankLocalKnowledge(
   for (const lesson of lessons) {
     const blob = `${lesson.title}\n${lesson.summary}\n${lesson.body_markdown}`;
     const score = scoreTextInCorpus(blob, query, corpus);
-    if (score < MIN_RETRIEVAL_SCORE) continue;
+    const topicOk = sourceMatchesQuestionTopic(query, {
+      title: lesson.title,
+      snippet: blob,
+    });
+    if (score < admissionFloor({ issuer: lesson.issuer }, topicOk)) continue;
     const snippet = clipSnippet(lesson.summary || lesson.body_markdown);
     scored.push({
       _score: score * 0.95, // slight preference for curated source_chunks
+      _body: blob,
       key: "",
       sourceId: `lesson:${lesson.slug}`,
       chunkId: `lesson:${lesson.slug}`,
@@ -599,9 +655,15 @@ export function rankLocalKnowledge(
   scored.sort((a, b) => b._score - a._score);
   const top = scored[0]?._score ?? 0;
   const band = scored.filter((item) => item._score >= top * 0.97);
-  const topical = band.filter((item) =>
-    sourceMatchesQuestionTopic(query, { title: item.title, snippet: item.snippet }),
-  );
+  const topicOf = (item: (typeof scored)[number]) =>
+    sourceMatchesQuestionTopic(query, {
+      title: item.title,
+      snippet: item._body || item.snippet,
+    });
+  // The 97% band can be an off-topic source that outscored the real hit.
+  // Fall through to every source that already cleared its floor and the topic gate.
+  let topical = band.filter(topicOf);
+  if (topical.length === 0) topical = scored.filter(topicOf);
   const withHits = topical.map((item) => ({
     item,
     hits: queryTokens(query).filter(
@@ -609,7 +671,7 @@ export function rankLocalKnowledge(
         token.length >= 3 &&
         !GENERIC_TOPIC.has(token) &&
         !WEAK_TOPIC.has(token) &&
-        containsToken(foldVietnamese(`${item.title}\n${item.snippet}`), token),
+        containsToken(foldVietnamese(`${item.title}\n${item._body || item.snippet}`), token),
     ),
   }));
   // A sibling that only repeats the broader source's tokens is the same issuer
@@ -627,7 +689,7 @@ export function rankLocalKnowledge(
     logRetrievalMiss(query, chunks);
   }
   return kept.map((item, index) => {
-    const { _score: _, ...rest } = item;
+    const { _score: _ignoredScore, _body: _ignoredBody, ...rest } = item;
     return { ...rest, key: `S${index + 1}`, score: rest.score };
   });
 }
