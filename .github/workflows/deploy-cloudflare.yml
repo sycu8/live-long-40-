@@ -25,7 +25,8 @@ on:
 
 concurrency:
   group: deploy-cloudflare-${{ github.ref }}
-  cancel-in-progress: true
+  # A new push or dispatch must not cancel an in-progress production deploy.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   verify:
@@ -53,11 +54,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Test
+        run: pnpm test
+
       - name: Build
         run: pnpm build
 
-      - name: Test
-        run: pnpm test
+      - name: Dry-run Worker deploy
+        run: pnpm exec wrangler deploy --dry-run
 
   deploy:
     name: Provision & deploy Worker
@@ -91,6 +95,17 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+
+      - name: Refuse non-production and non-main deploys
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Production deploys are only allowed from refs/heads/main (got ${GITHUB_REF})."
+            exit 1
+          fi
+          if [ "$DEPLOY_ENVIRONMENT" != "production" ]; then
+            echo "::error::Refusing DEPLOY_ENVIRONMENT=${DEPLOY_ENVIRONMENT}. There is no staging Worker; deploying would update the production Worker song-an-40."
+            exit 1
+          fi
 
       - name: Check Cloudflare secrets
         run: |

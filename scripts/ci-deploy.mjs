@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { randomBytes } from "node:crypto";
+import { pathToFileURL } from "node:url";
 
 const root = resolve(import.meta.dirname, "..");
 const PLACEHOLDER_D1 = "00000000-0000-0000-0000-000000000001";
@@ -147,14 +148,41 @@ function putSecret(name, value) {
   }
 }
 
-ensureToken();
+/**
+ * Production deploys are the top-level Worker `song-an-40` (`wrangler deploy`
+ * with no `--env`). There is no staging Worker yet, so anything other than
+ * production must fail before that command. On GitHub Actions, production is
+ * also limited to refs/heads/main — a workflow_dispatch from another branch
+ * would otherwise publish the same Worker.
+ */
+export function productionDeployRefusal({
+  environment,
+  githubActions,
+  githubRef,
+}) {
+  if (environment !== "production") {
+    const label = environment || "(unset)";
+    return `Refusing DEPLOY_ENVIRONMENT=${label}. There is no staging Worker; deploying would update the production Worker song-an-40.`;
+  }
+  const onActions = githubActions === true || githubActions === "true";
+  if (onActions && githubRef !== "refs/heads/main") {
+    const ref = githubRef || "(unknown ref)";
+    return `Refusing deploy from ${ref}. Production deploys are only allowed from refs/heads/main.`;
+  }
+  return null;
+}
 
-const environment = process.env.DEPLOY_ENVIRONMENT || "staging";
+function isDirectRun() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  return import.meta.url === pathToFileURL(entry).href;
+}
+
 const dbName = "song-an-40-db";
 const kvTitle = "song-an-40-config";
 const r2Name = "song-an-40-sources";
 
-async function main() {
+async function main(environment) {
   console.log("→ Installing deps…");
   run("pnpm", ["install", "--frozen-lockfile"], { stdio: "inherit" });
 
@@ -235,7 +263,23 @@ async function main() {
   console.log("→ Deploy complete.");
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (isDirectRun()) {
+  const refusal = productionDeployRefusal({
+    environment: process.env.DEPLOY_ENVIRONMENT || "",
+    githubActions: process.env.GITHUB_ACTIONS,
+    githubRef: process.env.GITHUB_REF,
+  });
+  if (refusal) {
+    console.error(refusal);
+    process.exit(1);
+  }
+
+  ensureToken();
+
+  const environment = "production";
+
+  main(environment).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
