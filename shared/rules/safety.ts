@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.4.0";
+export const SAFETY_RULESET_VERSION = "v1.5.0";
 
 export type RiskClass =
   | "chest_pain"
@@ -249,60 +249,44 @@ const MESSAGES: Record<Exclude<RiskClass, "none">, string> = {
   ),
 };
 
-/** Feeling immediately before "muốn chết". Body parts count only after đau/nhức/mỏi. */
-const FEELING = new Set([
-  "gian",
-  "ret",
-  "lanh",
-  "nong",
-  "met",
-  "doi",
-  "cuoi",
-  "so",
-  "khat",
-  "vui",
-  "nang",
-  "nhuc",
-  "moi",
-  "ngot",
-  "dau",
-]);
-const BODY = new Set([
-  "lung",
-  "bung",
-  "chan",
-  "vai",
-  "co",
-  "hong",
-  "tay",
-  "rang",
-  "dau",
-  "mat",
-  "nguc",
-]);
-
 const INTENT = new Set(["toi", "em", "minh", "muon", "dinh", "tinh", "toan"]);
 const SPEECH = new Set(["noi", "bao", "ke", "than", "hoi"]);
+/** The word directly before "muốn chết" when it is a plan, not an idiom. */
+const LITERAL_BEFORE_DIE = new Set([
+  "toi",
+  "em",
+  "minh",
+  "dinh",
+  "tinh",
+  "toan",
+  "noi",
+  "bao",
+  "ke",
+  "than",
+  "hoi",
+  "se",
+  "dang",
+  "chi",
+]);
 
 function hasIntentFrame(tokens: SafetyToken[], index: number): boolean {
   return nearFolded(tokens, index, [...INTENT, ...SPEECH], 4);
 }
 
-/** "đau lưng muốn chết" / "giận muốn chết": the words before muốn are the feeling. */
+/** Planning verbs. A nearby pronoun is not enough for unaccented "tu tu". */
+function explicitDeathPlan(tokens: SafetyToken[], index: number): boolean {
+  return nearFolded(tokens, index, ["muon", "dinh", "tinh", "toan"], 4);
+}
+
+/**
+ * "muốn chết" is literal only when the previous word is a person, a speech verb,
+ * or a plan verb. Any other predecessor is an exaggeration idiom
+ * ("rét muốn chết", "chán muốn chết", "điên muốn chết").
+ */
 function isHyperboleWantDie(tokens: SafetyToken[], wantIndex: number): boolean {
   const prev = tokens[wantIndex - 1];
-  const prev2 = tokens[wantIndex - 2];
   if (!prev) return false;
-  if (FEELING.has(prev.folded)) return true;
-  if (prev2?.folded === "buon" && prev.folded === "cuoi") return true;
-  if (
-    prev2 &&
-    (prev2.folded === "dau" || prev2.folded === "nhuc" || prev2.folded === "moi") &&
-    BODY.has(prev.folded)
-  ) {
-    return true;
-  }
-  return false;
+  return !LITERAL_BEFORE_DIE.has(prev.folded);
 }
 
 function restContext(tokens: SafetyToken[], index: number): boolean {
@@ -335,6 +319,12 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
       (matchesTarget(first, "tử") && matchesTarget(second, "tự"));
     if (!pair) continue;
     if (restContext(tokens, i)) continue;
+    // Unaccented "tu tu" is the gradual idiom "từ từ" unless a plan verb is present.
+    const bothUnaccented = !first.toned && !second.toned;
+    if (bothUnaccented) {
+      if (explicitDeathPlan(tokens, i)) return true;
+      continue;
+    }
     if (hasIntentFrame(tokens, i)) return true;
   }
 
@@ -519,6 +509,14 @@ function matchBreathing(folded: string): boolean {
 }
 
 function matchSeizure(folded: string): boolean {
+  if (
+    /\b(lam sao phong|phong ngua|de phong|ngan ngua|cach phong)\b/.test(folded) &&
+    !/\b(dang giat|giat lien|giat khong|lien tuc|sui bot|co cung|cung nguoi|bat tinh|len con)\b/.test(
+      folded,
+    )
+  ) {
+    return false;
+  }
   if (
     /\b(hay co giat|hay bi co giat|hay giat)\b/.test(folded) &&
     !/\b(dang|lien tuc|khong dung|sui bot|cung nguoi|co cung)\b/.test(folded)
@@ -713,7 +711,7 @@ function isSudden(folded: string): boolean {
 function isPastOrStable(folded: string): boolean {
   const years = /\b(lau nam|nhieu nam)\b/.test(folded);
   const currentComplaint =
-    /\b(tuc nguc|dau nguc|that nguc|nhoi nguc|kho tho|du doi|va mo hoi|toat mo hoi|lo mo|khong tinh|bat tinh|co giat|meo mieng|noi ngong|mat lech|chay mau|non ra mau|sui bot)\b/.test(
+    /\b(tuc nguc|dau nguc|that nguc|nhoi nguc|kho tho|du doi|va mo hoi|toat mo hoi|lo mo|khong tinh|bat tinh|co giat|meo mieng|noi ngong|mat lech|chay mau|non ra mau|sui bot|uong nham|qua lieu|ngo doc|ca vi|uong het|thuoc tru sau|thuoc diet)\b/.test(
       folded,
     );
   if (years && !currentComplaint) return true;
@@ -758,6 +756,10 @@ function isEducation(folded: string): boolean {
 }
 
 export const SYMPTOM_SAFETY_LINE = "Nếu có dấu hiệu nguy hiểm, gọi ngay 115.";
+
+/** One line, not the crisis screen. Used only when the classifier is unsure. */
+export const GENTLE_SUPPORT_LINE =
+  "Nếu bạn đang thấy quá sức, bạn có thể gọi đường dây hỗ trợ 1900 1267.";
 
 const SYMPTOM_ACCENTED = [
   "đau",
@@ -805,6 +807,78 @@ const SYMPTOM_FOLDED = new Set(
   SYMPTOM_ACCENTED.filter((word) => word !== "hóc").map((word) => foldVietnamese(word)),
 );
 
+/** Tone mark only. Vowel quality (â, ơ, đ) stays, so "dâu" does not become "đau". */
+const TONE_TO_BASE: Record<string, string> = {
+  à: "a",
+  á: "a",
+  ả: "a",
+  ã: "a",
+  ạ: "a",
+  ằ: "ă",
+  ắ: "ă",
+  ẳ: "ă",
+  ẵ: "ă",
+  ặ: "ă",
+  ầ: "â",
+  ấ: "â",
+  ẩ: "â",
+  ẫ: "â",
+  ậ: "â",
+  è: "e",
+  é: "e",
+  ẻ: "e",
+  ẽ: "e",
+  ẹ: "e",
+  ề: "ê",
+  ế: "ê",
+  ể: "ê",
+  ễ: "ê",
+  ệ: "ê",
+  ì: "i",
+  í: "i",
+  ỉ: "i",
+  ĩ: "i",
+  ị: "i",
+  ò: "o",
+  ó: "o",
+  ỏ: "o",
+  õ: "o",
+  ọ: "o",
+  ồ: "ô",
+  ố: "ô",
+  ổ: "ô",
+  ỗ: "ô",
+  ộ: "ô",
+  ờ: "ơ",
+  ớ: "ơ",
+  ở: "ơ",
+  ỡ: "ơ",
+  ợ: "ơ",
+  ù: "u",
+  ú: "u",
+  ủ: "u",
+  ũ: "u",
+  ụ: "u",
+  ừ: "ư",
+  ứ: "ư",
+  ử: "ư",
+  ữ: "ư",
+  ự: "ư",
+  ỳ: "y",
+  ý: "y",
+  ỷ: "y",
+  ỹ: "y",
+  ỵ: "y",
+};
+
+function stripTone(word: string): string {
+  let out = "";
+  for (const ch of word) out += TONE_TO_BASE[ch] ?? ch;
+  return out;
+}
+
+const SYMPTOM_BASE = new Set(SYMPTOM_ACCENTED.map((word) => stripTone(word)));
+
 const SYMPTOM_PHRASES =
   /\b(kho tho|dau nguc|tuc nguc|that nguc|nhoi nguc|buon non|chong mat|hoa mat|lo mo|lu lan|duong huyet|tieu duong|chay mau|meo mieng|co giat|co cung|bat tinh|mat ngu|kho ngu|tieu chay|tao bon|me day|phu ne|dau dau|dau bung|dau lung|dau hong|dau khop|sung khop|kho tieu|sut can|chan an|met moi|toat mo hoi|va mo hoi|noi man|tim tai|hut hoi|ngop tho|non oi|mat suc|te bi|ngu khong ngon|noi me day|sung phu|kho khe)\b/;
 
@@ -812,7 +886,10 @@ export function questionMentionsSymptom(question: string): boolean {
   const { tokens, folded } = analyzeQuestion(question);
   if (SYMPTOM_PHRASES.test(folded)) return true;
   return tokens.some((token) => {
-    if (token.toned) return SYMPTOM_WORDS.has(token.accented);
+    if (token.toned && SYMPTOM_WORDS.has(token.accented)) return true;
+    // "họ" is only a tone away from "ho", and it is not a cough.
+    if (token.accented === "họ") return false;
+    if (token.toned) return SYMPTOM_BASE.has(stripTone(token.accented));
     return SYMPTOM_FOLDED.has(token.folded);
   });
 }
@@ -856,4 +933,27 @@ export function evaluateHighRisk(question: string): SafetyMatch {
     message: MESSAGES[riskClass],
     rulesetVersion: SAFETY_RULESET_VERSION,
   };
+}
+
+export function emergencyMessage(riskClass: Exclude<RiskClass, "none">): string {
+  return MESSAGES[riskClass];
+}
+
+/**
+ * Wording that might be self-harm or might be an idiom.
+ * The fast path did not take the crisis screen. The classifier decides.
+ */
+export function selfHarmLooksAmbiguous(question: string): boolean {
+  if (evaluateHighRisk(question).riskClass === "self_harm") return false;
+  const { tokens, folded } = analyzeQuestion(question);
+  if (/\b(muon chet|chan doi)\b/.test(folded)) return true;
+  for (let i = 0; i < tokens.length - 1; i++) {
+    const first = tokens[i]!;
+    const second = tokens[i + 1]!;
+    if (first.toned || second.toned) continue;
+    if (first.folded !== "tu" || second.folded !== "tu") continue;
+    if (restContext(tokens, i)) continue;
+    return true;
+  }
+  return false;
 }

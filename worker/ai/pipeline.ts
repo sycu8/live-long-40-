@@ -1,10 +1,18 @@
 import { ABSTENTION_MESSAGE } from "@shared/constants/product";
 import { classifyQuestion, normalizeQuery } from "@shared/rules/classification";
 import {
+  emergencyMessage,
   evaluateHighRisk,
+  GENTLE_SUPPORT_LINE,
   questionMentionsSymptom,
+  selfHarmLooksAmbiguous,
   SYMPTOM_SAFETY_LINE,
 } from "@shared/rules/safety";
+import {
+  classifyAcuteRisk,
+  riskFromAcuteVerdict,
+  type AcuteLayerResult,
+} from "./acute-classifier";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "@shared/rules/prompt";
 import { answerHasCitations, sourceLooksOfficial } from "@shared/rules/sources";
 import type { Env } from "../env";
@@ -263,6 +271,10 @@ const PARTIAL_FALLBACK_SEPARATOR = "\n\n---\n";
 export type ChatPipelineOptions = {
   /** Test override. Production uses {@link CHAT_AI_TIMEOUT_MS}. */
   aiTimeoutMs?: number;
+  /** Test override. Production caps the classifier at 2.5s. */
+  classifierTimeoutMs?: number;
+  /** Test override. Production calls Workers AI. */
+  classifyAcute?: (question: string) => Promise<AcuteLayerResult>;
 };
 
 function chatTimeoutError(timeoutMs: number): Error {
@@ -315,22 +327,50 @@ async function readAiStream(
 
 /** Short 115 line for a non-emergency answer whose question names a symptom. */
 export function appendSymptomSafetyLine(question: string, text: string): string {
-  if (!questionMentionsSymptom(question)) return text;
-  if (text.includes(SYMPTOM_SAFETY_LINE)) return text;
-  if (/gọi\s+(?:ngay\s+)?115/i.test(text)) return text;
-  return `${text.replace(/\s+$/, "")}\n\n${SYMPTOM_SAFETY_LINE}`;
+  return appendAcuteSafetyNet(question, text, null);
+}
+
+/**
+ * 115 line when the question names a symptom, the classifier names a category,
+ * or the classifier failed open. A gentle support line is added only when the
+ * classifier is unsure about ambiguous self-harm wording.
+ */
+export function appendAcuteSafetyNet(
+  question: string,
+  text: string,
+  layer: AcuteLayerResult | null,
+): string {
+  const failed = layer?.status === "fail" && layer.reason !== "unavailable";
+  const category = layer?.status === "ok" ? layer.verdict.category : "none";
+  let out = text;
+  if (failed && selfHarmLooksAmbiguous(question) && !out.includes("1900 1267")) {
+    out = `${out.replace(/\s+$/, "")}\n\n${GENTLE_SUPPORT_LINE}`;
+  }
+  const needLine = questionMentionsSymptom(question) || category !== "none" || failed;
+  if (!needLine) return out;
+  if (out.includes(SYMPTOM_SAFETY_LINE)) return out;
+  if (/gọi\s+(?:ngay\s+)?115/i.test(out)) return out;
+  return `${out.replace(/\s+$/, "")}\n\n${SYMPTOM_SAFETY_LINE}`;
+}
+
+function shouldRunAcuteClassifier(question: string, classification: string): boolean {
+  if (classification === "health_education" || classification === "caregiving")
+    return true;
+  if (questionMentionsSymptom(question)) return true;
+  if (selfHarmLooksAmbiguous(question)) return true;
+  return false;
 }
 
 function enqueueFallback(
   controller: ReadableStreamDefaultController<string>,
   resolveFull: (value: string) => void,
-  question: string,
+  decorate: (text: string) => string,
   partial: string,
   fallback: string,
 ): void {
   const separator = partial ? PARTIAL_FALLBACK_SEPARATOR : "";
   const body = `${partial}${separator}${fallback}`;
-  const full = appendSymptomSafetyLine(question, body);
+  const full = decorate(body);
   if (separator) controller.enqueue(separator);
   controller.enqueue(fallback);
   if (full !== body) controller.enqueue(full.slice(body.replace(/\s+$/, "").length));
@@ -356,11 +396,37 @@ export async function runChatPipeline(
   }
 
   const classification = classifyQuestion(question);
+  let layer: AcuteLayerResult | null = null;
+  const classify = options?.classifyAcute;
+  if ((classify || env.AI) && shouldRunAcuteClassifier(question, classification)) {
+    try {
+      layer = classify
+        ? await classify(question)
+        : await classifyAcuteRisk(env, question, {
+            timeoutMs: options?.classifierTimeoutMs,
+          });
+    } catch {
+      layer = { status: "fail", reason: "empty" };
+    }
+    if (layer.status === "ok") {
+      const fromModel = riskFromAcuteVerdict(layer.verdict);
+      if (fromModel) {
+        return {
+          kind: "high_risk",
+          riskClass: fromModel,
+          message: emergencyMessage(fromModel),
+          classification: "high_risk_health",
+        };
+      }
+    }
+  }
+
+  const decorate = (text: string) => appendAcuteSafetyNet(question, text, layer);
+
   if (classification === "unsupported") {
     return {
       kind: "abstain",
-      message: appendSymptomSafetyLine(
-        question,
+      message: decorate(
         "Tôi chưa thể hỗ trợ yêu cầu này. VivaAge không khuyên mua bán đầu tư, không kê đơn thuốc và không tư vấn luật cho từng người.",
       ),
       classification,
@@ -372,7 +438,7 @@ export async function runChatPipeline(
   const prepared = await resolvePreparedAnswer(env, question);
   if (prepared) {
     return streamPreparedAnswer(
-      { ...prepared, answer: appendSymptomSafetyLine(question, prepared.answer) },
+      { ...prepared, answer: decorate(prepared.answer) },
       prepared.classification || classification,
     );
   }
@@ -381,7 +447,7 @@ export async function runChatPipeline(
   if (sources.length === 0) {
     return {
       kind: "abstain",
-      message: appendSymptomSafetyLine(question, ABSTENTION_MESSAGE),
+      message: decorate(ABSTENTION_MESSAGE),
       classification,
       sources: [],
       mode,
@@ -414,7 +480,7 @@ export async function runChatPipeline(
   };
 
   if (!env.AI) {
-    const fallback = appendSymptomSafetyLine(question, buildExtractiveAnswer(sources));
+    const fallback = decorate(buildExtractiveAnswer(sources));
     let resolveFull!: (v: string) => void;
     const fullTextPromise = new Promise<string>((r) => {
       resolveFull = r;
@@ -473,7 +539,7 @@ export async function runChatPipeline(
         };
 
         const closeWithSafety = (text: string) => {
-          const full = appendSymptomSafetyLine(question, text);
+          const full = decorate(text);
           if (full !== text) {
             controller.enqueue(full.slice(text.replace(/\s+$/, "").length));
           }
@@ -514,7 +580,7 @@ export async function runChatPipeline(
           enqueueFallback(
             controller,
             resolveFull,
-            question,
+            decorate,
             modelText.trim() ? modelText : "",
             fallback,
           );
@@ -523,7 +589,7 @@ export async function runChatPipeline(
 
         // Persist the streamed text, including the symptom safety line when
         // it was added, so a later cache hit matches what was displayed.
-        const full = appendSymptomSafetyLine(question, modelText);
+        const full = decorate(modelText);
         cacheGenerated(full);
         closeWithSafety(modelText);
       } catch (err) {
@@ -539,7 +605,7 @@ export async function runChatPipeline(
         enqueueFallback(
           controller,
           resolveFull,
-          question,
+          decorate,
           modelText,
           buildExtractiveAnswer(sources),
         );

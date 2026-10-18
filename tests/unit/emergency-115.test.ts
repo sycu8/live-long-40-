@@ -99,6 +99,9 @@ const NOT_SELF_HARM = [
   "Tôi nói khó nghe quá",
   "không muốn sống chung",
   "Bố tôi không muốn sống chung với con cái, nên làm gì?",
+  "em di tu tu ra cong vien",
+  "tu tu thoi dung voi",
+  "Chán muốn chết vì kẹt xe",
 ] as const;
 
 function expectEmergency(question: string, riskClass?: RiskClass) {
@@ -238,6 +241,26 @@ describe("emergency 115 routing", () => {
     expectEmergency("Bố bị hóc xương, không nói được", "choking");
     expect(evaluateHighRisk("nói không thành câu").matched).toBe(false);
     expect(evaluateHighRisk("Tôi bị tê tay vì ngồi lâu").matched).toBe(false);
+  });
+
+  it("keeps poisoning when a chronic tail is added", () => {
+    for (const stem of [
+      "Bà tôi uống nhầm thuốc, phải làm sao?",
+      "Ông tôi uống quá liều thuốc huyết áp",
+      "bo toi bi ngo doc ruou",
+    ]) {
+      const question = `${stem.replace(/\?$/, "")}, bị lâu năm rồi`;
+      const result = evaluateHighRisk(question);
+      expect(result.matched, question).toBe(true);
+      expect(result.riskClass, question).toBe("poisoning");
+      expect(result.message, question).toMatch(/gọi 115/i);
+    }
+  });
+
+  it("treats a wrong-tone symptom as a symptom and leaves dâu alone", () => {
+    expect(questionMentionsSymptom("Bé bị giất một cái rồi thôi")).toBe(true);
+    expect(evaluateHighRisk("Bé bị giất một cái rồi thôi").matched).toBe(false);
+    expect(questionMentionsSymptom("Ăn dâu tây buổi chiều có tốt không?")).toBe(false);
   });
 
   it("returns 115 before cache, retrieval, abstention, or the model", async () => {

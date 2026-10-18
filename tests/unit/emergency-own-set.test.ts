@@ -79,6 +79,10 @@ const POSITIVE: Array<{ q: string; cls: RiskClass }> = [
   { q: "Mình không thiết sống thêm nữa", cls: "self_harm" },
   { q: "Ba nói sống làm gì nữa, chỉ muốn đi cho rồi", cls: "self_harm" },
   { q: "Toi dinh nhay cau", cls: "self_harm" },
+  {
+    q: "Cháu uống nhầm siro ho của người lớn, nhà có bệnh lâu năm rồi",
+    cls: "poisoning",
+  },
 ];
 
 const BENIGN = [
@@ -147,6 +151,12 @@ const BENIGN = [
   "Bà nội dạy cháu ăn chậm, nhai kỹ",
   "Phòng khách có thảm, làm sao phòng té cho cụ?",
   "Cháu học tiếng Anh ở trung tâm",
+  "Chán muốn chết vì kẹt xe ngoài đường",
+  "Điên muốn chết với mấy cái quảng cáo",
+  "em di tu tu ra cong vien",
+  "Bà dặn tu tu thoi dung voi",
+  "Làm sao phòng co giật cho người có bệnh sẵn?",
+  "Ăn dâu tây buổi chiều có tốt không?",
 ];
 
 describe("fresh emergency set, not taken from QA", () => {

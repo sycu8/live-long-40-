@@ -1,7 +1,29 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  ACUTE_CLASSIFIER_MAX_TOKENS,
+  clearAcuteClassifierCache,
+  isAcuteClassifierInput,
+} from "../../worker/ai/acute-classifier";
 import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
 import { CHAT_AI_TIMEOUT_MS, runChatPipeline } from "../../worker/ai/pipeline";
 import type { Env } from "../../worker/env";
+
+const CLASSIFIER_NONE = {
+  response: JSON.stringify({
+    category: "none",
+    acute: false,
+    intent_first_person: false,
+    figurative: false,
+  }),
+};
+
+function isClassifierCall(args: unknown[]): boolean {
+  return isAcuteClassifierInput(args[1]);
+}
+
+function answerCachePuts(puts: { key: string; value: string }[]) {
+  return puts.filter((item) => item.key.startsWith("ans_cache:"));
+}
 
 const QUESTION = "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe";
 
@@ -59,8 +81,13 @@ function sseByteStream(payload: string): ReadableStream<Uint8Array> {
 }
 
 describe("chat Workers AI fallback", () => {
+  beforeEach(() => {
+    clearAcuteClassifierCache();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    clearAcuteClassifierCache();
   });
 
   it("calls the fp8 model directly with an explicit max_tokens", async () => {
@@ -70,6 +97,7 @@ describe("chat Workers AI fallback", () => {
       AI: {
         async run(...args: unknown[]) {
           calls.push(args);
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           return { response: "Đi bộ đều giúp giữ sức khỏe. [S1]" };
         },
       },
@@ -81,13 +109,19 @@ describe("chat Workers AI fallback", () => {
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
     expect(text).toContain("[S1]");
-    expect(calls).toHaveLength(1);
-    expect(calls[0]).toHaveLength(3);
-    expect(calls[0]?.[0]).toBe(WORKERS_AI_TEXT_MODEL);
-    const options = calls[0]?.[2] as { gateway?: unknown; signal?: AbortSignal };
+    expect(text).not.toContain("115");
+    const chatCalls = calls.filter((args) => !isClassifierCall(args));
+    const classifierCalls = calls.filter((args) => isClassifierCall(args));
+    expect(classifierCalls).toHaveLength(1);
+    const classifierInputs = classifierCalls[0]?.[1] as { max_tokens?: number };
+    expect(classifierInputs?.max_tokens).toBe(ACUTE_CLASSIFIER_MAX_TOKENS);
+    expect(chatCalls).toHaveLength(1);
+    expect(chatCalls[0]).toHaveLength(3);
+    expect(chatCalls[0]?.[0]).toBe(WORKERS_AI_TEXT_MODEL);
+    const options = chatCalls[0]?.[2] as { gateway?: unknown; signal?: AbortSignal };
     expect(options.gateway).toBeUndefined();
     expect(options.signal).toBeInstanceOf(AbortSignal);
-    const inputs = calls[0]?.[1] as { max_tokens?: number } | undefined;
+    const inputs = chatCalls[0]?.[1] as { max_tokens?: number } | undefined;
     expect(inputs?.max_tokens).toBe(WORKERS_AI_MAX_TOKENS);
   });
 
@@ -96,7 +130,8 @@ describe("chat Workers AI fallback", () => {
     const env = {
       DB: dbWithOfficialChunk(),
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           throw new Error("2001: Please configure AI Gateway");
         },
       },
@@ -131,6 +166,7 @@ describe("chat Workers AI fallback", () => {
       CONFIG,
       AI: {
         async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           calls.push(args);
           return sseByteStream(body);
         },
@@ -145,14 +181,18 @@ describe("chat Workers AI fallback", () => {
     expect(text).toBe(MODEL_ANSWER);
     expect(text).not.toContain("[DONE]");
     expect(text).not.toContain("Dựa trên nguồn từ cơ quan nhà nước");
-    expect(calls[0]).toHaveLength(3);
-    const options = calls[0]?.[2] as { gateway?: unknown; signal?: AbortSignal };
+    const chatCalls = calls.filter((args) => !isClassifierCall(args));
+    expect(chatCalls[0]).toHaveLength(3);
+    const options = chatCalls[0]?.[2] as { gateway?: unknown; signal?: AbortSignal };
     expect(options.gateway).toBeUndefined();
     expect(options.signal).toBeInstanceOf(AbortSignal);
-    expect(puts).toHaveLength(1);
-    expect(puts[0]?.key.startsWith(`ans_cache:v3:${WORKERS_AI_TEXT_MODEL}:`)).toBe(true);
-    expect(puts[0]?.key).not.toContain("ans_cache:v2:");
-    const cached = JSON.parse(puts[0]?.value ?? "{}") as { answer?: string };
+    const cachedPuts = answerCachePuts(puts);
+    expect(cachedPuts).toHaveLength(1);
+    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v3:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
+      true,
+    );
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v2:");
+    const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
     expect(cached.answer).toBe(MODEL_ANSWER);
   });
 
@@ -162,7 +202,8 @@ describe("chat Workers AI fallback", () => {
       DB: dbWithOfficialChunk(),
       CONFIG,
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           return sseByteStream("data: [DONE]\n\n");
         },
       },
@@ -174,7 +215,7 @@ describe("chat Workers AI fallback", () => {
     const text = await result.fullTextPromise;
     expect(text).toContain("Dựa trên nguồn từ cơ quan nhà nước");
     expect(text).not.toContain("\n\n---\n");
-    expect(puts).toEqual([]);
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 
   it("does not cache the extractive answer when Workers AI is unbound", async () => {
@@ -189,7 +230,7 @@ describe("chat Workers AI fallback", () => {
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
     expect(text).toContain("Dựa trên nguồn từ cơ quan nhà nước");
-    expect(puts).toEqual([]);
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 
   it("does not cache the extractive answer when Workers AI throws", async () => {
@@ -199,7 +240,8 @@ describe("chat Workers AI fallback", () => {
       DB: dbWithOfficialChunk(),
       CONFIG,
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           throw new Error("2001: Please configure AI Gateway");
         },
       },
@@ -210,7 +252,7 @@ describe("chat Workers AI fallback", () => {
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
     expect(text.startsWith("Dựa trên nguồn từ cơ quan nhà nước")).toBe(true);
-    expect(puts).toEqual([]);
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 
   it("separates a partial stream from the fallback and does not cache it", async () => {
@@ -224,6 +266,7 @@ describe("chat Workers AI fallback", () => {
       CONFIG,
       AI: {
         async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           expect(args).toHaveLength(3);
           const options = args[2] as { gateway?: unknown; signal?: AbortSignal };
           expect(options.gateway).toBeUndefined();
@@ -251,7 +294,7 @@ describe("chat Workers AI fallback", () => {
     const text = await result.fullTextPromise;
     expect(text.startsWith("Đi bộ ")).toBe(true);
     expect(text).toContain("\n\n---\nDựa trên nguồn từ cơ quan nhà nước");
-    expect(puts).toEqual([]);
+    expect(answerCachePuts(puts)).toEqual([]);
     expect(signal?.aborted).toBe(true);
   });
 
@@ -262,7 +305,8 @@ describe("chat Workers AI fallback", () => {
       DB: dbWithOfficialChunk(),
       CONFIG,
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           return { response: uncited };
         },
       },
@@ -276,7 +320,7 @@ describe("chat Workers AI fallback", () => {
     expect(saved).toBe(displayed);
     expect(saved).toContain(uncited);
     expect(saved).toContain("\n\n---\nDựa trên nguồn từ cơ quan nhà nước");
-    expect(puts).toEqual([]);
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 
   it("keeps a Vietnamese answer split across SSE bytes", async () => {
@@ -290,7 +334,8 @@ describe("chat Workers AI fallback", () => {
     const env = {
       DB: dbWithOfficialChunk(),
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           return new ReadableStream<Uint8Array>({
             start(controller) {
               controller.enqueue(bytes.slice(0, splitAt));
@@ -322,7 +367,8 @@ describe("chat Workers AI fallback", () => {
       DB: dbWithOfficialChunk(),
       CONFIG,
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           return sseByteStream(body);
         },
       },
@@ -333,7 +379,7 @@ describe("chat Workers AI fallback", () => {
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
     expect(text).toBe(MODEL_ANSWER);
-    expect(puts).toHaveLength(1);
+    expect(answerCachePuts(puts)).toHaveLength(1);
   });
 
   it("does not cache a cited answer that ends in an error event", async () => {
@@ -349,7 +395,8 @@ describe("chat Workers AI fallback", () => {
       DB: dbWithOfficialChunk(),
       CONFIG,
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           return sseByteStream(body);
         },
       },
@@ -362,7 +409,7 @@ describe("chat Workers AI fallback", () => {
     const saved = await result.fullTextPromise;
     expect(saved).toBe(displayed);
     expect(saved).toBe(MODEL_ANSWER);
-    expect(puts).toEqual([]);
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 
   it("does not cache a cited answer that hits the token limit", async () => {
@@ -385,7 +432,8 @@ describe("chat Workers AI fallback", () => {
       DB: dbWithOfficialChunk(),
       CONFIG,
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           return sseByteStream(body);
         },
       },
@@ -396,7 +444,7 @@ describe("chat Workers AI fallback", () => {
     if (result.kind !== "answer") return;
     const saved = await result.fullTextPromise;
     expect(saved).toBe(MODEL_ANSWER);
-    expect(puts).toEqual([]);
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 
   it("saves the same text that was displayed when citations are mixed", async () => {
@@ -407,7 +455,8 @@ describe("chat Workers AI fallback", () => {
       DB: dbWithOfficialChunk(),
       CONFIG,
       AI: {
-        async run() {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
           return { response: mixed };
         },
       },
@@ -421,8 +470,9 @@ describe("chat Workers AI fallback", () => {
     expect(saved).toBe(displayed);
     expect(saved).toContain("[S1]");
     expect(saved).toContain("[S99]");
-    expect(puts).toHaveLength(1);
-    const cached = JSON.parse(puts[0]?.value ?? "{}") as { answer?: string };
+    const cachedPuts = answerCachePuts(puts);
+    expect(cachedPuts).toHaveLength(1);
+    const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
     expect(cached.answer).toBe(saved);
   });
 });
