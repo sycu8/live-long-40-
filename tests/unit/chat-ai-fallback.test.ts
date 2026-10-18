@@ -6,6 +6,7 @@ import {
 } from "../../worker/ai/acute-classifier";
 import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
 import { CHAT_AI_TIMEOUT_MS, runChatPipeline } from "../../worker/ai/pipeline";
+import { SYMPTOM_SAFETY_LINE } from "../../shared/rules/safety";
 import type { Env } from "../../worker/env";
 
 const CLASSIFIER_NONE = {
@@ -54,6 +55,7 @@ function dbWithOfficialChunk(): D1Database {
 
 const MODEL_ANSWER =
   "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]";
+const MODEL_WITH_LINE = `${MODEL_ANSWER}\n\n${SYMPTOM_SAFETY_LINE}`;
 
 function memoryConfig() {
   const puts: { key: string; value: string }[] = [];
@@ -109,12 +111,18 @@ describe("chat Workers AI fallback", () => {
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
     expect(text).toContain("[S1]");
-    expect(text).not.toContain("115");
+    expect(text.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
     const chatCalls = calls.filter((args) => !isClassifierCall(args));
     const classifierCalls = calls.filter((args) => isClassifierCall(args));
     expect(classifierCalls).toHaveLength(1);
-    const classifierInputs = classifierCalls[0]?.[1] as { max_tokens?: number };
+    const classifierInputs = classifierCalls[0]?.[1] as {
+      max_tokens?: number;
+      temperature?: number;
+      response_format?: { type?: string };
+    };
     expect(classifierInputs?.max_tokens).toBe(ACUTE_CLASSIFIER_MAX_TOKENS);
+    expect(classifierInputs?.temperature).toBe(0);
+    expect(classifierInputs?.response_format?.type).toBe("json_schema");
     expect(chatCalls).toHaveLength(1);
     expect(chatCalls[0]).toHaveLength(3);
     expect(chatCalls[0]?.[0]).toBe(WORKERS_AI_TEXT_MODEL);
@@ -178,7 +186,7 @@ describe("chat Workers AI fallback", () => {
     expect(result.kind).toBe("answer");
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
-    expect(text).toBe(MODEL_ANSWER);
+    expect(text).toBe(MODEL_WITH_LINE);
     expect(text).not.toContain("[DONE]");
     expect(text).not.toContain("Dựa trên nguồn từ cơ quan nhà nước");
     const chatCalls = calls.filter((args) => !isClassifierCall(args));
@@ -193,7 +201,7 @@ describe("chat Workers AI fallback", () => {
     );
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v2:");
     const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
-    expect(cached.answer).toBe(MODEL_ANSWER);
+    expect(cached.answer).toBe(MODEL_WITH_LINE);
   });
 
   it("does not cache an extractive fallback when the stream has no model text", async () => {
@@ -351,7 +359,7 @@ describe("chat Workers AI fallback", () => {
     expect(result.kind).toBe("answer");
     if (result.kind !== "answer") return;
     const saved = await result.fullTextPromise;
-    expect(saved).toBe(text);
+    expect(saved).toBe(`${text}\n\n${SYMPTOM_SAFETY_LINE}`);
     expect(saved).not.toContain("\uFFFD");
   });
 
@@ -378,7 +386,7 @@ describe("chat Workers AI fallback", () => {
     expect(result.kind).toBe("answer");
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
-    expect(text).toBe(MODEL_ANSWER);
+    expect(text).toBe(MODEL_WITH_LINE);
     expect(answerCachePuts(puts)).toHaveLength(1);
   });
 
@@ -408,7 +416,7 @@ describe("chat Workers AI fallback", () => {
     const displayed = await readDisplayed(result.stream);
     const saved = await result.fullTextPromise;
     expect(saved).toBe(displayed);
-    expect(saved).toBe(MODEL_ANSWER);
+    expect(saved).toBe(MODEL_WITH_LINE);
     expect(answerCachePuts(puts)).toEqual([]);
   });
 
@@ -443,7 +451,7 @@ describe("chat Workers AI fallback", () => {
     expect(result.kind).toBe("answer");
     if (result.kind !== "answer") return;
     const saved = await result.fullTextPromise;
-    expect(saved).toBe(MODEL_ANSWER);
+    expect(saved).toBe(MODEL_WITH_LINE);
     expect(answerCachePuts(puts)).toEqual([]);
   });
 

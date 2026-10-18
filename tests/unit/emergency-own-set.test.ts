@@ -83,6 +83,22 @@ const POSITIVE: Array<{ q: string; cls: RiskClass }> = [
     q: "Cháu uống nhầm siro ho của người lớn, nhà có bệnh lâu năm rồi",
     cls: "poisoning",
   },
+  {
+    q: "Cháu uống nhầm nước tẩy rồi thở không nổi, môi tím",
+    cls: "breathing",
+  },
+  {
+    q: "Bé uống nhầm siro rồi đang co giật không dừng",
+    cls: "seizure",
+  },
+  {
+    q: "Ăn đậu xong môi sưng, khó thở rồi ngất",
+    cls: "severe_allergy",
+  },
+  {
+    q: "Bà tiểu đường bị ngất, người không tỉnh",
+    cls: "low_blood_sugar",
+  },
 ];
 
 const BENIGN = [
@@ -157,6 +173,12 @@ const BENIGN = [
   "Bà dặn tu tu thoi dung voi",
   "Làm sao phòng co giật cho người có bệnh sẵn?",
   "Ăn dâu tây buổi chiều có tốt không?",
+  "Làm sao phòng ngừa tự tử ở người già?",
+  "Dấu hiệu người muốn tự tử gồm những gì?",
+  "Cô cười ngất khi nghe chuyện xưa",
+  "Sợ ngất vì tiếng pháo giao thừa",
+  "toi muon, tu tu nghi mot lat",
+  "toi muon di tu tu ra san tap",
 ];
 
 describe("fresh emergency set, not taken from QA", () => {

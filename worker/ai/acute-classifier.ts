@@ -6,7 +6,8 @@ import { readWorkersAiText, runWorkersAi } from "./run";
 
 export const ACUTE_CLASSIFIER_TIMEOUT_MS = 2_500;
 export const ACUTE_CLASSIFIER_MAX_TOKENS = 180;
-const CACHE_TTL_SECONDS = 60 * 60 * 6;
+/** Short on purpose. The key is a hash, and the value is only the verdict. */
+export const ACUTE_CLASSIFIER_CACHE_TTL_SECONDS = 15 * 60;
 
 export const ACUTE_CATEGORIES = [
   "none",
@@ -122,16 +123,16 @@ export function riskFromAcuteVerdict(
   return CATEGORY_TO_RISK[verdict.category];
 }
 
-function djb2(input: string): string {
-  let hash = 5381;
-  for (let i = 0; i < input.length; i += 1) {
-    hash = (hash * 33) ^ input.charCodeAt(i);
-  }
-  return (hash >>> 0).toString(16).padStart(8, "0");
-}
-
-function cacheKey(normalized: string): string {
-  return `acute_clf:v1:${djb2(normalized)}:${normalized.slice(0, 180)}`;
+/** Hash only. The question text is not part of the key or the stored value. */
+export async function acuteClassifierCacheKey(normalized: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`acute-clf:v2:${normalized}`),
+  );
+  const hex = [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  return `acute_clf:v2:${hex}`;
 }
 
 async function readCache(env: Env, key: string): Promise<AcuteVerdict | null> {
@@ -155,7 +156,7 @@ async function writeCache(env: Env, key: string, verdict: AcuteVerdict): Promise
   if (!env.CONFIG) return;
   try {
     await env.CONFIG.put(key, JSON.stringify(verdict), {
-      expirationTtl: CACHE_TTL_SECONDS,
+      expirationTtl: ACUTE_CLASSIFIER_CACHE_TTL_SECONDS,
     });
   } catch {
     // A cache miss next time is safe. The classifier can run again.
@@ -181,23 +182,29 @@ function withTimeout<T>(
   });
 }
 
-export async function classifyAcuteRisk(
+const ACUTE_RESPONSE_FORMAT = {
+  type: "json_schema",
+  json_schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      category: { type: "string", enum: [...ACUTE_CATEGORIES] },
+      acute: { type: "boolean" },
+      intent_first_person: { type: "boolean" },
+      figurative: { type: "boolean" },
+    },
+    required: ["category", "acute", "intent_first_person", "figurative"],
+  },
+};
+
+type ModelRead = { raw: string } | { fail: AcuteFailReason };
+
+async function readModel(
   env: Env,
   question: string,
-  options?: { timeoutMs?: number },
-): Promise<AcuteLayerResult> {
-  const normalized = normalizeSafetyText(question);
-  if (!normalized) return { status: "fail", reason: "empty" };
-  const key = cacheKey(normalized);
-  const cached = await readCache(env, key);
-  if (cached) return { status: "ok", verdict: cached, cached: true };
-
-  if (!env.AI) return { status: "fail", reason: "unavailable" };
-
-  const timeoutMs = Math.min(
-    ACUTE_CLASSIFIER_TIMEOUT_MS,
-    options?.timeoutMs ?? ACUTE_CLASSIFIER_TIMEOUT_MS,
-  );
+  timeoutMs: number,
+): Promise<ModelRead> {
+  if (timeoutMs <= 0) return { fail: "timeout" };
   const abort = new AbortController();
   try {
     const response = await withTimeout(
@@ -211,6 +218,8 @@ export async function classifyAcuteRisk(
           ],
           stream: false,
           max_tokens: ACUTE_CLASSIFIER_MAX_TOKENS,
+          temperature: 0,
+          response_format: ACUTE_RESPONSE_FORMAT,
         },
         { signal: abort.signal },
       ),
@@ -218,16 +227,63 @@ export async function classifyAcuteRisk(
       abort,
     );
     const read = readWorkersAiText(response);
-    if (!read.ok || !read.text.trim()) return { status: "fail", reason: "empty" };
-    const verdict = parseAcuteClassifierOutput(read.text);
-    if (!verdict) return { status: "fail", reason: "parse" };
-    await writeCache(env, key, verdict);
-    return { status: "ok", verdict, cached: false };
+    if (!read.ok || !read.text.trim()) return { fail: "empty" };
+    return { raw: read.text };
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
     if (abort.signal.aborted || message === "acute_classifier_timeout") {
-      return { status: "fail", reason: "timeout" };
+      return { fail: "timeout" };
     }
-    return { status: "fail", reason: "empty" };
+    return { fail: "empty" };
   }
+}
+
+export async function classifyAcuteRisk(
+  env: Env,
+  question: string,
+  options?: { timeoutMs?: number },
+): Promise<AcuteLayerResult> {
+  const normalized = normalizeSafetyText(question);
+  if (!normalized) return { status: "fail", reason: "empty" };
+
+  if (!env.AI) {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        message: "acute_classifier_unavailable",
+        reason: "binding_missing",
+      }),
+    );
+    return { status: "fail", reason: "unavailable" };
+  }
+
+  const key = await acuteClassifierCacheKey(normalized);
+  const cached = await readCache(env, key);
+  if (cached) return { status: "ok", verdict: cached, cached: true };
+
+  const timeoutMs = Math.min(
+    ACUTE_CLASSIFIER_TIMEOUT_MS,
+    options?.timeoutMs ?? ACUTE_CLASSIFIER_TIMEOUT_MS,
+  );
+  const deadline = Date.now() + timeoutMs;
+  const first = await readModel(env, question, deadline - Date.now());
+  if ("fail" in first && first.fail === "timeout") {
+    return { status: "fail", reason: "timeout" };
+  }
+  const parsed = "raw" in first ? parseAcuteClassifierOutput(first.raw) : null;
+  if (parsed) {
+    await writeCache(env, key, parsed);
+    return { status: "ok", verdict: parsed, cached: false };
+  }
+
+  const remaining = deadline - Date.now();
+  if (remaining < 50) {
+    return { status: "fail", reason: "fail" in first ? first.fail : "parse" };
+  }
+  const second = await readModel(env, question, remaining);
+  if ("fail" in second) return { status: "fail", reason: second.fail };
+  const again = parseAcuteClassifierOutput(second.raw);
+  if (!again) return { status: "fail", reason: "parse" };
+  await writeCache(env, key, again);
+  return { status: "ok", verdict: again, cached: false };
 }

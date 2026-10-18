@@ -5,8 +5,11 @@ import {
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
   questionMentionsSymptom,
+  refineClassifierRisk,
   selfHarmLooksAmbiguous,
+  selfHarmLooksInformational,
   SYMPTOM_SAFETY_LINE,
+  type RiskClass,
 } from "@shared/rules/safety";
 import {
   classifyAcuteRisk,
@@ -195,6 +198,36 @@ function escapeXml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function streamThenSuffix(
+  base: string,
+  classification: string,
+  sources: RetrievedSource[],
+  mode: string,
+  suffix: (base: string) => Promise<string>,
+) {
+  let resolveFull!: (v: string) => void;
+  const fullTextPromise = new Promise<string>((r) => {
+    resolveFull = r;
+  });
+  const stream = new ReadableStream<string>({
+    async start(controller) {
+      controller.enqueue(base);
+      const extra = await suffix(base);
+      if (extra) controller.enqueue(extra);
+      resolveFull(`${base.replace(/\s+$/, "")}${extra}`);
+      controller.close();
+    },
+  });
+  return {
+    kind: "answer" as const,
+    classification,
+    sources,
+    mode,
+    stream,
+    fullTextPromise,
+  };
+}
+
 function streamPreparedAnswer(prepared: CachedAnswer, classification: string) {
   let resolveFull!: (v: string) => void;
   const fullTextPromise = new Promise<string>((r) => {
@@ -227,6 +260,8 @@ export type ChatPipelineResult =
   | {
       kind: "abstain";
       message: string;
+      /** Extra text once the classifier settles. The first token does not wait for it. */
+      followUp?: Promise<string>;
       classification: string;
       sources: RetrievedSource[];
       mode: string;
@@ -331,26 +366,113 @@ export function appendSymptomSafetyLine(question: string, text: string): string 
 }
 
 /**
- * 115 line when the question names a symptom, the classifier names a category,
- * or the classifier failed open. A gentle support line is added only when the
- * classifier is unsure about ambiguous self-harm wording.
+ * Every health answer the classifier routes ends with the short 115 line,
+ * including a confident "none" and a missing AI binding.
+ * A support line is added for prevention questions, and for ambiguous
+ * self-harm wording while the classifier is missing or still unsure.
  */
 export function appendAcuteSafetyNet(
   question: string,
   text: string,
   layer: AcuteLayerResult | null,
+  routed = false,
+  pending = false,
 ): string {
-  const failed = layer?.status === "fail" && layer.reason !== "unavailable";
+  const failed = layer?.status === "fail";
+  const figurative = layer?.status === "ok" && layer.verdict.figurative;
   const category = layer?.status === "ok" ? layer.verdict.category : "none";
+  const unsure = pending || failed;
   let out = text;
-  if (failed && selfHarmLooksAmbiguous(question) && !out.includes("1900 1267")) {
+  if (
+    !figurative &&
+    !out.includes("1900 1267") &&
+    (selfHarmLooksInformational(question) || (unsure && selfHarmLooksAmbiguous(question)))
+  ) {
     out = `${out.replace(/\s+$/, "")}\n\n${GENTLE_SUPPORT_LINE}`;
   }
-  const needLine = questionMentionsSymptom(question) || category !== "none" || failed;
+  const needLine =
+    routed || questionMentionsSymptom(question) || category !== "none" || failed;
   if (!needLine) return out;
   if (out.includes(SYMPTOM_SAFETY_LINE)) return out;
   if (/gọi\s+(?:ngay\s+)?115/i.test(out)) return out;
   return `${out.replace(/\s+$/, "")}\n\n${SYMPTOM_SAFETY_LINE}`;
+}
+
+type LayerBox = {
+  saw: boolean;
+  layer: AcuteLayerResult | null;
+  promise: Promise<AcuteLayerResult> | null;
+};
+
+function alertFromLayer(
+  question: string,
+  layer: AcuteLayerResult | null,
+): Exclude<RiskClass, "none"> | null {
+  if (!layer || layer.status !== "ok") return null;
+  const raw = riskFromAcuteVerdict(layer.verdict);
+  if (!raw) return null;
+  return refineClassifierRisk(question, raw);
+}
+
+/** Two microtasks. A still-running model call stays pending. A finished override is visible. */
+async function peekLayer(box: LayerBox): Promise<void> {
+  if (box.saw || !box.promise) return;
+  await new Promise<void>((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    box.promise!.then(
+      (layer) => {
+        box.saw = true;
+        box.layer = layer;
+        finish();
+      },
+      () => {
+        box.saw = true;
+        box.layer = { status: "fail", reason: "empty" };
+        finish();
+      },
+    );
+    queueMicrotask(() => {
+      queueMicrotask(finish);
+    });
+  });
+}
+
+function startClassifier(
+  env: Env,
+  question: string,
+  routed: boolean,
+  options: ChatPipelineOptions | undefined,
+): LayerBox {
+  if (!routed) return { saw: true, layer: null, promise: null };
+  const box: LayerBox = { saw: false, layer: null, promise: null };
+  const promise = (async (): Promise<AcuteLayerResult> => {
+    try {
+      if (options?.classifyAcute) return await options.classifyAcute(question);
+      return await classifyAcuteRisk(env, question, {
+        timeoutMs: options?.classifierTimeoutMs,
+      });
+    } catch {
+      return { status: "fail", reason: "empty" };
+    }
+  })();
+  box.promise = promise;
+  return box;
+}
+
+async function resolvedLayer(box: LayerBox): Promise<AcuteLayerResult | null> {
+  if (box.saw || !box.promise) return box.layer;
+  try {
+    box.layer = await box.promise;
+  } catch {
+    box.layer = { status: "fail", reason: "empty" };
+  }
+  box.saw = true;
+  return box.layer;
 }
 
 function shouldRunAcuteClassifier(question: string, classification: string): boolean {
@@ -361,30 +483,12 @@ function shouldRunAcuteClassifier(question: string, classification: string): boo
   return false;
 }
 
-function enqueueFallback(
-  controller: ReadableStreamDefaultController<string>,
-  resolveFull: (value: string) => void,
-  decorate: (text: string) => string,
-  partial: string,
-  fallback: string,
-): void {
-  const separator = partial ? PARTIAL_FALLBACK_SEPARATOR : "";
-  const body = `${partial}${separator}${fallback}`;
-  const full = decorate(body);
-  if (separator) controller.enqueue(separator);
-  controller.enqueue(fallback);
-  if (full !== body) controller.enqueue(full.slice(body.replace(/\s+$/, "").length));
-  resolveFull(full);
-  controller.close();
-}
-
 export async function runChatPipeline(
   env: Env,
   question: string,
   options?: ChatPipelineOptions,
 ): Promise<ChatPipelineResult> {
-  // Emergency routing is deterministic and first: cache, retrieval,
-  // the empty-source refusal, and the model must not replace it.
+  // A rule hit is deterministic and first. It does not wait on the classifier.
   const risk = evaluateHighRisk(question);
   if (risk.matched) {
     return {
@@ -396,62 +500,124 @@ export async function runChatPipeline(
   }
 
   const classification = classifyQuestion(question);
-  let layer: AcuteLayerResult | null = null;
-  const classify = options?.classifyAcute;
-  if ((classify || env.AI) && shouldRunAcuteClassifier(question, classification)) {
-    try {
-      layer = classify
-        ? await classify(question)
-        : await classifyAcuteRisk(env, question, {
-            timeoutMs: options?.classifierTimeoutMs,
-          });
-    } catch {
-      layer = { status: "fail", reason: "empty" };
+  const routed = shouldRunAcuteClassifier(question, classification);
+  const box = startClassifier(env, question, routed, options);
+
+  const highRisk = (riskClass: Exclude<RiskClass, "none">): ChatPipelineResult => ({
+    kind: "high_risk",
+    riskClass,
+    message: emergencyMessage(riskClass),
+    classification: "high_risk_health",
+  });
+
+  const safetySuffix = (
+    base: string,
+    layer: AcuteLayerResult | null,
+    pending: boolean,
+  ): string => {
+    const alert = alertFromLayer(question, layer);
+    if (alert) {
+      if (base.includes("Nên làm:")) return "";
+      return `\n\n${emergencyMessage(alert)}`;
     }
-    if (layer.status === "ok") {
-      const fromModel = riskFromAcuteVerdict(layer.verdict);
-      if (fromModel) {
-        return {
-          kind: "high_risk",
-          riskClass: fromModel,
-          message: emergencyMessage(fromModel),
-          classification: "high_risk_health",
-        };
+    const full = appendAcuteSafetyNet(question, base, layer, routed, pending);
+    const trimmed = base.replace(/\s+$/, "");
+    if (!full.startsWith(trimmed) || full.length === trimmed.length) return "";
+    return full.slice(trimmed.length);
+  };
+
+  const settledSuffix = async (base: string): Promise<string> => {
+    const layer = await resolvedLayer(box);
+    return safetySuffix(base, layer, false);
+  };
+
+  await peekLayer(box);
+  const peeked = alertFromLayer(question, box.saw ? box.layer : null);
+  if (peeked) return highRisk(peeked);
+
+  const abstain = (
+    messageBody: string,
+    abstainClass: string,
+    sources: RetrievedSource[],
+    mode: string,
+  ): ChatPipelineResult => {
+    if (box.saw || !box.promise) {
+      return {
+        kind: "abstain",
+        message: appendAcuteSafetyNet(question, messageBody, box.layer, routed, false),
+        classification: abstainClass,
+        sources,
+        mode,
+      };
+    }
+    const message = appendAcuteSafetyNet(question, messageBody, null, routed, true);
+    const followUp = box.promise.then((layer) => {
+      box.saw = true;
+      box.layer = layer;
+      const alert = alertFromLayer(question, layer);
+      if (alert && !message.includes("Nên làm:")) {
+        return `\n\n${emergencyMessage(alert)}`;
       }
-    }
-  }
-
-  const decorate = (text: string) => appendAcuteSafetyNet(question, text, layer);
-
-  if (classification === "unsupported") {
+      const full = appendAcuteSafetyNet(question, messageBody, layer, routed, false);
+      const trimmed = message.replace(/\s+$/, "");
+      if (!full.startsWith(trimmed) || full.length === trimmed.length) return "";
+      return full.slice(trimmed.length);
+    });
     return {
       kind: "abstain",
-      message: decorate(
-        "Tôi chưa thể hỗ trợ yêu cầu này. VivaAge không khuyên mua bán đầu tư, không kê đơn thuốc và không tư vấn luật cho từng người.",
-      ),
-      classification,
-      sources: [],
-      mode: "policy",
+      message,
+      followUp,
+      classification: abstainClass,
+      sources,
+      mode,
     };
+  };
+
+  if (classification === "unsupported") {
+    return abstain(
+      "Tôi chưa thể hỗ trợ yêu cầu này. VivaAge không khuyên mua bán đầu tư, không kê đơn thuốc và không tư vấn luật cho từng người.",
+      classification,
+      [],
+      "policy",
+    );
   }
 
   const prepared = await resolvePreparedAnswer(env, question);
   if (prepared) {
-    return streamPreparedAnswer(
-      { ...prepared, answer: decorate(prepared.answer) },
-      prepared.classification || classification,
+    await peekLayer(box);
+    const preparedAlert = alertFromLayer(question, box.saw ? box.layer : null);
+    if (preparedAlert) return highRisk(preparedAlert);
+    const preparedClass = prepared.classification || classification;
+    if (box.saw) {
+      return streamPreparedAnswer(
+        {
+          ...prepared,
+          answer: appendAcuteSafetyNet(
+            question,
+            prepared.answer,
+            box.layer,
+            routed,
+            false,
+          ),
+        },
+        preparedClass,
+      );
+    }
+    return streamThenSuffix(
+      prepared.answer,
+      preparedClass,
+      prepared.sources,
+      prepared.mode,
+      settledSuffix,
     );
   }
 
   const { sources, mode } = await retrieveSources(env, question);
+  await peekLayer(box);
+  const retrievedAlert = alertFromLayer(question, box.saw ? box.layer : null);
+  if (retrievedAlert) return highRisk(retrievedAlert);
   if (sources.length === 0) {
-    return {
-      kind: "abstain",
-      message: decorate(ABSTENTION_MESSAGE),
-      classification,
-      sources: [],
-      mode,
-    };
+    return abstain(ABSTENTION_MESSAGE, classification, [], mode);
   }
 
   const evidence = buildEvidenceBlock(sources);
@@ -480,26 +646,13 @@ export async function runChatPipeline(
   };
 
   if (!env.AI) {
-    const fallback = decorate(buildExtractiveAnswer(sources));
-    let resolveFull!: (v: string) => void;
-    const fullTextPromise = new Promise<string>((r) => {
-      resolveFull = r;
-    });
-    const stream = new ReadableStream<string>({
-      start(controller) {
-        controller.enqueue(fallback);
-        controller.close();
-        resolveFull(fallback);
-      },
-    });
-    return {
-      kind: "answer",
+    return streamThenSuffix(
+      buildExtractiveAnswer(sources),
       classification,
       sources,
       mode,
-      stream,
-      fullTextPromise,
-    };
+      settledSuffix,
+    );
   }
 
   const model = WORKERS_AI_TEXT_MODEL;
@@ -513,6 +666,29 @@ export async function runChatPipeline(
     async start(controller) {
       let modelText = "";
       const abort = new AbortController();
+      const closeWithSafety = async (text: string, cache: boolean) => {
+        const layer = await resolvedLayer(box);
+        const alert = alertFromLayer(question, layer);
+        const extra =
+          alert && !text.includes("Nên làm:")
+            ? `\n\n${emergencyMessage(alert)}`
+            : safetySuffix(text, layer, false);
+        if (extra) controller.enqueue(extra);
+        const full = `${text.replace(/\s+$/, "")}${extra}`;
+        if (cache && !alert) cacheGenerated(full);
+        resolveFull(full);
+        controller.close();
+      };
+      const enqueueFallback = async (partial: string, fallback: string) => {
+        const separator = partial ? PARTIAL_FALLBACK_SEPARATOR : "";
+        const body = `${partial}${separator}${fallback}`;
+        if (separator) controller.enqueue(separator);
+        controller.enqueue(fallback);
+        const extra = await settledSuffix(body);
+        if (extra) controller.enqueue(extra);
+        resolveFull(`${body.replace(/\s+$/, "")}${extra}`);
+        controller.close();
+      };
       try {
         const timeoutMs = options?.aiTimeoutMs ?? CHAT_AI_TIMEOUT_MS;
         const deadline = Date.now() + timeoutMs;
@@ -538,15 +714,6 @@ export async function runChatPipeline(
           controller.enqueue(text);
         };
 
-        const closeWithSafety = (text: string) => {
-          const full = decorate(text);
-          if (full !== text) {
-            controller.enqueue(full.slice(text.replace(/\s+$/, "").length));
-          }
-          resolveFull(full);
-          controller.close();
-        };
-
         let cutoff: "error" | "length" | null = null;
         if (isAsyncIterable(response)) {
           const reader = createAiStreamReader({ maxTokens: WORKERS_AI_MAX_TOKENS });
@@ -568,7 +735,7 @@ export async function runChatPipeline(
         if (citedCutoff) {
           // The user already saw these tokens. Keep that text, and do not
           // cache a cut-off answer or append a second reply.
-          closeWithSafety(modelText);
+          await closeWithSafety(modelText, false);
           return;
         }
         if (
@@ -577,21 +744,13 @@ export async function runChatPipeline(
           replacedWithExtractive ||
           !answerHasCitations(grounded)
         ) {
-          enqueueFallback(
-            controller,
-            resolveFull,
-            decorate,
-            modelText.trim() ? modelText : "",
-            fallback,
-          );
+          await enqueueFallback(modelText.trim() ? modelText : "", fallback);
           return;
         }
 
-        // Persist the streamed text, including the symptom safety line when
-        // it was added, so a later cache hit matches what was displayed.
-        const full = decorate(modelText);
-        cacheGenerated(full);
-        closeWithSafety(modelText);
+        // Persist the streamed text, including the 115 line when it was
+        // added, so a later cache hit matches what was displayed.
+        await closeWithSafety(modelText, true);
       } catch (err) {
         if (!abort.signal.aborted) abort.abort(err);
         console.error(
@@ -602,13 +761,7 @@ export async function runChatPipeline(
             error: formatWorkersAiError(err),
           }),
         );
-        enqueueFallback(
-          controller,
-          resolveFull,
-          decorate,
-          modelText,
-          buildExtractiveAnswer(sources),
-        );
+        await enqueueFallback(modelText, buildExtractiveAnswer(sources));
       }
     },
   });

@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.5.0";
+export const SAFETY_RULESET_VERSION = "v1.6.0";
 
 export type RiskClass =
   | "chest_pain"
@@ -33,6 +33,8 @@ export type SafetyToken = {
   folded: string;
   /** True only when this token itself carries a Vietnamese tone mark. */
   toned: boolean;
+  /** True when a comma, stop, or newline separates this token from the previous one. */
+  clauseStart: boolean;
 };
 
 /**
@@ -61,28 +63,44 @@ function decodeTelexStem(token: string): string | null {
   return stem;
 }
 
+const CLAUSE_BREAK = /[,;.!?…\n]/u;
+
 export function analyzeQuestion(question: string): {
   tokens: SafetyToken[];
   folded: string;
   accented: string;
 } {
-  const accented = question.normalize("NFC").toLowerCase().replace(/\s+/g, " ").trim();
-  const raw = accented.match(/[\p{L}\p{N}]+/gu) ?? [];
-  const tokens: SafetyToken[] = raw.map((word) => {
+  const source = question.normalize("NFC").toLowerCase();
+  const tokens: SafetyToken[] = [];
+  const wordRe = /[\p{L}\p{N}]+/gu;
+  let match: RegExpExecArray | null;
+  let lastEnd = 0;
+  while ((match = wordRe.exec(source))) {
+    const word = match[0];
+    const gap = source.slice(lastEnd, match.index);
+    const clauseStart = tokens.length === 0 || CLAUSE_BREAK.test(gap);
+    lastEnd = match.index + word.length;
     const telex = decodeTelexStem(word);
     if (telex) {
-      return { accented: word, folded: foldVietnamese(telex), toned: false };
+      tokens.push({
+        accented: word,
+        folded: foldVietnamese(telex),
+        toned: false,
+        clauseStart,
+      });
+      continue;
     }
-    return {
+    tokens.push({
       accented: word,
       folded: foldVietnamese(word),
       toned: TONE.test(word),
-    };
-  });
+      clauseStart,
+    });
+  }
   return {
     tokens,
     folded: tokens.map((token) => token.folded).join(" "),
-    accented,
+    accented: source.replace(/\s+/g, " ").trim(),
   };
 }
 
@@ -251,6 +269,8 @@ const MESSAGES: Record<Exclude<RiskClass, "none">, string> = {
 
 const INTENT = new Set(["toi", "em", "minh", "muon", "dinh", "tinh", "toan"]);
 const SPEECH = new Set(["noi", "bao", "ke", "than", "hoi"]);
+const FIRST_PERSON = new Set(["toi", "em", "minh"]);
+const PLAN_VERBS = new Set(["muon", "dinh", "tinh", "toan"]);
 /** The word directly before "muốn chết" when it is a plan, not an idiom. */
 const LITERAL_BEFORE_DIE = new Set([
   "toi",
@@ -273,9 +293,48 @@ function hasIntentFrame(tokens: SafetyToken[], index: number): boolean {
   return nearFolded(tokens, index, [...INTENT, ...SPEECH], 4);
 }
 
-/** Planning verbs. A nearby pronoun is not enough for unaccented "tu tu". */
-function explicitDeathPlan(tokens: SafetyToken[], index: number): boolean {
-  return nearFolded(tokens, index, ["muon", "dinh", "tinh", "toan"], 4);
+function sameClause(tokens: SafetyToken[], from: number, to: number): boolean {
+  for (let i = from + 1; i <= to; i++) {
+    if (tokens[i]?.clauseStart) return false;
+  }
+  return true;
+}
+
+/**
+ * Unaccented "tu tu" is a plan only when a first person and a plan verb
+ * sit immediately in front of it, in the same clause.
+ * "toi muon tu tu" counts. "toi muon, tu tu" and "toi muon di tu tu" do not.
+ */
+function adjacentTuTuPlan(tokens: SafetyToken[], tuIndex: number): boolean {
+  const plan = tokens[tuIndex - 1];
+  const person = tokens[tuIndex - 2];
+  if (!plan || !person) return false;
+  if (!sameClause(tokens, tuIndex - 2, tuIndex)) return false;
+  return FIRST_PERSON.has(person.folded) && PLAN_VERBS.has(plan.folded);
+}
+
+function hasTightPersonalPlan(tokens: SafetyToken[]): boolean {
+  for (let i = 0; i < tokens.length - 1; i++) {
+    const first = tokens[i]!;
+    const second = tokens[i + 1]!;
+    const pair =
+      (matchesTarget(first, "tự") && matchesTarget(second, "tử")) ||
+      (matchesTarget(first, "tử") && matchesTarget(second, "tự"));
+    if (pair && adjacentTuTuPlan(tokens, i)) return true;
+    if (!matchesTarget(first, "muốn") || !matchesTarget(second, "chết")) continue;
+    const person = tokens[i - 1];
+    if (!person || !FIRST_PERSON.has(person.folded)) continue;
+    if (!sameClause(tokens, i - 1, i + 1)) continue;
+    return true;
+  }
+  return false;
+}
+
+/** Prevention and "what are the signs" questions, with no personal plan. */
+function isSelfHarmInformation(folded: string): boolean {
+  return /\b(phong ngua|de phong|ngan ngua|cach phong|lam sao phong|dau hieu|nhan biet|cach nhan|nguoi muon tu|nguoi dinh tu|nguoi muon chet)\b/.test(
+    folded,
+  );
 }
 
 /**
@@ -300,6 +359,7 @@ function restContext(tokens: SafetyToken[], index: number): boolean {
 
 function matchSelfHarm(tokens: SafetyToken[]): boolean {
   const joined = tokens.map((token) => token.folded).join(" ");
+  if (isSelfHarmInformation(joined) && !hasTightPersonalPlan(tokens)) return false;
   if (/\bkhong muon song chung\b/.test(joined)) {
     /* living together is not suicidal ideation */
   } else if (hasAnyPhrase(tokens, ["không muốn sống", "không thiết sống", "chán sống"])) {
@@ -319,10 +379,10 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
       (matchesTarget(first, "tử") && matchesTarget(second, "tự"));
     if (!pair) continue;
     if (restContext(tokens, i)) continue;
-    // Unaccented "tu tu" is the gradual idiom "từ từ" unless a plan verb is present.
+    // Unaccented "tu tu" is "từ từ" unless the plan is adjacent and first person.
     const bothUnaccented = !first.toned && !second.toned;
     if (bothUnaccented) {
-      if (explicitDeathPlan(tokens, i)) return true;
+      if (adjacentTuTuPlan(tokens, i)) return true;
       continue;
     }
     if (hasIntentFrame(tokens, i)) return true;
@@ -449,7 +509,7 @@ function sugarContext(folded: string): boolean {
 }
 
 function sugarSevere(folded: string): boolean {
-  return /\b(lo mo|lu lan|noi lan|noi lap|run|va mo hoi|toat mo hoi|khong tinh|met la|hon me|bat tinh|mo hoi|hoa mat|tay run|bung doi)\b/.test(
+  return /\b(lo mo|lu lan|noi lan|noi lap|run|va mo hoi|toat mo hoi|khong tinh|met la|hon me|bat tinh|mo hoi|hoa mat|tay run|bung doi|ngat|xiu)\b/.test(
     folded,
   );
 }
@@ -499,7 +559,7 @@ function matchBreathing(folded: string): boolean {
   }
   if (
     /\b(kho tho|tho kho khe)\b/.test(folded) &&
-    /\b(nang|du doi|rit|hon hen|khong do|dot nhien|dang|nua tieng|qua|khong noi|tim)\b/.test(
+    /\b(nang|du doi|rit|hon hen|khong do|dot nhien|dang|nua tieng|qua|khong noi|tim tai|moi tim)\b/.test(
       folded,
     )
   ) {
@@ -561,6 +621,42 @@ function matchBleeding(folded: string): boolean {
   );
 }
 
+const FAINT_IDIOM = new Set(["chet", "cuoi", "so", "muon"]);
+
+function realFaintSign(folded: string): boolean {
+  return /\b(bat tinh|mat y thuc|khong danh thuc|khong tinh lai|lim di|khong phan ung|goi khong tra loi|nam im|goi khong tinh|khong day|khong tinh)\b/.test(
+    folded,
+  );
+}
+
+function isFaintWord(token: SafetyToken, next: SafetyToken | undefined): boolean {
+  if (next?.folded === "tho" && token.folded === "ngat") return false;
+  if (token.toned && (token.accented === "ngất" || token.accented === "xỉu")) return true;
+  if (token.toned && token.accented === "ngạt") return false;
+  return !token.toned && (token.folded === "ngat" || token.folded === "xiu");
+}
+
+/** "chết ngất", "cười ngất", "sợ ngất", "muốn ngất" are idioms, not a collapse. */
+function isFaintIdiomToken(tokens: SafetyToken[], index: number): boolean {
+  const token = tokens[index]!;
+  const prev = tokens[index - 1];
+  const next = tokens[index + 1];
+  const prevHit = Boolean(prev && !token.clauseStart && FAINT_IDIOM.has(prev.folded));
+  const nextHit = Boolean(next && !next.clauseStart && FAINT_IDIOM.has(next.folded));
+  return prevHit || nextHit;
+}
+
+function faintIdiomOnly(tokens: SafetyToken[]): boolean {
+  let saw = false;
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]!;
+    if (!isFaintWord(token, tokens[i + 1])) continue;
+    if (!isFaintIdiomToken(tokens, i)) return false;
+    saw = true;
+  }
+  return saw;
+}
+
 function matchUnconscious(tokens: SafetyToken[], folded: string): boolean {
   if (
     /\b(bat tinh|mat y thuc|khong danh thuc|khong tinh lai|lim di|khong phan ung|goi khong tra loi|nam im|goi khong tinh|khong day)\b/.test(
@@ -569,22 +665,14 @@ function matchUnconscious(tokens: SafetyToken[], folded: string): boolean {
   ) {
     return true;
   }
-  if (hasPhrase(tokens, "ngất") || hasPhrase(tokens, "xỉu")) return true;
-  if (/\bxiu\b/.test(folded)) return true;
-  if (/\bngat\b/.test(folded) && !/\bngat tho\b/.test(folded)) {
-    const onlyTonedNgat = tokens.some(
-      (token) => token.toned && token.accented === "ngạt",
-    );
-    const hasFaint = tokens.some(
-      (token) =>
-        (token.toned && token.accented === "ngất") ||
-        (!token.toned && token.folded === "ngat"),
-    );
-    if (hasFaint && !onlyTonedNgat) return true;
-    if (hasFaint && tokens.some((token) => token.toned && token.accented === "ngất"))
-      return true;
-  }
   if (/\bkhong tinh\b/.test(folded) && !/\bvan tinh\b/.test(folded)) return true;
+  if (faintIdiomOnly(tokens) && !realFaintSign(folded)) return false;
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i]!;
+    if (!isFaintWord(token, tokens[i + 1])) continue;
+    if (isFaintIdiomToken(tokens, i) && !realFaintSign(folded)) continue;
+    return true;
+  }
   return false;
 }
 
@@ -899,22 +987,155 @@ export function isRedFlagAdjacent(question: string): boolean {
   return questionMentionsSymptom(question) && !evaluateHighRisk(question).matched;
 }
 
+function chestPainPicture(folded: string): boolean {
+  if (!matchChest(folded)) return false;
+  return /\b(va mo hoi|toat mo hoi|mo hoi lanh|lan ra|lan xuong|lan sang|canh tay|ham duoi|con dau tim)\b/.test(
+    folded,
+  );
+}
+
+/** Dyspnea cues that should beat poison, fainting, or choking when those co-occur. */
+function breathingSignal(folded: string): boolean {
+  if (matchBreathing(folded)) return true;
+  return /\b(tho nong|tho yeu|tho kho|kho tho|moi tim|tim tai|tim moi|khong hit|hit kho|ngop tho|hut hoi)\b/.test(
+    folded,
+  );
+}
+
+function allergySignal(folded: string): boolean {
+  if (matchAllergy(folded)) return true;
+  if (/\b(soc phan ve|phan ve)\b/.test(folded)) return true;
+  const marker =
+    /\b(di ung|sung moi|sung luoi|sung hong|sung co|phu moi|phu mat|moi sung|noi man|me day|noi me day)\b/.test(
+      folded,
+    );
+  return (
+    marker && /\b(kho tho|khong tho|choang|ngat|xiu|bat tinh|khong tinh)\b/.test(folded)
+  );
+}
+
+function seizureSignal(folded: string): boolean {
+  if (matchSeizure(folded)) return true;
+  if (
+    /\b(phong ngua|de phong|ngan ngua|cach phong|lam sao phong)\b/.test(folded) &&
+    !/\b(dang giat|giat lien|sui bot|co cung|giat khong)\b/.test(folded)
+  ) {
+    return false;
+  }
+  return /\b(co giat|sui bot|co cung|giat khong|dang giat|len con|dong kinh)\b/.test(
+    folded,
+  );
+}
+
+function onlyHyperboleSelfHarm(tokens: SafetyToken[]): boolean {
+  let saw = false;
+  for (let i = 0; i < tokens.length - 1; i++) {
+    if (!matchesTarget(tokens[i]!, "muốn") || !matchesTarget(tokens[i + 1]!, "chết"))
+      continue;
+    saw = true;
+    if (!isHyperboleWantDie(tokens, i)) return false;
+  }
+  return saw && !hasTightPersonalPlan(tokens);
+}
+
+/**
+ * Breathing, seizure, allergy, and low sugar win over poisoning and unconscious.
+ * A chest-pain picture with sweating or pain spreading to the arm stays chest pain.
+ * Education and stable history do not become a full screen from the classifier.
+ */
+export function refineClassifierRisk(
+  question: string,
+  modelClass: Exclude<RiskClass, "none">,
+): Exclude<RiskClass, "none"> | null {
+  const { tokens, folded } = analyzeQuestion(question);
+  if (modelClass === "self_harm") {
+    if (isSelfHarmInformation(folded) && !hasTightPersonalPlan(tokens)) return null;
+    if (onlyHyperboleSelfHarm(tokens)) return null;
+    return "self_harm";
+  }
+  if (modelClass === "unconscious" && faintIdiomOnly(tokens) && !realFaintSign(folded)) {
+    return null;
+  }
+  if ((isEducation(folded) || isPastOrStable(folded)) && !isSudden(folded)) return null;
+
+  const lower =
+    modelClass === "poisoning" ||
+    modelClass === "unconscious" ||
+    modelClass === "choking" ||
+    modelClass === "chest_pain";
+  if (
+    allergySignal(folded) &&
+    (modelClass === "poisoning" ||
+      modelClass === "unconscious" ||
+      modelClass === "chest_pain")
+  ) {
+    return "severe_allergy";
+  }
+  if (
+    (matchGlucose(folded) ||
+      (sugarContext(folded) &&
+        /\b(ngat|xiu|bat tinh|khong tinh|lo mo|hon me)\b/.test(folded))) &&
+    (modelClass === "poisoning" || modelClass === "unconscious")
+  ) {
+    return "low_blood_sugar";
+  }
+  if (
+    seizureSignal(folded) &&
+    (modelClass === "poisoning" || modelClass === "unconscious")
+  ) {
+    return "seizure";
+  }
+  if (breathingSignal(folded) && !chestPainPicture(folded) && lower) return "breathing";
+  return modelClass;
+}
+
+function pickRiskClass(
+  tokens: SafetyToken[],
+  folded: string,
+): Exclude<RiskClass, "none"> | null {
+  if (matchSelfHarm(tokens)) return "self_harm";
+  const poison = matchPoison(folded);
+  const unconscious = matchUnconscious(tokens, folded);
+  const chest = matchChest(folded);
+  const choking = matchChoking(tokens, folded);
+  const breathing = matchBreathing(folded);
+  const chestPicture = chestPainPicture(folded);
+  if (
+    matchAllergy(folded) ||
+    (allergySignal(folded) && (poison || unconscious || chest))
+  ) {
+    return "severe_allergy";
+  }
+  if (
+    matchGlucose(folded) ||
+    (sugarContext(folded) &&
+      /\b(ngat|xiu|bat tinh|khong tinh|lo mo|hon me)\b/.test(folded) &&
+      (poison || unconscious || matchGlucose(folded)))
+  ) {
+    return "low_blood_sugar";
+  }
+  if (matchSeizure(folded) || (seizureSignal(folded) && (poison || unconscious))) {
+    return "seizure";
+  }
+  if (breathing && !chestPicture) return "breathing";
+  if (choking) return "choking";
+  if (chest) return "chest_pain";
+  if (breathing) return "breathing";
+  if (breathingSignal(folded) && !chestPicture && (poison || unconscious)) {
+    return "breathing";
+  }
+  if (poison) return "poisoning";
+  if (matchBleeding(folded)) return "bleeding";
+  if (matchHead(folded)) return "head_injury";
+  if (unconscious) return "unconscious";
+  if (matchStroke(folded)) return "stroke";
+  if (matchFall(tokens, folded)) return "fall_emergency";
+  return null;
+}
+
 export function evaluateHighRisk(question: string): SafetyMatch {
   const { tokens, folded } = analyzeQuestion(question);
-  let riskClass: Exclude<RiskClass, "none"> | null = null;
-  if (matchSelfHarm(tokens)) riskClass = "self_harm";
-  else if (matchChoking(tokens, folded)) riskClass = "choking";
-  else if (matchGlucose(folded)) riskClass = "low_blood_sugar";
-  else if (matchAllergy(folded)) riskClass = "severe_allergy";
-  else if (matchChest(folded)) riskClass = "chest_pain";
-  else if (matchBreathing(folded)) riskClass = "breathing";
-  else if (matchSeizure(folded)) riskClass = "seizure";
-  else if (matchPoison(folded)) riskClass = "poisoning";
-  else if (matchBleeding(folded)) riskClass = "bleeding";
-  else if (matchHead(folded)) riskClass = "head_injury";
-  else if (matchUnconscious(tokens, folded)) riskClass = "unconscious";
-  else if (matchStroke(folded)) riskClass = "stroke";
-  else if (matchFall(tokens, folded)) riskClass = "fall_emergency";
+  let riskClass = pickRiskClass(tokens, folded);
 
   if (riskClass && riskClass !== "self_harm" && isEducation(folded)) riskClass = null;
 
@@ -943,8 +1164,16 @@ export function emergencyMessage(riskClass: Exclude<RiskClass, "none">): string 
  * Wording that might be self-harm or might be an idiom.
  * The fast path did not take the crisis screen. The classifier decides.
  */
+export function selfHarmLooksInformational(question: string): boolean {
+  const { tokens, folded } = analyzeQuestion(question);
+  if (hasTightPersonalPlan(tokens)) return false;
+  if (evaluateHighRisk(question).riskClass === "self_harm") return false;
+  return isSelfHarmInformation(folded);
+}
+
 export function selfHarmLooksAmbiguous(question: string): boolean {
   if (evaluateHighRisk(question).riskClass === "self_harm") return false;
+  if (selfHarmLooksInformational(question)) return false;
   const { tokens, folded } = analyzeQuestion(question);
   if (/\b(muon chet|chan doi)\b/.test(folded)) return true;
   for (let i = 0; i < tokens.length - 1; i++) {
@@ -953,7 +1182,9 @@ export function selfHarmLooksAmbiguous(question: string): boolean {
     if (first.toned || second.toned) continue;
     if (first.folded !== "tu" || second.folded !== "tu") continue;
     if (restContext(tokens, i)) continue;
-    return true;
+    if (adjacentTuTuPlan(tokens, i)) continue;
+    // A plan verb in the neighborhood, but not the adjacent first-person form.
+    if (nearFolded(tokens, i, ["muon", "dinh", "tinh", "toan"], 4)) return true;
   }
   return false;
 }

@@ -27,6 +27,14 @@ Rules / Quy tắc:
 - self_harm needs a real plan or reported intent (first person or someone saying they will harm themselves), including farewell notes and height methods, not a method word alone in a lesson. intent_first_person=true, figurative=false, acute=true.
   Tự hại thật, kể cả thư từ biệt hoặc định nhảy từ trên cao: self_harm, intent_first_person=true, figurative=false, acute=true.
 - Categories: stroke đột quỵ; seizure co giật; chest đau/tức ngực cấp; breathing khó thở nặng hoặc tím tái; low_sugar hạ đường huyết; allergy phản vệ; bleeding chảy máu không cầm; poisoning uống nhầm/quá liều/ngộ độc; head_injury chấn thương đầu kèm lú lẫn hoặc nôn; fall té ngã không đứng được; self_harm; none.
+- When trouble breathing, a seizure, or anaphylaxis appears together with poison, fainting, or chest words, choose breathing, seizure, or allergy. Those outrank poisoning and unconscious. Chest pain with sweating, or pain spreading into the arm, stays chest.
+  Khó thở nặng, co giật, hoặc phản vệ đi cùng ngộ độc, ngất, hoặc tức ngực: chọn breathing, seizure, hoặc allergy. Đau ngực kèm vã mồ hôi hoặc lan ra tay vẫn là chest.
+- Prevention or general information about suicide, with no first-person plan, is category none and acute false. Examples of the class: how to prevent it, what warning signs look like. Do not treat that as a crisis.
+  Hỏi phòng ngừa hoặc dấu hiệu chung về tự hại, không có kế hoạch của chính người nói: category none, acute false.
+- "chết ngất", "cười ngất", "sợ ngất", and "muốn ngất" are exaggeration idioms. category none, figurative true, unless the person is actually unconscious.
+  Thành ngữ chết ngất, cười ngất, sợ ngất: figurative true, category none, trừ khi người đó thật sự bất tỉnh.
+- An everyday or stable symptom question is category none, acute false, even if it names the chest, the back, or a cough.
+  Câu hỏi triệu chứng hàng ngày hoặc bệnh ổn định: category none, acute false.
 
 Examples:
 
@@ -71,4 +79,22 @@ Message: Đau lưng mạn lâu năm, tập gì cho đỡ
 
 Message: bo bi nang nguc va kho tho dot ngot
 {"category":"chest","acute":true,"intent_first_person":false,"figurative":false}
+
+Message: Làm thế nào để phòng người thân nghĩ tới việc tự hại?
+{"category":"none","acute":false,"intent_first_person":false,"figurative":false}
+
+Message: Cô ấy cười ngất khi nghe chuyện cũ
+{"category":"none","acute":false,"intent_first_person":false,"figurative":true}
+
+Message: Bé nuốt nhầm nước tẩy rồi thở không nổi, môi tím
+{"category":"breathing","acute":true,"intent_first_person":false,"figurative":false}
+
+Message: Uống nhầm thìa siro xong đang co giật liên tục
+{"category":"seizure","acute":true,"intent_first_person":false,"figurative":false}
+
+Message: Ăn tôm xong môi sưng, khó thở, rồi lịm đi
+{"category":"allergy","acute":true,"intent_first_person":false,"figurative":false}
+
+Message: Đau ngực khi leo cầu thang lâu năm, khám định kỳ thế nào?
+{"category":"none","acute":false,"intent_first_person":false,"figurative":false}
 `;

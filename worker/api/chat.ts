@@ -1,5 +1,9 @@
 import { Hono } from "hono";
-import { CreateChatSessionSchema, ChatMessageSchema, FeedbackSchema } from "@shared/schemas/api";
+import {
+  CreateChatSessionSchema,
+  ChatMessageSchema,
+  FeedbackSchema,
+} from "@shared/schemas/api";
 import { createId, nowIso } from "@shared/utils/id";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
@@ -91,7 +95,12 @@ chatRoutes.get("/chat/sessions/latest", async (c) => {
 chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
   const ok = await enforceRateLimit(c, "chat", 30, 3600);
   if (!ok) {
-    return jsonError(c, 429, "RATE_LIMITED", "Bạn đã gửi quá nhiều câu hỏi. Thử lại sau.");
+    return jsonError(
+      c,
+      429,
+      "RATE_LIMITED",
+      "Bạn đã gửi quá nhiều câu hỏi. Thử lại sau.",
+    );
   }
 
   const chatPublicId = c.req.param("id");
@@ -212,29 +221,87 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
   }
 
   if (pipeline.kind === "abstain") {
-    await c.env.DB.prepare(
-      `INSERT INTO chat_messages
-       (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
-       VALUES (?, ?, ?, 'assistant', ?, ?, ?, 'none', ?, 1, ?)`,
-    )
-      .bind(
-        assistantMsgId,
-        assistantPublicId,
-        chat.id,
-        chat.history_opt_in ? pipeline.message : null,
-        chat.history_opt_in ? 0 : 1,
-        pipeline.classification,
-        SYSTEM_PROMPT_VERSION,
-        nowIso(),
+    if (!pipeline.followUp) {
+      await c.env.DB.prepare(
+        `INSERT INTO chat_messages
+         (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
+         VALUES (?, ?, ?, 'assistant', ?, ?, ?, 'none', ?, 1, ?)`,
       )
-      .run();
+        .bind(
+          assistantMsgId,
+          assistantPublicId,
+          chat.id,
+          chat.history_opt_in ? pipeline.message : null,
+          chat.history_opt_in ? 0 : 1,
+          pipeline.classification,
+          SYSTEM_PROMPT_VERSION,
+          nowIso(),
+        )
+        .run();
 
-    return c.json({
-      messagePublicId: assistantPublicId,
-      kind: "abstain",
-      content: pipeline.message,
-      sources: pipeline.sources,
-      classification: pipeline.classification,
+      return c.json({
+        messagePublicId: assistantPublicId,
+        kind: "abstain",
+        content: pipeline.message,
+        sources: pipeline.sources,
+        classification: pipeline.classification,
+      });
+    }
+
+    // The refusal is the first token. A late alert is more tokens, not a dropped block.
+    const encoder = new TextEncoder();
+    const opening = pipeline.message;
+    const followUp = pipeline.followUp;
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (obj: unknown) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        };
+        send({
+          type: "meta",
+          classification: pipeline.classification,
+          riskClass: "none",
+          messagePublicId: assistantPublicId,
+        });
+        send({ type: "token", text: opening });
+        let extra = "";
+        try {
+          extra = await followUp;
+        } catch {
+          extra = "";
+        }
+        if (extra) send({ type: "token", text: extra });
+        const full = `${opening}${extra}`;
+        try {
+          await c.env.DB.prepare(
+            `INSERT INTO chat_messages
+             (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
+             VALUES (?, ?, ?, 'assistant', ?, ?, ?, 'none', ?, 1, ?)`,
+          )
+            .bind(
+              assistantMsgId,
+              assistantPublicId,
+              chat.id,
+              chat.history_opt_in ? full : null,
+              chat.history_opt_in ? 0 : 1,
+              pipeline.classification,
+              SYSTEM_PROMPT_VERSION,
+              nowIso(),
+            )
+            .run();
+        } catch {
+          /* the tokens were already sent */
+        }
+        send({ type: "done", abstained: true });
+        controller.close();
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store",
+        Connection: "keep-alive",
+      },
     });
   }
 
@@ -328,9 +395,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             .run();
         }
 
-        await c.env.DB.prepare(
-          `UPDATE chat_sessions SET updated_at = ? WHERE id = ?`,
-        )
+        await c.env.DB.prepare(`UPDATE chat_sessions SET updated_at = ? WHERE id = ?`)
           .bind(nowIso(), chat.id)
           .run();
 

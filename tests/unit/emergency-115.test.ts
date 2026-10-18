@@ -5,6 +5,7 @@ import { ABSTENTION_MESSAGE } from "../../shared/constants/product";
 import { classifyQuestion } from "../../shared/rules/classification";
 import {
   evaluateHighRisk,
+  GENTLE_SUPPORT_LINE,
   questionMentionsSymptom,
   SYMPTOM_SAFETY_LINE,
   type RiskClass,
@@ -313,7 +314,7 @@ describe("emergency 115 routing", () => {
     expect(result.kind).toBe("abstain");
     if (result.kind !== "abstain") return;
     expect(result.message).toContain("chưa tìm thấy đủ nguồn");
-    expect(result.message).not.toMatch(/115/);
+    expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
     expect(
       questionMentionsSymptom("Vitamin D liều cao có nên uống mỗi ngày không?"),
     ).toBe(false);
@@ -328,7 +329,8 @@ describe("emergency 115 routing", () => {
     if (result.kind !== "abstain") return;
     expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
     expect(result.message).toContain("chưa tìm thấy đủ nguồn");
-    expect(result.message).not.toContain("1900 1267");
+    expect(result.message).toContain(GENTLE_SUPPORT_LINE);
+    expect(result.message).not.toContain("Nên làm");
   });
 
   it("ends a symptom policy refusal with the short 115 line", async () => {
