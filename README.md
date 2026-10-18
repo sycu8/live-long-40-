@@ -115,11 +115,13 @@ Biến công khai: `TURNSTILE_SITE_KEY`, `AI_GATEWAY_ID`, `AI_SEARCH_INSTANCE`, 
    - `CLOUDFLARE_ACCOUNT_ID`
    - (tuỳ chọn) `ADMIN_SHARED_SECRET`, `SESSION_SIGNING_SECRET`
 2. Workflow: `.github/workflows/deploy-cloudflare.yml`
-   - Chạy trên push `main` / `cursor/**`, hoặc **Actions → Deploy Cloudflare → Run workflow**
-3. Job gọi `node scripts/ci-deploy.mjs`: provision D1/KV/R2/Queues nếu thiếu → build → deploy → migrate → (optional) seed.
+   - **Push `main`:** deploy tự động, `ENVIRONMENT=production`, không seed D1 remote.
+   - **Pull request vào `main`:** chỉ `pnpm build` và `pnpm test`. Không deploy, không seed.
+   - **Thủ công:** Actions → Deploy Cloudflare → Run workflow. Chọn `environment` (`staging` hoặc `production`) và `seed` (mặc định tắt).
+3. Job deploy gọi `node scripts/ci-deploy.mjs`: provision D1/KV/R2/Queues nếu thiếu → build → deploy → migrate → seed remote chỉ khi `seed` bật.
 
 ```bash
-gh workflow run deploy-cloudflare.yml -f environment=staging -f seed=true
+gh workflow run deploy-cloudflare.yml -f environment=production -f seed=false
 gh run watch
 ```
 
