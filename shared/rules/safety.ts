@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.8.1";
+export const SAFETY_RULESET_VERSION = "v1.8.2";
 
 export type RiskClass =
   | "chest_pain"
@@ -17,6 +17,7 @@ export type RiskClass =
   | "low_blood_sugar"
   | "severe_allergy"
   | "burn"
+  | "urgent"
   | "none";
 
 export type SafetyMatch = {
@@ -276,6 +277,13 @@ const MESSAGES: Record<Exclude<RiskClass, "none">, string> = {
       "Không làm vỡ chỗ phồng rộp.",
     ],
   ),
+  urgent: advice(
+    [
+      "Gọi 115 ngay và nói rõ đang xảy ra chuyện gì.",
+      "Ở bên cạnh và làm theo hướng dẫn của tổng đài 115.",
+    ],
+    ["Không bỏ mặc một mình.", "Không tự cho thuốc."],
+  ),
 };
 
 const INTENT = new Set(["toi", "em", "minh", "muon", "dinh", "tinh", "toan"]);
@@ -427,7 +435,7 @@ function hasSelfHarmTopic(tokens: SafetyToken[], joined: string): boolean {
   ) {
     return true;
   }
-  return classBasedSelfHarm(tokens, joined);
+  return classBasedSelfHarm(tokens, joined) || intentPlusMethod(tokens, joined);
 }
 
 function hasCurrentSelfHarmPlan(tokens: SafetyToken[], joined: string): boolean {
@@ -898,30 +906,16 @@ function restContext(tokens: SafetyToken[], index: number): boolean {
   );
 }
 
-const FAMILY_PERSON = new Set([
-  "ong",
-  "ba",
-  "bo",
-  "me",
-  "anh",
-  "chi",
-  "chau",
-  "con",
-  "chu",
-  "cu",
-]);
-
-function isReportedPerson(token: SafetyToken): boolean {
-  if (FIRST_PERSON.has(token.folded) || SPEECH.has(token.folded)) return true;
-  if (FAMILY_PERSON.has(token.folded)) return true;
-  return token.toned && token.accented === "cô";
+function isFirstPersonOrSpeech(token: SafetyToken): boolean {
+  return FIRST_PERSON.has(token.folded) || SPEECH.has(token.folded);
 }
 
+/** A death wish needs the speaker. A relative mentioned alone is not the plan. */
 function personNearDeath(tokens: SafetyToken[], index: number): boolean {
   const from = Math.max(0, index - 8);
   const to = Math.min(tokens.length - 1, index + 4);
   for (let j = from; j <= to; j++) {
-    if (isReportedPerson(tokens[j]!)) return true;
+    if (isFirstPersonOrSpeech(tokens[j]!)) return true;
   }
   return false;
 }
@@ -1003,7 +997,40 @@ function farewellToLife(joined: string): boolean {
 }
 
 function classBasedSelfHarm(tokens: SafetyToken[], joined: string): boolean {
+  if (!tokens.some((token) => isFirstPersonOrSpeech(token))) return false;
   return cannotLive(tokens) || plannedDeath(tokens, joined) || farewellToLife(joined);
+}
+
+/**
+ * A method (pills, poison, jumping, hanging) plus an intent to die.
+ * This is self-harm for any person in the sentence, and it outranks poisoning.
+ * Accidental "uống nhầm" and a sleeping pill taken in order to sleep stay out.
+ */
+function intentPlusMethod(tokens: SafetyToken[], joined: string): boolean {
+  if (/\buong nham\b/.test(joined)) return false;
+  if (
+    /\bthuoc ngu\b/.test(joined) &&
+    /\b(de ngu|cho de ngu|kho ngu)\b/.test(joined) &&
+    !/\b(de chet|cho chet|muon chet|khong day|ngu luon)\b/.test(joined)
+  ) {
+    return false;
+  }
+  const method =
+    /\b(thuoc doc|thuoc chuot|thuoc diet|thuoc tru sau|hoa chat|thuoc ngu|uong het|ca vi|treo co|nhay lau|nhay cau|nhay ban cong|nhay xuong|cat co tay|rach co tay|tuyet menh)\b/.test(
+      joined,
+    );
+  if (!method) return false;
+  return (
+    /\b(muon chet|de chet|cho chet|tu sat|quyen sinh|khong muon song|chet cho xong|tu van|tu hai)\b/.test(
+      joined,
+    ) ||
+    hasRealSuicidePair(tokens) ||
+    /\b(muon|dinh|tinh|toan)\b/.test(joined)
+  );
+}
+
+function isHypothetical(joined: string): boolean {
+  return /\b(neu|gia su|trong truong hop)\b/.test(joined);
 }
 
 function matchSelfHarm(tokens: SafetyToken[]): boolean {
@@ -1011,6 +1038,10 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
   if (selfHarmIsPastStable(tokens, joined)) return false;
   if (isSelfHarmInformation(tokens, joined) && !hasTightPersonalPlan(tokens))
     return false;
+  if (isHypothetical(joined) && !/\b(dang|vua|toi nay|dem nay)\b/.test(joined)) {
+    return false;
+  }
+  if (intentPlusMethod(tokens, joined)) return true;
   if (/\bkhong muon song chung\b/.test(joined)) {
     /* living together is not suicidal ideation */
   } else if (hasAnyPhrase(tokens, ["không muốn sống", "không thiết sống", "chán sống"])) {
@@ -1346,6 +1377,14 @@ function seizureHasResolved(tokens: SafetyToken[], folded: string): boolean {
   ) {
     return false;
   }
+  if (
+    /\b(co giat|dong kinh)\s+(xong|roi|het)\b/.test(folded) ||
+    /\b(xong|het|da het)\s+(?:roi\s+)?(?:con\s+)?(?:co\s+)?(?:giat|dong kinh)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
   const spans: Array<{ start: number; end: number }> = [];
   for (let i = 0; i < tokens.length; i++) {
     const len = seizureSpanLength(tokens, i);
@@ -1669,11 +1708,24 @@ function hasEducationFrame(folded: string): boolean {
  * Question frames cancel a topic only when no acute picture is present.
  * A live sign, a sudden change, or a named person with that sign always wins.
  */
+/** A definition or "what are the signs" question, not a live event with a person. */
+function isDefinitionQuestion(folded: string): boolean {
+  if (isSudden(folded)) return false;
+  if (hasSpecificPerson(folded) && hasHardClinical(folded)) return false;
+  return (
+    /\b(dau hieu|nguyen nhan|dinh nghia|la benh gi|benh gi|co phai dau hieu|cach nhan|nhan biet)\b/.test(
+      folded,
+    ) ||
+    (/\bla gi\b/.test(folded) && !hasSpecificPerson(folded))
+  );
+}
+
 function isEducation(folded: string): boolean {
   const sudden = isSudden(folded);
   const past = isPastOrStable(folded);
   const hard = hasHardClinical(folded);
   if (past && !sudden) return true;
+  if (isDefinitionQuestion(folded)) return true;
   if (sudden || (hard && hasSpecificPerson(folded))) return false;
   if (
     hasSpecificPerson(folded) &&
@@ -1943,8 +1995,9 @@ function gradualTuTuOnly(tokens: SafetyToken[]): boolean {
 }
 
 /**
- * Breathing, seizure, allergy, and low sugar win over poisoning and unconscious.
- * A chest-pain picture with sweating or pain spreading to the arm stays chest pain.
+ * A lexical class and a different model class become the generic urgent screen.
+ * A chest-pain picture with sweating or pain spreading to the arm stays chest pain
+ * when the model also says chest pain.
  * Education and stable history do not become a full screen from the classifier.
  */
 export function refineClassifierRisk(
@@ -2013,29 +2066,19 @@ export function refineClassifierRisk(
     modelClass === "unconscious" ||
     modelClass === "choking" ||
     modelClass === "chest_pain";
-  if (
-    allergySignal(folded) &&
-    (modelClass === "poisoning" ||
-      modelClass === "unconscious" ||
-      modelClass === "chest_pain")
-  ) {
-    return "severe_allergy";
-  }
-  if (
-    (matchGlucose(folded) ||
+  const lexicalDisagreement =
+    (allergySignal(folded) &&
+      (modelClass === "poisoning" ||
+        modelClass === "unconscious" ||
+        modelClass === "chest_pain")) ||
+    ((matchGlucose(folded) ||
       (sugarContext(folded) &&
         /\b(ngat|xiu|bat tinh|khong tinh|lo mo|hon me)\b/.test(folded))) &&
-    (modelClass === "poisoning" || modelClass === "unconscious")
-  ) {
-    return "low_blood_sugar";
-  }
-  if (
-    seizureSignal(tokens, folded) &&
-    (modelClass === "poisoning" || modelClass === "unconscious")
-  ) {
-    return "seizure";
-  }
-  if (breathingSignal(folded) && !chestPainPicture(folded) && lower) return "breathing";
+      (modelClass === "poisoning" || modelClass === "unconscious")) ||
+    (seizureSignal(tokens, folded) &&
+      (modelClass === "poisoning" || modelClass === "unconscious")) ||
+    (breathingSignal(folded) && !chestPainPicture(folded) && lower);
+  if (lexicalDisagreement) return "urgent";
   return modelClass;
 }
 
@@ -2108,6 +2151,14 @@ export function evaluateHighRisk(question: string): SafetyMatch {
 
   if (riskClass && riskClass !== "self_harm" && isEducation(folded)) riskClass = null;
   if (
+    riskClass &&
+    riskClass !== "self_harm" &&
+    isHypothetical(folded) &&
+    !isSudden(folded)
+  ) {
+    riskClass = null;
+  }
+  if (
     riskClass === "poisoning" &&
     selfHarmIsPastStable(tokens, folded) &&
     !isSudden(folded) &&
@@ -2174,4 +2225,53 @@ export function selfHarmLooksAmbiguous(question: string): boolean {
     if (nearFolded(tokens, i, ["muon", "dinh", "tinh", "toan"], 4)) return true;
   }
   return false;
+}
+
+/**
+ * figurative=true is accepted only when the text itself has an idiom:
+ * "mệt/cười/nóng muốn chết", other intensifiers, work/heat/laughing hyperbole,
+ * "chết ngất", or unaccented "từ từ" meaning slowly.
+ */
+export function hasExplicitFigurativeMarker(question: string): boolean {
+  const { tokens, folded } = analyzeQuestion(question);
+  for (let i = 0; i < tokens.length - 1; i++) {
+    if (!matchesTarget(tokens[i]!, "muốn") || !matchesTarget(tokens[i + 1]!, "chết"))
+      continue;
+    if (isHyperboleWantDie(tokens, i)) return true;
+  }
+  if (gradualTuTuOnly(tokens)) return true;
+  return (
+    /\b(chet ngat|cuoi ngat|so ngat|muon ngat)\b/.test(folded) && !realFaintSign(folded)
+  );
+}
+
+/** A self-harm cue that is not only an idiom, a definition, a hypothetical, or the past. */
+export function hasSelfHarmCue(question: string): boolean {
+  const { tokens, folded } = analyzeQuestion(question);
+  if (selfHarmIsPastStable(tokens, folded)) return false;
+  if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens))
+    return false;
+  if (isHypothetical(folded) && !/\b(dang|vua|toi nay|dem nay)\b/.test(folded))
+    return false;
+  if (hasExplicitFigurativeMarker(question)) return false;
+  if (matchSelfHarm(tokens)) return true;
+  return (
+    /\b(tu sat|quyen sinh|tuyet menh|khong muon song|khong song noi)\b/.test(folded) ||
+    hasRealSuicidePair(tokens)
+  );
+}
+
+/** An emergency picture that should not collapse to the one-line 115 note. */
+export function hasAcuteCue(question: string): boolean {
+  const { tokens, folded } = analyzeQuestion(question);
+  if (isDefinitionQuestion(folded) || (isEducation(folded) && !isSudden(folded)))
+    return false;
+  if (selfHarmLooksPastStable(question)) return false;
+  if (hasSelfHarmCue(question)) return true;
+  const masked = applyNegationMask(tokens);
+  const maskedFolded = masked.map((token) => token.folded).join(" ");
+  if (pickRiskClass(masked, maskedFolded)) return true;
+  return /\b(tim dap|mo hoi lanh|do mo hoi|tuc nguc|dau nguc|kho tho|co giat|bat tinh|chay mau|uong nham|meo mieng)\b/.test(
+    maskedFolded,
+  );
 }

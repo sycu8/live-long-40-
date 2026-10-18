@@ -10,7 +10,6 @@ import {
 import {
   ACUTE_CLASSIFIER_CACHE_TTL_SECONDS,
   ACUTE_CLASSIFIER_TIMEOUT_MS,
-  acuteClassifierAttemptPlan,
   acuteClassifierCacheKey,
   classifyAcuteRisk,
   clearAcuteClassifierCache,
@@ -220,7 +219,7 @@ describe("acute classifier JSON", () => {
     expect(first).toEqual({ status: "ok", verdict: NONE, cached: false });
     expect(second).toEqual({ status: "ok", verdict: NONE, cached: true });
     expect(calls).toBe(1);
-    expect(ACUTE_CLASSIFIER_TIMEOUT_MS).toBe(4000);
+    expect(ACUTE_CLASSIFIER_TIMEOUT_MS).toBe(3500);
   });
 
   it("fails immediately when Workers AI is not bound", async () => {
@@ -306,20 +305,19 @@ describe("acute classifier JSON", () => {
     expect(latency.pipeline_ms.p95).toBeLessThan(500);
   });
 
-  it("retries invalid JSON once, and does not retry a timeout", async () => {
+  it("uses one classifier call and does not retry a timeout or bad JSON", async () => {
     let calls = 0;
     const env = {
       AI: {
         async run() {
           calls += 1;
-          if (calls === 1) return { response: "not json" };
-          return { response: JSON.stringify(NONE) };
+          return { response: "not json" };
         },
       },
     } as unknown as Env;
     const parsed = await classifyAcuteRisk(env, "Người già nên ngủ mấy giờ?");
-    expect(parsed).toEqual({ status: "ok", verdict: NONE, cached: false });
-    expect(calls).toBe(2);
+    expect(parsed).toEqual({ status: "fail", reason: "parse" });
+    expect(calls).toBe(1);
 
     clearAcuteClassifierCache();
     let hung = 0;
@@ -336,32 +334,6 @@ describe("acute classifier JSON", () => {
     });
     expect(timed).toEqual({ status: "fail", reason: "timeout" });
     expect(hung).toBe(1);
-    expect(acuteClassifierAttemptPlan(40)).toEqual({
-      firstMs: 40,
-      retryAfterTimeout: false,
-    });
-    expect(acuteClassifierAttemptPlan(4000)).toEqual({
-      firstMs: 2500,
-      retryAfterTimeout: true,
-    });
-  });
-
-  it("retries once when a timeout still leaves budget", async () => {
-    let calls = 0;
-    const env = {
-      AI: {
-        async run() {
-          calls += 1;
-          if (calls === 1) throw new Error("acute_classifier_timeout");
-          return { response: JSON.stringify(NONE) };
-        },
-      },
-    } as unknown as Env;
-    const parsed = await classifyAcuteRisk(env, "Người già nên uống nước lọc không?", {
-      timeoutMs: 4000,
-    });
-    expect(parsed).toEqual({ status: "ok", verdict: NONE, cached: false });
-    expect(calls).toBe(2);
   });
 
   it("does not retry when the model rejects JSON schema", async () => {
@@ -485,7 +457,7 @@ describe("acute classifier JSON", () => {
     expect(`${first.value ?? ""}${rest}`).toBe(saved);
   });
 
-  it("prefers breathing, seizure, and allergy over a lower classifier label", async () => {
+  it("uses the generic urgent screen when the rules and the classifier disagree", async () => {
     const breathing = await runChatPipeline({} as Env, "Bé thở nông, môi tái", {
       classifyAcute: async () => ({
         status: "ok",
@@ -495,8 +467,10 @@ describe("acute classifier JSON", () => {
     });
     expect(breathing.kind).toBe("high_risk");
     if (breathing.kind === "high_risk") {
-      expect(breathing.riskClass).toBe("breathing");
-      expect(breathing.message).toContain("Để ngồi thẳng");
+      expect(breathing.riskClass).toBe("urgent");
+      expect(breathing.message).toMatch(/gọi 115/i);
+      expect(breathing.message).toContain("Nên làm");
+      expect(breathing.message).not.toContain("1900");
     }
 
     const seizure = await runChatPipeline(
@@ -506,7 +480,7 @@ describe("acute classifier JSON", () => {
         classifyAcute: async () => ({
           status: "ok",
           cached: false,
-          verdict: verdict({ category: "unconscious", acute: true }),
+          verdict: verdict({ category: "poisoning", acute: true }),
         }),
       },
     );
@@ -514,7 +488,7 @@ describe("acute classifier JSON", () => {
       "seizure",
     );
     expect(seizure.kind).toBe("high_risk");
-    if (seizure.kind === "high_risk") expect(seizure.riskClass).toBe("seizure");
+    if (seizure.kind === "high_risk") expect(seizure.riskClass).toBe("urgent");
   });
 
   it("keeps a stable chest question off the emergency screen", async () => {

@@ -265,12 +265,12 @@ describe("emergency 115 routing", () => {
     expect(questionMentionsSymptom("Ăn dâu tây buổi chiều có tốt không?")).toBe(false);
   });
 
-  it("returns 115 before cache, retrieval, abstention, or the model", async () => {
-    let cacheReads = 0;
+  it("returns the chest screen before the answer cache, retrieval, or abstention", async () => {
+    const cacheKeys: string[] = [];
     const env = {
       CONFIG: {
-        async get() {
-          cacheReads += 1;
+        async get(key: string) {
+          cacheKeys.push(key);
           return JSON.stringify({
             answer: "Đứng dậy ngay và đi lại. gọi cấp cứu địa phương.",
             sources: [],
@@ -304,7 +304,9 @@ describe("emergency 115 routing", () => {
     expect(result.message).toMatch(/gọi 115/i);
     expect(result.message).not.toContain(ABSTENTION_MESSAGE);
     expect(result.message).not.toContain(SYMPTOM_SAFETY_LINE);
-    expect(cacheReads).toBe(0);
+    expect(cacheKeys).toHaveLength(1);
+    expect(cacheKeys[0]?.startsWith("acute_clf:")).toBe(true);
+    expect(cacheKeys.some((key) => key.startsWith("ans_cache:"))).toBe(false);
   });
 
   it("still abstains on an ordinary question when nothing is retrieved", async () => {

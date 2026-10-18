@@ -4,6 +4,9 @@ import {
   emergencyMessage,
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
+  hasAcuteCue,
+  hasExplicitFigurativeMarker,
+  hasSelfHarmCue,
   POST_SEIZURE_CHECK_LINE,
   questionMentionsSymptom,
   refineClassifierRisk,
@@ -390,13 +393,13 @@ export function appendAcuteSafetyNet(
   const figurative = layer?.status === "ok" && layer.verdict.figurative;
   const category = layer?.status === "ok" ? layer.verdict.category : "none";
   const unsure = pending || failed;
+  const past = selfHarmLooksPastStable(question);
   let out = text;
   if (
-    !figurative &&
     !out.includes(GENTLE_SUPPORT_LINE) &&
-    (selfHarmLooksPastStable(question) ||
-      selfHarmLooksInformational(question) ||
-      (unsure && selfHarmLooksAmbiguous(question)))
+    (past ||
+      (!figurative && selfHarmLooksInformational(question)) ||
+      (unsure && !figurative && selfHarmLooksAmbiguous(question)))
   ) {
     out = `${out.replace(/\s+$/, "")}\n\n${GENTLE_SUPPORT_LINE}`;
   }
@@ -421,20 +424,59 @@ type LayerBox = {
   promise: Promise<AcuteLayerResult> | null;
 };
 
+function modelClassFromLayer(
+  question: string,
+  layer: AcuteLayerResult,
+): Exclude<RiskClass, "none"> | null {
+  if (layer.status !== "ok") return null;
+  const verdict = layer.verdict;
+  if (selfHarmLooksPastStable(question)) return null;
+  const marker = hasExplicitFigurativeMarker(question);
+  const cue = hasSelfHarmCue(question) || verdict.category === "self_harm";
+  if (verdict.figurative && !marker && cue) return "self_harm";
+  if (verdict.figurative && marker && verdict.category === "self_harm") return null;
+  const raw = riskFromAcuteVerdict(verdict);
+  if (!raw) return null;
+  return refineClassifierRisk(question, raw);
+}
+
+/**
+ * Self-harm wins over every other class.
+ * A timeout with an acute cue and no rule class becomes the generic urgent screen.
+ * When the rules and the classifier name different classes, use that same generic screen.
+ */
+export function resolveAcuteScreen(
+  question: string,
+  layer: AcuteLayerResult | null,
+): Exclude<RiskClass, "none"> | null {
+  const rules = evaluateHighRisk(question);
+  const rulesClass = rules.matched && rules.riskClass !== "none" ? rules.riskClass : null;
+  if (rulesClass === "self_harm") return "self_harm";
+
+  if (!layer || layer.status === "fail") {
+    if (
+      layer?.status === "fail" &&
+      layer.reason === "timeout" &&
+      !rulesClass &&
+      hasAcuteCue(question)
+    ) {
+      return "urgent";
+    }
+    return rulesClass;
+  }
+
+  const modelClass = modelClassFromLayer(question, layer);
+  if (modelClass === "self_harm") return "self_harm";
+  if (modelClass === "urgent") return "urgent";
+  if (rulesClass && modelClass && rulesClass !== modelClass) return "urgent";
+  return rulesClass ?? modelClass;
+}
+
 function alertFromLayer(
   question: string,
   layer: AcuteLayerResult | null,
 ): Exclude<RiskClass, "none"> | null {
-  // A failed classifier, including a timeout, defers to the rules screen.
-  if (layer?.status === "fail") {
-    const rules = evaluateHighRisk(question);
-    if (!rules.matched || rules.riskClass === "none") return null;
-    return rules.riskClass;
-  }
-  if (!layer || layer.status !== "ok") return null;
-  const raw = riskFromAcuteVerdict(layer.verdict);
-  if (!raw) return null;
-  return refineClassifierRisk(question, raw);
+  return resolveAcuteScreen(question, layer);
 }
 
 /** Rules alert when the classifier times out. A settled verdict still goes through refine. */
@@ -442,7 +484,7 @@ export function alertFromClassifierLayer(
   question: string,
   layer: AcuteLayerResult | null,
 ): Exclude<RiskClass, "none"> | null {
-  return alertFromLayer(question, layer);
+  return resolveAcuteScreen(question, layer);
 }
 
 /** Two microtasks. A still-running model call stays pending. A finished override is visible. */
@@ -528,12 +570,12 @@ export async function runChatPipeline(
   question: string,
   options?: ChatPipelineOptions,
 ): Promise<ChatPipelineResult> {
-  // A rule hit is deterministic and first. It does not wait on the classifier.
+  // Rules and the classifier start together. A self-harm rule hit does not wait.
   const risk = evaluateHighRisk(question);
-  if (risk.matched) {
+  if (risk.matched && risk.riskClass === "self_harm") {
     return {
       kind: "high_risk",
-      riskClass: risk.riskClass,
+      riskClass: "self_harm",
       message: risk.message,
       classification: "high_risk_health",
     };
@@ -541,7 +583,18 @@ export async function runChatPipeline(
 
   const classification = classifyQuestion(question);
   const routed = shouldRunAcuteClassifier(question, classification);
-  const box = startClassifier(env, question, routed, options);
+  const box = startClassifier(env, question, routed || risk.matched, options);
+
+  if (risk.matched && risk.riskClass !== "none") {
+    const layer = await resolvedLayer(box);
+    const chosen = resolveAcuteScreen(question, layer) ?? risk.riskClass;
+    return {
+      kind: "high_risk",
+      riskClass: chosen,
+      message: emergencyMessage(chosen),
+      classification: "high_risk_health",
+    };
+  }
 
   const highRisk = (riskClass: Exclude<RiskClass, "none">): ChatPipelineResult => ({
     kind: "high_risk",

@@ -15,8 +15,8 @@ import { alertFromClassifierLayer, runChatPipeline } from "../../worker/ai/pipel
 import type { Env } from "../../worker/env";
 
 describe("emergency rules r8", () => {
-  it("bumps the ruleset to v1.8.1", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.1");
+  it("bumps the ruleset", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.2");
   });
 
   it("routes intent, a plan, a means, and a farewell as self-harm", () => {
@@ -26,7 +26,7 @@ describe("emergency rules r8", () => {
       "Em không sống nổi nữa",
       "Tôi không còn sống nổi",
       "Tôi viết thư vĩnh biệt cuộc đời",
-      "Cháu để lại lời trăng trối",
+      "Tôi để lại lời trăng trối",
     ]) {
       const result = evaluateHighRisk(question);
       expect(result.riskClass, question).toBe("self_harm");

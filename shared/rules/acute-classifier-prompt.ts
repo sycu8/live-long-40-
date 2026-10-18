@@ -22,10 +22,16 @@ Rules / Quy tắc:
   Hỏi phòng ngừa, định nghĩa, hoặc bệnh ổn định lâu năm mà không có sự việc mới: category "none", acute=false.
 - A chronic tail such as "bị lâu năm rồi" does NOT cancel an overdose, a wrong ingestion, or a new acute sign.
   "bị lâu năm rồi" không hủy ngộ độc, uống nhầm, quá liều, hoặc dấu hiệu cấp mới.
-- figurative=true for exaggeration idioms: "rét/chán/điên/mệt muốn chết", gradual "từ từ" / unaccented "tu tu" meaning slowly, "từ từ nghỉ". Then category "none", acute=false.
-  Thành ngữ phóng đại và "từ từ" nghĩa là chậm: figurative=true, category "none".
-- self_harm needs a real plan or reported intent (first person or someone saying they will harm themselves), including farewell notes and height methods, not a method word alone in a lesson. intent_first_person=true, figurative=false, acute=true.
-  Tự hại thật, kể cả thư từ biệt hoặc định nhảy từ trên cao: self_harm, intent_first_person=true, figurative=false, acute=true.
+- figurative=true ONLY when the message itself contains an exaggeration idiom. The idiom has to be in the text: "mệt muốn chết", "cười muốn chết", "nóng muốn chết", "rét muốn chết", "đói muốn chết", "khát muốn chết", hyperbole about work, heat, or laughing, or "từ từ" meaning slowly. If that idiom is absent, figurative=false.
+  figurative=true chỉ khi câu có thành ngữ phóng đại: mệt muốn chết, cười muốn chết, nóng muốn chết, rét muốn chết, đói muốn chết, khát muốn chết, nói quá về việc làm, nóng, hoặc cười, hoặc từ từ nghĩa là chậm. Không có thành ngữ thì figurative=false.
+- A wish to die with no such idiom is self_harm. Do not mark real intent as figurative. intent_first_person=true, figurative=false, acute=true.
+  Ý định chết mà không có thành ngữ là self_harm. Đừng gắn figurative cho ý định thật. intent_first_person=true, figurative=false, acute=true.
+- self_harm is decided before every other class. Intent plus a method (pills, poison, jumping, hanging) is self_harm, not poisoning and not unconscious.
+  Tự hại được xét trước mọi lớp khác. Có ý định cộng với cách thực hiện (thuốc, thuốc độc, nhảy, treo cổ) là self_harm, không phải poisoning, không phải ngất.
+- Information questions, resolved past events, negation, third-person descriptions with no method, and hypotheticals (nếu, giả sử) are category none. "Đau ngực là gì" and "dấu hiệu đau ngực" are none. A sudden chest pain in a named person stays chest.
+  Câu hỏi thông tin, chuyện đã qua, phủ định, người thứ ba không có cách thực hiện, và câu giả sử là category none. Đau ngực là gì và dấu hiệu đau ngực là none. Đau ngực đột ngột ở một người cụ thể vẫn là chest.
+- A stopped seizure is category none in any order, including "co giật xong rồi" and "đã hết co giật". An ongoing seizure is still seizure.
+  Co giật xong rồi, hoặc đã hết co giật, là category none. Cơn đang giật vẫn là seizure.
 - Categories: stroke đột quỵ; seizure co giật; chest đau/tức ngực cấp; breathing khó thở nặng hoặc tím tái; low_sugar hạ đường huyết; allergy phản vệ; bleeding chảy máu không cầm; poisoning uống nhầm/quá liều/ngộ độc; head_injury chấn thương đầu kèm lú lẫn hoặc nôn; fall té ngã không đứng được; burn bỏng nặng; self_harm; none.
 - A large or deep burn from boiling water, fire, electricity, or chemicals is category burn and acute true. A mild burn, or a question about preventing burns, is category none.
   Bỏng rộng hoặc sâu do nước sôi, lửa, điện, hóa chất là burn, acute true. Bỏng nhẹ hoặc hỏi cách phòng bỏng là category none.
