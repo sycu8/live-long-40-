@@ -257,8 +257,8 @@ const crisisVerdict = {
 };
 
 describe("emergency precedence r10", () => {
-  it("is ruleset v1.8.6", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.6");
+  it("is ruleset v1.8.7", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.7");
   });
 
   it("follows the precedence table for every r9 and r10 id", () => {

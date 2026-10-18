@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ACUTE_VERIFIER_SYSTEM_PROMPT } from "../../shared/rules/acute-classifier-prompt";
 import { decide, ruleViewFor } from "../../shared/rules/precedence";
 import {
@@ -17,8 +17,8 @@ const cases = JSON.parse(
 ) as Array<{ id: string; q: string }>;
 
 describe("emergency precedence r13", () => {
-  it("is ruleset v1.8.6 and restores the verifier prompt", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.6");
+  it("is ruleset v1.8.7 and restores the verifier prompt", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.7");
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).toContain("You may escalate");
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).toContain("You may not dismiss a real plan");
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).not.toContain("third-party news");
@@ -108,6 +108,7 @@ describe("emergency precedence r13", () => {
 
   it("F22 releases an unconscious screen while the classifier stalls and routes once", async () => {
     const analytics: unknown[] = [];
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const env = {
       DB: {
         prepare(sql: string) {
@@ -161,14 +162,30 @@ describe("emergency precedence r13", () => {
       },
       env,
     );
-    const body = await response.text();
-    expect(performance.now() - started).toBeLessThan(400);
     expect(response.status).toBe(200);
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let body = "";
+    let readyAt = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      body += decoder.decode(value, { stream: true });
+      if (readyAt === 0 && body.includes('"type":"ready"')) {
+        readyAt = performance.now() - started;
+      }
+    }
+    expect(readyAt).toBeGreaterThan(0);
+    expect(readyAt).toBeLessThan(400);
     expect(body).toContain("unconscious");
     expect(body).toContain("Gọi 115");
     expect(body).not.toContain("1900");
     expect(analytics).toEqual([
       expect.objectContaining({ type: "risk_routed", riskClass: "unconscious" }),
     ]);
-  });
+    expect(
+      errorSpy.mock.calls.some((call) => String(call[0]).includes("upgrade_timeout")),
+    ).toBe(false);
+    errorSpy.mockRestore();
+  }, 20_000);
 });

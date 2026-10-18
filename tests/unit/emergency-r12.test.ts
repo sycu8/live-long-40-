@@ -22,8 +22,8 @@ const crisisVerdict = {
 };
 
 describe("emergency precedence r12", () => {
-  it("is ruleset v1.8.6", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.6");
+  it("is ruleset v1.8.7", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.7");
   });
 
   it("F15 shows the rule screen immediately, including under a classifier stall", async () => {

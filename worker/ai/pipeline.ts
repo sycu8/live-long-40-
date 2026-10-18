@@ -9,10 +9,13 @@ import {
   type RuleView,
 } from "@shared/rules/precedence";
 import {
+  crisisUpgradeText,
   emergencyMessage,
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
   hasAcuteCue,
+  hasSelfHarmCue,
+  presentAcuteScreen,
   POST_SEIZURE_CHECK_LINE,
   questionMentionsSymptom,
   refineClassifierRisk,
@@ -613,6 +616,7 @@ function shouldRunAcuteClassifier(question: string, classification: string): boo
     return true;
   if (questionMentionsSymptom(question)) return true;
   if (selfHarmLooksAmbiguous(question)) return true;
+  if (hasSelfHarmCue(question)) return true;
   return false;
 }
 
@@ -641,7 +645,7 @@ function startRuleUpgrade(
       const upgraded = mayUpgrade(rules, { ...view, verified });
       if (!upgraded || upgraded.kind !== "screen") return null;
       return {
-        message: `\n\n${emergencyMessage(upgraded.riskClass, question)}`,
+        message: `\n\n${crisisUpgradeText()}`,
         riskClass: upgraded.riskClass,
       };
     })
@@ -659,14 +663,15 @@ export async function runChatPipeline(
   if (rules.class) {
     const decision = decide(rules, null, false);
     const riskClass = decision.kind === "screen" ? decision.riskClass : rules.class;
+    const presented = presentAcuteScreen(riskClass, question);
     const upgrade =
-      riskClass === "unconscious" || riskClass === "urgent"
+      presented.riskClass === "unconscious" || presented.riskClass === "urgent"
         ? startRuleUpgrade(env, question, rules, options)
         : undefined;
     return {
       kind: "high_risk",
-      riskClass,
-      message: emergencyMessage(riskClass, question),
+      riskClass: presented.riskClass,
+      message: presented.message,
       classification: "high_risk_health",
       upgrade,
     };
@@ -687,12 +692,15 @@ export async function runChatPipeline(
   };
   let checkIn = false;
 
-  const highRisk = (riskClass: Exclude<RiskClass, "none">): ChatPipelineResult => ({
-    kind: "high_risk",
-    riskClass,
-    message: emergencyMessage(riskClass, question),
-    classification: "high_risk_health",
-  });
+  const highRisk = (riskClass: Exclude<RiskClass, "none">): ChatPipelineResult => {
+    const presented = presentAcuteScreen(riskClass, question);
+    return {
+      kind: "high_risk",
+      riskClass: presented.riskClass,
+      message: presented.message,
+      classification: "high_risk_health",
+    };
+  };
 
   const settledSuffix = async (base: string): Promise<string> => {
     const decision = await decisionFor();
@@ -758,9 +766,10 @@ export async function runChatPipeline(
     );
     const followUp = decisionFor().then((decision) => {
       if (decision.kind === "screen" && !message.includes("Nên làm:")) {
+        const presented = presentAcuteScreen(decision.riskClass, question);
         return {
-          extra: `\n\n${emergencyMessage(decision.riskClass, question)}`,
-          riskClass: decision.riskClass,
+          extra: `\n\n${presented.message}`,
+          riskClass: presented.riskClass,
         };
       }
       const full = appendAcuteSafetyNet(

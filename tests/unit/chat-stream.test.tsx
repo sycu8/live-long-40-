@@ -66,12 +66,15 @@ function sseStream(events: unknown[]) {
       } else {
         controller.enqueue(chunk);
       }
+      const text = new TextDecoder().decode(chunk);
+      if (afterReady && text.includes('"ready"')) await afterReady;
       await new Promise((resolve) => setTimeout(resolve, 30));
     },
   });
 }
 
 let streamEvents: unknown[] = STREAM_EVENTS;
+let afterReady: Promise<void> | null = null;
 
 function installFetch() {
   vi.stubGlobal(
@@ -102,6 +105,7 @@ function installFetch() {
 describe("ChatPage streamed answers", () => {
   beforeEach(() => {
     streamEvents = STREAM_EVENTS;
+    afterReady = null;
     Element.prototype.scrollIntoView = () => {};
     localStorage.clear();
     installFetch();
@@ -184,5 +188,46 @@ describe("ChatPage streamed answers", () => {
     expect(answer.textContent).toContain("Nên làm:");
     expect(answer.textContent).toContain("Không nên:");
     expect(answer.textContent).not.toContain("chưa tìm thấy đủ nguồn");
+  });
+
+  it("unlocks the composer on ready, before the stream ends", async () => {
+    let release = () => undefined as void;
+    afterReady = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    streamEvents = [
+      {
+        type: "meta",
+        classification: "high_risk_health",
+        riskClass: "unconscious",
+        messagePublicId: "msg_ready",
+      },
+      { type: "token", text: "Gọi 115 ngay." },
+      { type: "ready" },
+      { type: "token", text: "\n\nỞ lại bên cạnh." },
+      { type: "done", abstained: false },
+    ];
+
+    render(
+      <MemoryRouter initialEntries={["/hoi"]}>
+        <ChatPage />
+      </MemoryRouter>,
+    );
+
+    const input = screen.getByLabelText("Câu hỏi của bạn");
+    await vi.waitFor(() => {
+      expect((input as HTMLInputElement).disabled).toBe(false);
+    });
+    fireEvent.change(input, { target: { value: "Mẹ tôi lịm đi" } });
+    fireEvent.submit(input.closest("form")!);
+
+    await screen.findByText(/Gọi 115 ngay/, undefined, { timeout: 4000 });
+    await vi.waitFor(() => {
+      expect((input as HTMLInputElement).disabled).toBe(false);
+    });
+    expect(screen.queryByText("Câu trả lời này hữu ích?")).toBeNull();
+    release();
+    expect(await screen.findByText("Câu trả lời này hữu ích?")).toBeTruthy();
+    expect(screen.getByText(/Ở lại bên cạnh/)).toBeTruthy();
   });
 });

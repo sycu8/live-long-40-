@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.8.6";
+export const SAFETY_RULESET_VERSION = "v1.8.7";
 
 export type RiskClass =
   | "chest_pain"
@@ -1419,7 +1419,7 @@ function seizureStillAcute(folded: string): boolean {
     return true;
   }
   if (
-    /\b(chua tinh|khong tinh|chua day|khong day|khong dap ung|khong phan ung|khong con phan ung|khong con dap ung|van chua tinh|chua tinh lai|khong tinh nguoi|me man|khong goi duoc|goi khong duoc|van bat tinh|khong nhuc nhao|bat tinh|chua mo mat)\b/.test(
+    /\b(chua tinh|khong tinh|chua day|khong day|khong dap ung|khong phan ung|khong con phan ung|khong con dap ung|van chua tinh|chua tinh lai|khong tinh nguoi|me man|khong goi duoc|goi khong duoc|van bat tinh|khong nhuc nhao|bat tinh|chua mo mat|khong tra loi|khong mo mat|hon me|li bi|khong phan hoi|nam bat dong|van me|khong con biet gi)\b/.test(
       folded,
     )
   ) {
@@ -2356,10 +2356,11 @@ export function evaluateHighRisk(question: string): SafetyMatch {
     };
   }
 
+  const presented = presentAcuteScreen(riskClass, question);
   return {
     matched: true,
-    riskClass,
-    message: emergencyMessage(riskClass, question),
+    riskClass: presented.riskClass,
+    message: presented.message,
     rulesetVersion: SAFETY_RULESET_VERSION,
   };
 }
@@ -2377,28 +2378,100 @@ function accompanyingAcute(
   return acute;
 }
 
+function stepsAfterHeader(message: string): string {
+  if (!message.startsWith(CALL)) return message;
+  return message.slice(CALL.length).replace(/^\n+/, "");
+}
+
+/** Crisis steps for a late upgrade. The first screen already has its own header. */
+export function crisisUpgradeText(): string {
+  return stepsAfterHeader(MESSAGES.self_harm);
+}
+
+function ingestedHarm(folded: string): boolean {
+  return (
+    matchPoison(folded) ||
+    /\b(uong het|ca vi|nuot thuoc|uong thuoc|dau doc|tu dau doc|thuoc doc|thuoc ngu|chat doc)\b/.test(
+      folded,
+    )
+  );
+}
+
+/**
+ * A wish or plan about one's own life that is not yet a high-precision screen.
+ * The class is the cue. The classifier and the verifier choose the screen.
+ */
+function indirectFirstPersonIntent(tokens: SafetyToken[], joined: string): boolean {
+  if (!tokens.some((token) => FIRST_PERSON.has(token.folded))) return false;
+  if (!/\b(muon|dinh|tinh|toan|se|sap|dang)\b/.test(joined)) return false;
+  return /\b(cuoc doi|cuoc song|doi minh|ban than|ket lieu|giet minh|giet ban than|bien mat|buong xuoi|giai thoat|cham dut|khong muon ton tai|khong muon tiep|ngu mai|ngu luon|bo cuoc|ket thuc tat ca|ket thuc moi thu|ra di mai|ra di luon)\b/.test(
+    joined,
+  );
+}
+
+/** A denial or a minimizer sitting with an intent topic. The 2-token window does not clear it. */
+function denialBesideIntent(tokens: SafetyToken[], joined: string): boolean {
+  if (!hasSelfHarmTopic(tokens, joined) && !indirectFirstPersonIntent(tokens, joined)) {
+    return false;
+  }
+  if (tokens.some((token) => isSimpleNegator(token) && token.folded !== "chua"))
+    return true;
+  return /\b(khong sao|noi choi|noi dua|chi dua|chi noi|khong nghiem|khong phai that|thoi ma)\b/.test(
+    joined,
+  );
+}
+
+/**
+ * Intent that should compose the crisis block onto an acute screen.
+ * Broad distress such as "không chịu nổi" is not this context.
+ */
+export function selfHarmIntentContext(question: string): boolean {
+  if (hasExplicitFigurativeMarker(question)) return false;
+  const { tokens, folded } = analyzeQuestion(question);
+  if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens))
+    return false;
+  if (isHypothetical(folded) && !/\b(dang|vua|toi nay|dem nay)\b/.test(folded))
+    return false;
+  if (selfHarmIsPastStable(tokens, folded) && !negatesCurrentPlan(tokens)) return false;
+  if (indirectFirstPersonIntent(tokens, folded)) return true;
+  if (ambiguousSelfHarmCue(tokens) && !hasSelfHarmTopic(tokens, folded)) return false;
+  return hasSelfHarmTopic(tokens, folded);
+}
+
+/**
+ * Crisis block first, then the acute steps, with the emergency header once.
+ * An accompanying acute class plus intent context becomes the crisis screen.
+ */
+export function presentAcuteScreen(
+  riskClass: Exclude<RiskClass, "none">,
+  question?: string,
+): { riskClass: Exclude<RiskClass, "none">; message: string } {
+  if (!question) return { riskClass, message: MESSAGES[riskClass] };
+  const { folded } = analyzeQuestion(question);
+  const intent = riskClass === "self_harm" || selfHarmIntentContext(question);
+  let acute = accompanyingAcute(question);
+  if (!acute && riskClass !== "self_harm" && ACCOMPANYING_ACUTE.has(riskClass)) {
+    acute = riskClass;
+  }
+  const accidentalSwallow =
+    /\buong nham\b/.test(folded) &&
+    !/\b(muon chet|de chet|cho chet|tu sat|khong muon song)\b/.test(folded);
+  const poisonSteps = !acute && intent && ingestedHarm(folded) && !accidentalSwallow;
+  if (intent && (acute || poisonSteps)) {
+    const block = acute ? MESSAGES[acute] : MESSAGES.poisoning;
+    return {
+      riskClass: "self_harm",
+      message: `${MESSAGES.self_harm}\n\n${stepsAfterHeader(block)}`,
+    };
+  }
+  return { riskClass, message: MESSAGES[riskClass] };
+}
+
 export function emergencyMessage(
   riskClass: Exclude<RiskClass, "none">,
   question?: string,
 ): string {
-  const base = MESSAGES[riskClass];
-  if (riskClass !== "self_harm" || !question) return base;
-  const acute = accompanyingAcute(question);
-  if (acute) return `${base}\n\n${MESSAGES[acute]}`;
-  const { folded } = analyzeQuestion(question);
-  const ingested =
-    matchPoison(folded) ||
-    /\b(uong het|ca vi|nuot thuoc|uong thuoc|dau doc|tu dau doc|thuoc doc|thuoc ngu|chat doc)\b/.test(
-      folded,
-    );
-  if (!ingested) return base;
-  if (
-    /\buong nham\b/.test(folded) &&
-    !/\b(muon chet|de chet|cho chet|tu sat|khong muon song)\b/.test(folded)
-  ) {
-    return base;
-  }
-  return `${base}\n\nGiữ vỏ thuốc hoặc chất đã nuốt nếu an toàn. Không tự gây nôn. Làm theo tổng đài 115.`;
+  return presentAcuteScreen(riskClass, question).message;
 }
 
 /**
@@ -2458,26 +2531,50 @@ export function hasExplicitFigurativeMarker(question: string): boolean {
   );
 }
 
-/** A self-harm cue that is not only an idiom, a definition, a hypothetical, or the past. */
-export function hasSelfHarmCue(question: string): boolean {
+type CueParts = { tokens: SafetyToken[]; folded: string } | null;
+
+/** Shared exits. An idiom, a definition, a hypothetical, or a settled past is not a cue. */
+function cueParts(question: string): CueParts {
   const { tokens, folded } = analyzeQuestion(question);
-  if (hasExplicitFigurativeMarker(question)) return false;
-  if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens))
-    return false;
+  if (hasExplicitFigurativeMarker(question)) return null;
+  if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens)) return null;
   if (isHypothetical(folded) && !/\b(dang|vua|toi nay|dem nay)\b/.test(folded))
-    return false;
+    return null;
   // "không còn" / "no longer" does not hide the cue. Other settled past does.
-  if (selfHarmIsPastStable(tokens, folded) && !negatesCurrentPlan(tokens)) return false;
-  const visible = applySelfHarmDenial(tokens);
+  if (selfHarmIsPastStable(tokens, folded) && !negatesCurrentPlan(tokens)) return null;
+  return { tokens, folded };
+}
+
+/**
+ * High-precision lexicon. A 2-token denial still hides this flag, so the
+ * verifier stays in charge of that class.
+ */
+export function hasSelfHarmLexicon(question: string): boolean {
+  const parts = cueParts(question);
+  if (!parts) return false;
+  const visible = applySelfHarmDenial(parts.tokens);
   const visibleFolded = visible.map((token) => token.folded).join(" ");
   if (ambiguousSelfHarmCue(visible)) return true;
-  if (negatesCurrentPlan(tokens)) return hasSelfHarmTopic(visible, visibleFolded);
+  if (negatesCurrentPlan(parts.tokens)) return hasSelfHarmTopic(visible, visibleFolded);
   if (matchSelfHarm(visible)) return true;
   return (
     /\b(tu sat|quyen sinh|tuyet menh|khong muon song|khong song noi)\b/.test(
       visibleFolded,
     ) || hasRealSuicidePair(visible)
   );
+}
+
+/**
+ * A self-harm cue that is not only an idiom, a definition, a hypothetical, or the past.
+ * A denial or a minimizer next to an intent cue stays visible. The 2-token window
+ * still keeps that denial off the immediate screen.
+ */
+export function hasSelfHarmCue(question: string): boolean {
+  if (hasSelfHarmLexicon(question)) return true;
+  const parts = cueParts(question);
+  if (!parts) return false;
+  if (indirectFirstPersonIntent(parts.tokens, parts.folded)) return true;
+  return denialBesideIntent(parts.tokens, parts.folded);
 }
 
 /** An emergency picture that should not collapse to the one-line 115 note. */
@@ -2509,7 +2606,7 @@ export function hasFirstPersonHarmIntent(question: string): boolean {
     return false;
   if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens))
     return false;
-  return hasSelfHarmCue(question);
+  return hasSelfHarmLexicon(question);
 }
 
 const CUE_CLASSES = [

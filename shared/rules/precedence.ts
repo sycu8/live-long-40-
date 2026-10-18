@@ -3,7 +3,7 @@ import {
   evaluateHighRisk,
   hasAcuteCue,
   hasFirstPersonHarmIntent,
-  hasSelfHarmCue,
+  hasSelfHarmLexicon,
   selfHarmLooksPastStable,
   type RiskClass,
 } from "./safety";
@@ -162,7 +162,7 @@ export function ruleViewFor(question: string): RuleView {
   return {
     class: riskClass,
     acuteCue: hasAcuteCue(question),
-    selfHarmLexicon: hasSelfHarmCue(question),
+    selfHarmLexicon: hasSelfHarmLexicon(question),
     firstPersonHarmIntent: hasFirstPersonHarmIntent(question),
     pastStable: selfHarmLooksPastStable(question),
     cues: corroboratingCues(question),

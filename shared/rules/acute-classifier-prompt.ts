@@ -57,6 +57,12 @@ Rules / Quy tắc:
   Câu phủ định không phải sự việc. Không thở được, không muốn sống, máu không cầm vẫn là cấp cứu.
 - Past self-harm the speaker says is over is category none and acute false. A plan for tonight or right now is still self_harm.
   Từng nghĩ đến tự hại mà nay đã ổn: category none, acute false. Kế hoạch tối nay vẫn là self_harm.
+- Indirect first-person intent is self_harm even without the words tự tử or tự sát. The class is a plan or wish about one's own life: kết thúc cuộc đời, kết liễu, giết mình, biến mất, buông xuôi, giải thoát, chấm dứt tất cả, không muốn tồn tại, ngủ luôn, ra đi mãi. intent_first_person=true, figurative=false, acute=true.
+  Ý định gián tiếp của chính người nói vẫn là self_harm dù không có chữ tự tử. Kế hoạch về cuộc đời mình, kết liễu, giết mình, biến mất, buông xuôi, giải thoát, chấm dứt tất cả, không muốn tồn tại: intent_first_person=true, figurative=false, acute=true.
+- A denial or a minimizer next to that intent does not make it safe. không, chẳng, không sao, nói chơi, chỉ đùa, không nghiêm trọng sitting beside a wish to die stays self_harm unless the whole message is an explicit idiom or a settled past. Do not clear it because a short negator is nearby.
+  Phủ định hoặc nói giảm ngay cạnh ý định chết không xóa ý định. không, chẳng, không sao, nói chơi, chỉ đùa cạnh ý muốn chết vẫn là self_harm, trừ thành ngữ rõ hoặc chuyện đã qua và đã ổn.
+- When that intent is also in a message about poison, category is self_harm, not poisoning. The poison is the method.
+  Có ý định chết và có nhắc thuốc độc thì category là self_harm, không phải poisoning.
 
 Examples:
 

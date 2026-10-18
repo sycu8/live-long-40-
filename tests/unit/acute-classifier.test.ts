@@ -569,11 +569,12 @@ describe("acute classifier JSON", () => {
       expect(result.matched, question).toBe(false);
     }
     const denied = await runChatPipeline({} as Env, "Tôi không muốn tự tử");
-    expect(denied.kind).toBe("abstain");
-    if (denied.kind === "abstain") {
+    expect(denied.kind).toBe("high_risk");
+    if (denied.kind === "high_risk") {
+      expect(denied.riskClass).toBe("urgent");
+      expect(denied.message).toMatch(/gọi 115/i);
+      expect(denied.message).not.toContain("Ở lại bên cạnh");
       expect(denied.message).not.toContain("1900");
-      expect(denied.message).not.toContain("Nên làm");
-      expect(denied.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
     }
     expect(evaluateHighRisk("Tôi không muốn sống nữa").riskClass).toBe("self_harm");
     expect(evaluateHighRisk("Không thở được").riskClass).toBe("breathing");
