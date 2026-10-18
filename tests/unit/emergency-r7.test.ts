@@ -27,7 +27,7 @@ const chestVerdict = {
 
 describe("emergency rules r7", () => {
   it("bumps the ruleset", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.5");
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.6");
   });
 
   it("treats a spoken muốn chết plan as self-harm, including across a comma", () => {
@@ -223,13 +223,15 @@ describe("emergency rules r7", () => {
     expect(calls).toBe(0);
   });
 
-  it("adds the support line for a settled plan without opening the crisis screen", async () => {
+  it("keeps a no-longer denial off the crisis screen and urgent when the classifier fails", async () => {
     const question = "Tôi không còn muốn tự tử";
+    expect(evaluateHighRisk(question).riskClass).not.toBe("self_harm");
     const result = await runChatPipeline({} as Env, question);
-    expect(result.kind).toBe("abstain");
-    if (result.kind !== "abstain") return;
-    expect(result.message).toContain(GENTLE_SUPPORT_LINE);
-    expect(result.message).not.toContain("Nên làm");
-    expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+    expect(result.kind).toBe("high_risk");
+    if (result.kind !== "high_risk") return;
+    expect(result.riskClass).toBe("urgent");
+    expect(result.message).toMatch(/gọi 115/i);
+    expect(result.message).not.toContain("Ở lại bên cạnh");
+    expect(result.message).not.toContain("1900");
   });
 });

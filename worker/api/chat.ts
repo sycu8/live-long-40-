@@ -176,17 +176,6 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
       )
       .run();
 
-    // Privacy-safe analytics event (no question text)
-    try {
-      await c.env.ANALYTICS_QUEUE?.send({
-        type: "risk_routed",
-        riskClass: pipeline.riskClass,
-        at: nowIso(),
-      });
-    } catch {
-      /* optional binding */
-    }
-
     // Same SSE path as a normal answer (#43 appends every token). The 115
     // text is already decided, so this does not wait on cache, retrieval, or the model.
     const encoder = new TextEncoder();
@@ -206,10 +195,16 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           if (!part) return;
           send({ type: "token", text: index === 0 ? part : `\n\n${part}` });
         });
+        let shown = pipeline.riskClass;
         if (pipeline.upgrade) {
           try {
-            const upgraded = await pipeline.upgrade;
+            // A stalled classifier must not hold the composer for the 3.5s timeout.
+            const upgraded = await Promise.race([
+              pipeline.upgrade,
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 0)),
+            ]);
             if (upgraded && upgraded.riskClass !== pipeline.riskClass) {
+              shown = upgraded.riskClass;
               send({
                 type: "meta",
                 classification: "high_risk_health",
@@ -226,19 +221,19 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
               } catch {
                 /* the tokens were already sent */
               }
-              try {
-                await c.env.ANALYTICS_QUEUE?.send({
-                  type: "risk_routed",
-                  riskClass: upgraded.riskClass,
-                  at: nowIso(),
-                });
-              } catch {
-                /* optional binding */
-              }
             }
           } catch {
             /* the first screen already went out */
           }
+        }
+        try {
+          await c.env.ANALYTICS_QUEUE?.send({
+            type: "risk_routed",
+            riskClass: shown,
+            at: nowIso(),
+          });
+        } catch {
+          /* optional binding */
         }
         send({ type: "done", abstained: false });
         controller.close();

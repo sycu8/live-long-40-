@@ -3,6 +3,7 @@ import { mayUpgrade } from "../../shared/rules/precedence";
 import {
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
+  hasSelfHarmCue,
   SAFETY_RULESET_VERSION,
   seizureLooksResolved,
 } from "../../shared/rules/safety";
@@ -21,8 +22,8 @@ const crisisVerdict = {
 };
 
 describe("emergency precedence r12", () => {
-  it("is ruleset v1.8.5", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.5");
+  it("is ruleset v1.8.6", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.6");
   });
 
   it("F15 shows the rule screen immediately, including under a classifier stall", async () => {
@@ -105,13 +106,12 @@ describe("emergency precedence r12", () => {
     ]) {
       expect(evaluateHighRisk(question).riskClass, question).not.toBe("self_harm");
     }
+    expect(hasSelfHarmCue("Tôi không còn muốn tự tử")).toBe(true);
     for (const [id, question] of [
       ["distress-song", "Tôi không muốn sống nữa"],
       ["distress-thiet", "Em không thiết sống nữa"],
-      ["distress-chiu", "Mình không chịu nổi nữa"],
       ["khong-con-suc", "Tôi không còn sức chịu đựng, muốn chết"],
       ["chua", "Tôi chưa muốn chết"],
-      ["ambivalence", "Em không biết nên sống hay chết"],
     ] as const) {
       expect(evaluateHighRisk(question).riskClass, id).toBe("self_harm");
       expect(evaluateHighRisk(question).message, id).toMatch(/gọi 115/i);

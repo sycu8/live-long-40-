@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.8.5";
+export const SAFETY_RULESET_VERSION = "v1.8.6";
 
 export type RiskClass =
   | "chest_pain"
@@ -645,6 +645,13 @@ function negationScope(tokens: SafetyToken[]): Set<number> {
         if (i >= 2 && !tokens[i - 1]?.clauseStart && !token.clauseStart) add(i - 2);
       }
       continue;
+    } else if (
+      isSimpleNegator(token) &&
+      foldedAt(tokens, i + 1) === "chiu" &&
+      (foldedAt(tokens, i + 2) === "noi" || foldedAt(tokens, i + 2) === "dung")
+    ) {
+      // "không chịu nổi" is distress, not a denial of the symptom that follows.
+      continue;
     } else if (isSimpleNegator(token)) from = i + 1;
     if (from < 0) continue;
     let limit = 5;
@@ -1075,19 +1082,6 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
     return true;
   }
   if (
-    hasAnyPhrase(tokens, ["không chịu nổi"]) &&
-    tokens.some((token) => FIRST_PERSON.has(token.folded))
-  ) {
-    return true;
-  }
-  if (
-    /\b(hay|hoac|or)\b/.test(joined) &&
-    /\b(chet|tu tu|tu sat)\b/.test(joined) &&
-    tokens.some((token) => FIRST_PERSON.has(token.folded) || SPEECH.has(token.folded))
-  ) {
-    return true;
-  }
-  if (
     !tokens.some((token) => FIRST_PERSON.has(token.folded) || SPEECH.has(token.folded)) &&
     /\b(tin tuc|bao dua|tren bao|mot vu)\b/.test(joined)
   ) {
@@ -1425,22 +1419,28 @@ function seizureStillAcute(folded: string): boolean {
     return true;
   }
   if (
-    /\b(chua tinh|khong tinh|chua day|khong day|khong dap ung|khong phan ung|bat tinh|chua mo mat)\b/.test(
+    /\b(chua tinh|khong tinh|chua day|khong day|khong dap ung|khong phan ung|khong con phan ung|khong con dap ung|van chua tinh|chua tinh lai|khong tinh nguoi|me man|khong goi duoc|goi khong duoc|van bat tinh|khong nhuc nhao|bat tinh|chua mo mat)\b/.test(
       folded,
     )
   ) {
     return true;
   }
   if (
-    /\b(hon 5 phut|qua 5 phut|tren 5 phut|lau hon 5|keo dai hon 5|hon nam phut|hon 5p)\b/.test(
+    /\b(hon 5 phut|qua 5 phut|tren 5 phut|lau hon 5|keo dai hon 5|hon nam phut|hon 5p|hon 10 phut|hon muoi phut|qua 10 phut|tren 10 phut|lau hon 10|keo dai hon 10|dai hon muoi|hon 10p)\b/.test(
       folded,
     )
   ) {
     return true;
   }
   if (/\b(mang thai|co thai|dang mang bau)\b/.test(folded)) return true;
-  if (/\b(chan thuong|dap dau|chay mau|thuong tich|bi thuong)\b/.test(folded))
+  const oldBleed =
+    /\b(hom qua|hom truoc|truoc do|luc truoc|da cam|lau roi|nam ngoai)\b/.test(folded);
+  if (
+    !oldBleed &&
+    /\b(chan thuong|dap dau|chay mau|thuong tich|bi thuong)\b/.test(folded)
+  ) {
     return true;
+  }
   if (/\b(kho tho|khong tho|tho yeu|tho nong|ngung tho|tho khong ra)\b/.test(folded))
     return true;
   return false;
@@ -2170,14 +2170,21 @@ export function refineClassifierRisk(
   return modelClass;
 }
 
-function pickRiskClass(
+const ACCOMPANYING_ACUTE = new Set<Exclude<RiskClass, "none">>([
+  "chest_pain",
+  "poisoning",
+  "seizure",
+  "unconscious",
+  "bleeding",
+]);
+
+function pickAcuteClass(
   tokens: SafetyToken[],
   folded: string,
-): Exclude<RiskClass, "none"> | null {
+): Exclude<RiskClass, "none" | "self_harm"> | null {
   const take = (ok: boolean, riskClass: Exclude<RiskClass, "none">) =>
     ok && !classFullyNegated(tokens, riskClass);
 
-  if (take(matchSelfHarm(tokens), "self_harm")) return "self_harm";
   const poison = matchPoison(folded);
   const unconscious = matchUnconscious(tokens, folded);
   const chest = matchChest(folded);
@@ -2229,6 +2236,34 @@ function pickRiskClass(
   if (take(matchStroke(folded), "stroke")) return "stroke";
   if (take(matchFall(tokens, folded), "fall_emergency")) return "fall_emergency";
   return null;
+}
+
+function pickRiskClass(
+  tokens: SafetyToken[],
+  folded: string,
+): Exclude<RiskClass, "none"> | null {
+  if (matchSelfHarm(tokens) && !classFullyNegated(tokens, "self_harm"))
+    return "self_harm";
+  return pickAcuteClass(tokens, folded);
+}
+
+/**
+ * Broad wording that must not open the crisis screen by itself.
+ * "không chịu nổi" and hay/hoặc plus "chết" stay cues for the classifier.
+ */
+function ambiguousSelfHarmCue(tokens: SafetyToken[]): boolean {
+  const joined = tokens.map((token) => token.folded).join(" ");
+  if (
+    hasAnyPhrase(tokens, ["không chịu nổi"]) &&
+    tokens.some((token) => FIRST_PERSON.has(token.folded))
+  ) {
+    return true;
+  }
+  return (
+    /\b(hay|hoac|or)\b/.test(joined) &&
+    /\b(chet|tu tu|tu sat)\b/.test(joined) &&
+    tokens.some((token) => FIRST_PERSON.has(token.folded) || SPEECH.has(token.folded))
+  );
 }
 
 function isDistressNegator(tokens: SafetyToken[], index: number): boolean {
@@ -2329,12 +2364,27 @@ export function evaluateHighRisk(question: string): SafetyMatch {
   };
 }
 
+function accompanyingAcute(
+  question: string,
+): Exclude<RiskClass, "none" | "self_harm"> | null {
+  const { tokens, folded } = analyzeQuestion(question);
+  const masked = applyNegationMask(tokens);
+  const maskedFolded = masked.map((token) => token.folded).join(" ");
+  let acute = pickAcuteClass(masked, maskedFolded);
+  if (acute && isEducation(folded)) acute = null;
+  if (acute && isHypothetical(folded) && !isSudden(folded)) acute = null;
+  if (!acute || !ACCOMPANYING_ACUTE.has(acute)) return null;
+  return acute;
+}
+
 export function emergencyMessage(
   riskClass: Exclude<RiskClass, "none">,
   question?: string,
 ): string {
   const base = MESSAGES[riskClass];
   if (riskClass !== "self_harm" || !question) return base;
+  const acute = accompanyingAcute(question);
+  if (acute) return `${base}\n\n${MESSAGES[acute]}`;
   const { folded } = analyzeQuestion(question);
   const ingested =
     matchPoison(folded) ||
@@ -2411,19 +2461,22 @@ export function hasExplicitFigurativeMarker(question: string): boolean {
 /** A self-harm cue that is not only an idiom, a definition, a hypothetical, or the past. */
 export function hasSelfHarmCue(question: string): boolean {
   const { tokens, folded } = analyzeQuestion(question);
-  if (selfHarmIsPastStable(tokens, folded)) return false;
+  if (hasExplicitFigurativeMarker(question)) return false;
   if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens))
     return false;
   if (isHypothetical(folded) && !/\b(dang|vua|toi nay|dem nay)\b/.test(folded))
     return false;
-  if (hasExplicitFigurativeMarker(question)) return false;
-  const masked = applyNegationMask(tokens);
-  const maskedFolded = masked.map((token) => token.folded).join(" ");
-  if (matchSelfHarm(masked)) return true;
+  // "không còn" / "no longer" does not hide the cue. Other settled past does.
+  if (selfHarmIsPastStable(tokens, folded) && !negatesCurrentPlan(tokens)) return false;
+  const visible = applySelfHarmDenial(tokens);
+  const visibleFolded = visible.map((token) => token.folded).join(" ");
+  if (ambiguousSelfHarmCue(visible)) return true;
+  if (negatesCurrentPlan(tokens)) return hasSelfHarmTopic(visible, visibleFolded);
+  if (matchSelfHarm(visible)) return true;
   return (
     /\b(tu sat|quyen sinh|tuyet menh|khong muon song|khong song noi)\b/.test(
-      maskedFolded,
-    ) || hasRealSuicidePair(masked)
+      visibleFolded,
+    ) || hasRealSuicidePair(visible)
   );
 }
 
