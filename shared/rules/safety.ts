@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.8.2";
+export const SAFETY_RULESET_VERSION = "v1.8.3";
 
 export type RiskClass =
   | "chest_pain"
@@ -996,9 +996,26 @@ function farewellToLife(joined: string): boolean {
   return /\b(cuoc doi|cuoc song|mai mai|khong gap lai)\b/.test(joined);
 }
 
+/**
+ * A plan verb next to ending a life: "kết thúc cuộc đời", "kết liễu", "giết mình".
+ * The words are a class, not a copied sentence.
+ */
+function endingLifePlan(joined: string): boolean {
+  if (!/\b(muon|dinh|tinh|toan|se|sap)\b/.test(joined)) return false;
+  return (
+    /\b(ket lieu|giet minh|giet ban than)\b/.test(joined) ||
+    /\bket thuc cuoc (doi|song)\b/.test(joined)
+  );
+}
+
 function classBasedSelfHarm(tokens: SafetyToken[], joined: string): boolean {
   if (!tokens.some((token) => isFirstPersonOrSpeech(token))) return false;
-  return cannotLive(tokens) || plannedDeath(tokens, joined) || farewellToLife(joined);
+  return (
+    cannotLive(tokens) ||
+    plannedDeath(tokens, joined) ||
+    farewellToLife(joined) ||
+    endingLifePlan(joined)
+  );
 }
 
 /**
@@ -1041,6 +1058,7 @@ function matchSelfHarm(tokens: SafetyToken[]): boolean {
   if (isHypothetical(joined) && !/\b(dang|vua|toi nay|dem nay)\b/.test(joined)) {
     return false;
   }
+  if (isDefinitionQuestion(joined) && !hasTightPersonalPlan(tokens)) return false;
   if (intentPlusMethod(tokens, joined)) return true;
   if (/\bkhong muon song chung\b/.test(joined)) {
     /* living together is not suicidal ideation */
@@ -1995,7 +2013,7 @@ function gradualTuTuOnly(tokens: SafetyToken[]): boolean {
 }
 
 /**
- * A lexical class and a different model class become the generic urgent screen.
+ * A lexicon cue of a more specific class replaces a lower model label.
  * A chest-pain picture with sweating or pain spreading to the arm stays chest pain
  * when the model also says chest pain.
  * Education and stable history do not become a full screen from the classifier.
@@ -2066,19 +2084,29 @@ export function refineClassifierRisk(
     modelClass === "unconscious" ||
     modelClass === "choking" ||
     modelClass === "chest_pain";
-  const lexicalDisagreement =
-    (allergySignal(folded) &&
-      (modelClass === "poisoning" ||
-        modelClass === "unconscious" ||
-        modelClass === "chest_pain")) ||
-    ((matchGlucose(folded) ||
+  if (
+    allergySignal(folded) &&
+    (modelClass === "poisoning" ||
+      modelClass === "unconscious" ||
+      modelClass === "chest_pain")
+  ) {
+    return "severe_allergy";
+  }
+  if (
+    (matchGlucose(folded) ||
       (sugarContext(folded) &&
         /\b(ngat|xiu|bat tinh|khong tinh|lo mo|hon me)\b/.test(folded))) &&
-      (modelClass === "poisoning" || modelClass === "unconscious")) ||
-    (seizureSignal(tokens, folded) &&
-      (modelClass === "poisoning" || modelClass === "unconscious")) ||
-    (breathingSignal(folded) && !chestPainPicture(folded) && lower);
-  if (lexicalDisagreement) return "urgent";
+    (modelClass === "poisoning" || modelClass === "unconscious")
+  ) {
+    return "low_blood_sugar";
+  }
+  if (
+    seizureSignal(tokens, folded) &&
+    (modelClass === "poisoning" || modelClass === "unconscious")
+  ) {
+    return "seizure";
+  }
+  if (breathingSignal(folded) && !chestPainPicture(folded) && lower) return "breathing";
   return modelClass;
 }
 
@@ -2274,4 +2302,42 @@ export function hasAcuteCue(question: string): boolean {
   return /\b(tim dap|mo hoi lanh|do mo hoi|tuc nguc|dau nguc|kho tho|co giat|bat tinh|chay mau|uong nham|meo mieng)\b/.test(
     maskedFolded,
   );
+}
+
+/** First person plus a harm-intent cue that is not an idiom, a definition, or the past. */
+export function hasFirstPersonHarmIntent(question: string): boolean {
+  if (hasExplicitFigurativeMarker(question)) return false;
+  const { tokens, folded } = analyzeQuestion(question);
+  if (!tokens.some((token) => FIRST_PERSON.has(token.folded))) return false;
+  if (selfHarmIsPastStable(tokens, folded)) return false;
+  if (isHypothetical(folded) && !/\b(dang|vua|toi nay|dem nay)\b/.test(folded))
+    return false;
+  if (isSelfHarmInformation(tokens, folded) && !hasTightPersonalPlan(tokens))
+    return false;
+  return hasSelfHarmCue(question);
+}
+
+const CUE_CLASSES = [
+  "self_harm",
+  "severe_allergy",
+  "low_blood_sugar",
+  "seizure",
+  "breathing",
+  "choking",
+  "chest_pain",
+  "burn",
+  "poisoning",
+  "bleeding",
+  "head_injury",
+  "unconscious",
+  "stroke",
+  "fall_emergency",
+] as const;
+
+/** Classes with a lexicon or rule cue in the text, after negation is masked. */
+export function corroboratingCues(question: string): Array<(typeof CUE_CLASSES)[number]> {
+  const { tokens } = analyzeQuestion(question);
+  const masked = applyNegationMask(tokens);
+  const maskedFolded = masked.map((token) => token.folded).join(" ");
+  return CUE_CLASSES.filter((riskClass) => matchesClass(riskClass, masked, maskedFolded));
 }

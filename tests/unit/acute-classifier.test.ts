@@ -250,6 +250,7 @@ describe("acute classifier JSON", () => {
           figurative: false,
         }),
       }),
+      verifyCrisis: async () => true,
     });
     expect(result.kind).toBe("high_risk");
     if (result.kind !== "high_risk") return;
@@ -457,7 +458,7 @@ describe("acute classifier JSON", () => {
     expect(`${first.value ?? ""}${rest}`).toBe(saved);
   });
 
-  it("uses the generic urgent screen when the rules and the classifier disagree", async () => {
+  it("uses the breathing screen when the classifier says poisoning", async () => {
     const breathing = await runChatPipeline({} as Env, "Bé thở nông, môi tái", {
       classifyAcute: async () => ({
         status: "ok",
@@ -467,7 +468,7 @@ describe("acute classifier JSON", () => {
     });
     expect(breathing.kind).toBe("high_risk");
     if (breathing.kind === "high_risk") {
-      expect(breathing.riskClass).toBe("urgent");
+      expect(breathing.riskClass).toBe("breathing");
       expect(breathing.message).toMatch(/gọi 115/i);
       expect(breathing.message).toContain("Nên làm");
       expect(breathing.message).not.toContain("1900");
@@ -488,7 +489,7 @@ describe("acute classifier JSON", () => {
       "seizure",
     );
     expect(seizure.kind).toBe("high_risk");
-    if (seizure.kind === "high_risk") expect(seizure.riskClass).toBe("urgent");
+    if (seizure.kind === "high_risk") expect(seizure.riskClass).toBe("seizure");
   });
 
   it("keeps a stable chest question off the emergency screen", async () => {

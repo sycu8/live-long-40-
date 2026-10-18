@@ -1,4 +1,7 @@
-import { ACUTE_CLASSIFIER_SYSTEM_PROMPT } from "@shared/rules/acute-classifier-prompt";
+import {
+  ACUTE_CLASSIFIER_SYSTEM_PROMPT,
+  ACUTE_VERIFIER_SYSTEM_PROMPT,
+} from "@shared/rules/acute-classifier-prompt";
 import { normalizeSafetyText, type RiskClass } from "@shared/rules/safety";
 import type { Env } from "../env";
 import { WORKERS_AI_TEXT_MODEL } from "./models";
@@ -308,4 +311,61 @@ export async function classifyAcuteRisk(
   if (!parsed) return { status: "fail", reason: "parse" };
   await writeCache(env, key, parsed);
   return { status: "ok", verdict: parsed, cached: false };
+}
+
+/** One short call. A failure means the crisis was not confirmed. */
+export const ACUTE_VERIFIER_TIMEOUT_MS = 2_000;
+
+/** True only when the verifier returns crisis=true. Anything else is false. */
+export function parseCrisisVerifierOutput(raw: string): boolean | null {
+  const body = extractJsonObject(raw);
+  if (!body) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+  const record = parsed as Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(record, "crisis")) return null;
+  return coerceBool(record.crisis);
+}
+
+export async function verifyCrisisWording(
+  env: Env,
+  question: string,
+  options?: { timeoutMs?: number },
+): Promise<boolean> {
+  if (!env.AI) return false;
+  const timeoutMs = Math.min(
+    ACUTE_VERIFIER_TIMEOUT_MS,
+    options?.timeoutMs ?? ACUTE_VERIFIER_TIMEOUT_MS,
+  );
+  const abort = new AbortController();
+  try {
+    const response = await withTimeout(
+      runWorkersAi(
+        env,
+        WORKERS_AI_TEXT_MODEL,
+        {
+          messages: [
+            { role: "system", content: ACUTE_VERIFIER_SYSTEM_PROMPT },
+            { role: "user", content: question },
+          ],
+          stream: false,
+          max_tokens: 40,
+          temperature: 0,
+        },
+        { signal: abort.signal },
+      ),
+      timeoutMs,
+      abort,
+    );
+    const read = readWorkersAiText(response);
+    if (!read.ok || !read.text.trim()) return false;
+    return parseCrisisVerifierOutput(read.text) === true;
+  } catch {
+    return false;
+  }
 }

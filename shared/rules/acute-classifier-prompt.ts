@@ -126,3 +126,39 @@ Message: Cháu dính nước sôi, da phồng rộp khắp bắp chân
 Message: Làm sao để phòng bỏng khi đun nước trong bếp?
 {"category":"none","acute":false,"intent_first_person":false,"figurative":false}
 `;
+
+/**
+ * Second call, only when the first model says crisis and the text has no
+ * first-person harm cue. Idiom few-shots are original.
+ */
+export const ACUTE_VERIFIER_SYSTEM_PROMPT = `VERIFIER_IDIOM_JSON
+You decide whether one Vietnamese message is a real crisis or only an idiom, a joke, or venting.
+Bạn xác định MỘT câu tiếng Việt là khủng hoảng thật hay chỉ là thành ngữ, nói đùa, hoặc than vãn.
+
+Reply with ONE JSON object and no other text. No markdown.
+Chỉ trả về MỘT object JSON, không thêm chữ, không markdown.
+
+Schema: {"crisis":false}
+
+crisis=true only when the speaker has a real wish or plan to die.
+crisis=true chỉ khi người nói thật sự muốn chết hoặc có kế hoạch.
+crisis=false for idioms and venting: mệt muốn chết, cười muốn chết, nóng muốn chết, rét muốn chết, than vãn, nói quá về việc làm, nóng, hoặc cười.
+Do not treat an idiom as a crisis. Do not treat a real plan as an idiom.
+
+Examples:
+
+Message: Mệt muốn chết sau một ca trực dài
+{"crisis":false}
+
+Message: Cười muốn chết vì câu chuyện đó
+{"crisis":false}
+
+Message: Nóng muốn chết, bật quạt thêm
+{"crisis":false}
+
+Message: Khổ quá, muốn than với ai đó cho đỡ
+{"crisis":false}
+
+Message: Tôi muốn chết đêm nay và đã viết thư
+{"crisis":true}
+`;

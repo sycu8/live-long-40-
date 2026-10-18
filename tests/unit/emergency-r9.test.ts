@@ -25,8 +25,8 @@ const figurativeIntent = {
 };
 
 describe("emergency rules r9", () => {
-  it("bumps the ruleset to v1.8.2", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.2");
+  it("bumps the ruleset to v1.8.3", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.3");
     expect(ACUTE_CLASSIFIER_TIMEOUT_MS).toBe(3500);
   });
 
@@ -37,7 +37,7 @@ describe("emergency rules r9", () => {
     expect(hasExplicitFigurativeMarker("Tôi muốn chết đêm nay")).toBe(false);
 
     const literal = "Em tính kết thúc cuộc đời";
-    expect(evaluateHighRisk(literal).riskClass).not.toBe("self_harm");
+    expect(evaluateHighRisk(literal).riskClass).toBe("self_harm");
     expect(hasExplicitFigurativeMarker(literal)).toBe(false);
     expect(resolveAcuteScreen(literal, figurativeIntent)).toBe("self_harm");
 
@@ -121,7 +121,7 @@ describe("emergency rules r9", () => {
     expect(resolveAcuteScreen(calm, { status: "fail", reason: "timeout" })).toBeNull();
   });
 
-  it("uses the generic urgent screen when the two layers name different classes", () => {
+  it("keeps the chest screen when the classifier names poisoning", () => {
     const question = "Bố tôi đau tức ngực và vã mồ hôi";
     expect(evaluateHighRisk(question).riskClass).toBe("chest_pain");
     expect(
@@ -135,7 +135,7 @@ describe("emergency rules r9", () => {
           figurative: false,
         },
       }),
-    ).toBe("urgent");
+    ).toBe("chest_pain");
     expect(
       resolveAcuteScreen(question, {
         status: "ok",
