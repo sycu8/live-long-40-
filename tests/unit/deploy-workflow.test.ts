@@ -1,6 +1,8 @@
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { productionDeployRefusal } from "../../scripts/ci-deploy.mjs";
 
 const workflow = readFileSync(resolve(".github/workflows/deploy-cloudflare.yml"), "utf8");
 
@@ -71,6 +73,98 @@ describe("deploy workflow triggers", () => {
     expect(pullRequest).not.toContain("ci-deploy.mjs");
     expect(pullRequest).not.toContain("secret put");
     expect(pullRequest).not.toContain("--remote");
+    expect(pullRequest).not.toContain("CLOUDFLARE_API_TOKEN");
+    expect(pullRequest).not.toContain("CLOUDFLARE_ACCOUNT_ID");
     expect(pullRequest).not.toMatch(/wrangler deploy(?! --dry-run)/);
+  });
+
+  it("does not cancel an in-progress production deploy", () => {
+    expect(workflow).toMatch(
+      /cancel-in-progress:\s*\$\{\{\s*github\.ref != 'refs\/heads\/main'\s*\}\}/,
+    );
+    expect(workflow).not.toMatch(/cancel-in-progress:\s*true/);
+  });
+
+  it("fails closed unless the ref is refs/heads/main and the environment is production", () => {
+    const deploy = jobSource(workflow, "deploy");
+    expect(deploy).toContain('if [ "$GITHUB_REF" != "refs/heads/main" ]');
+    expect(deploy).toContain('if [ "$DEPLOY_ENVIRONMENT" != "production" ]');
+    expect(deploy.indexOf('"$GITHUB_REF" != "refs/heads/main"')).toBeLessThan(
+      deploy.indexOf("node scripts/ci-deploy.mjs"),
+    );
+    expect(deploy.indexOf('"$DEPLOY_ENVIRONMENT" != "production"')).toBeLessThan(
+      deploy.indexOf("node scripts/ci-deploy.mjs"),
+    );
+  });
+});
+
+describe("productionDeployRefusal", () => {
+  it("allows production only from refs/heads/main on Actions", () => {
+    expect(
+      productionDeployRefusal({
+        environment: "production",
+        githubActions: "true",
+        githubRef: "refs/heads/main",
+      }),
+    ).toBeNull();
+  });
+
+  it("refuses staging before the production Worker can be updated", () => {
+    expect(
+      productionDeployRefusal({
+        environment: "staging",
+        githubActions: "true",
+        githubRef: "refs/heads/main",
+      }),
+    ).toMatch(/song-an-40/);
+    expect(
+      productionDeployRefusal({
+        environment: "",
+        githubActions: "false",
+        githubRef: "",
+      }),
+    ).toMatch(/no staging Worker/);
+  });
+
+  it("refuses a production deploy from any other ref", () => {
+    expect(
+      productionDeployRefusal({
+        environment: "production",
+        githubActions: "true",
+        githubRef: "refs/heads/fix/deploy-main-only",
+      }),
+    ).toMatch(/refs\/heads\/main/);
+  });
+
+  it("exits before wrangler when staging or a non-main ref is requested", () => {
+    const staging = spawnSync("node", ["scripts/ci-deploy.mjs"], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        CLOUDFLARE_API_TOKEN: "",
+        CLOUDFLARE_ACCOUNT_ID: "",
+        DEPLOY_ENVIRONMENT: "staging",
+        GITHUB_ACTIONS: "true",
+        GITHUB_REF: "refs/heads/main",
+      },
+    });
+    expect(staging.status).not.toBe(0);
+    expect(staging.stderr).toMatch(/song-an-40/);
+    expect(`${staging.stdout}`).not.toMatch(/Deploying Worker|Authenticating/);
+
+    const otherBranch = spawnSync("node", ["scripts/ci-deploy.mjs"], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        CLOUDFLARE_API_TOKEN: "",
+        CLOUDFLARE_ACCOUNT_ID: "",
+        DEPLOY_ENVIRONMENT: "production",
+        GITHUB_ACTIONS: "true",
+        GITHUB_REF: "refs/heads/fix/deploy-main-only",
+      },
+    });
+    expect(otherBranch.status).not.toBe(0);
+    expect(otherBranch.stderr).toMatch(/refs\/heads\/main/);
+    expect(`${otherBranch.stdout}`).not.toMatch(/Deploying Worker|Authenticating/);
   });
 });

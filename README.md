@@ -117,7 +117,7 @@ Biến công khai: `TURNSTILE_SITE_KEY`, `AI_GATEWAY_ID`, `AI_SEARCH_INSTANCE`, 
 2. Workflow: `.github/workflows/deploy-cloudflare.yml`
    - **Push `main`:** deploy tự động, `ENVIRONMENT=production`, không seed D1 remote.
    - **Pull request vào `main`:** `pnpm test`, `pnpm build`, và `wrangler deploy --dry-run`. Không deploy, không seed.
-   - **Thủ công:** Actions → Deploy Cloudflare → Run workflow. Chọn `environment` (`staging` hoặc `production`) và `seed` (mặc định tắt).
+   - **Thủ công:** chỉ từ `refs/heads/main` và chỉ `environment=production`. `staging` bị từ chối (chưa có Worker staging; không deploy đè `song-an-40`). `seed` mặc định tắt.
 3. Job deploy gọi `node scripts/ci-deploy.mjs`: provision D1/KV/R2/Queues nếu thiếu → build → deploy → migrate → seed remote chỉ khi `seed` bật.
 
 ```bash
