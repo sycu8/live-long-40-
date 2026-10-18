@@ -8,6 +8,7 @@ import {
   refineClassifierRisk,
   selfHarmLooksAmbiguous,
   selfHarmLooksInformational,
+  selfHarmLooksPastStable,
   SYMPTOM_SAFETY_LINE,
   type RiskClass,
 } from "@shared/rules/safety";
@@ -204,6 +205,7 @@ function streamThenSuffix(
   sources: RetrievedSource[],
   mode: string,
   suffix: (base: string) => Promise<string>,
+  riskPromise: Promise<string | null>,
 ) {
   let resolveFull!: (v: string) => void;
   const fullTextPromise = new Promise<string>((r) => {
@@ -225,6 +227,7 @@ function streamThenSuffix(
     mode,
     stream,
     fullTextPromise,
+    riskPromise,
   };
 }
 
@@ -247,6 +250,7 @@ function streamPreparedAnswer(prepared: CachedAnswer, classification: string) {
     mode: prepared.mode,
     stream,
     fullTextPromise,
+    riskPromise: Promise.resolve<string | null>(null),
   };
 }
 
@@ -261,7 +265,7 @@ export type ChatPipelineResult =
       kind: "abstain";
       message: string;
       /** Extra text once the classifier settles. The first token does not wait for it. */
-      followUp?: Promise<string>;
+      followUp?: Promise<{ extra: string; riskClass: string | null }>;
       classification: string;
       sources: RetrievedSource[];
       mode: string;
@@ -273,6 +277,8 @@ export type ChatPipelineResult =
       mode: string;
       stream: ReadableStream<string>;
       fullTextPromise: Promise<string>;
+      /** Set when a late alert replaces the ordinary answer. Null when the text stays informational. */
+      riskPromise: Promise<string | null>;
     };
 
 function finalizeGroundedAnswer(full: string, sources: RetrievedSource[]): string {
@@ -386,7 +392,9 @@ export function appendAcuteSafetyNet(
   if (
     !figurative &&
     !out.includes("1900 1267") &&
-    (selfHarmLooksInformational(question) || (unsure && selfHarmLooksAmbiguous(question)))
+    (selfHarmLooksPastStable(question) ||
+      selfHarmLooksInformational(question) ||
+      (unsure && selfHarmLooksAmbiguous(question)))
   ) {
     out = `${out.replace(/\s+$/, "")}\n\n${GENTLE_SUPPORT_LINE}`;
   }
@@ -475,6 +483,15 @@ async function resolvedLayer(box: LayerBox): Promise<AcuteLayerResult | null> {
   return box.layer;
 }
 
+function riskPromiseFor(question: string, box: LayerBox): Promise<string | null> {
+  const read = (layer: AcuteLayerResult | null) => alertFromLayer(question, layer);
+  if (!box.promise) return Promise.resolve(read(box.layer));
+  return box.promise.then(
+    (layer) => read(layer),
+    () => null,
+  );
+}
+
 function shouldRunAcuteClassifier(question: string, classification: string): boolean {
   if (classification === "health_education" || classification === "caregiving")
     return true;
@@ -556,12 +573,14 @@ export async function runChatPipeline(
       box.layer = layer;
       const alert = alertFromLayer(question, layer);
       if (alert && !message.includes("Nên làm:")) {
-        return `\n\n${emergencyMessage(alert)}`;
+        return { extra: `\n\n${emergencyMessage(alert)}`, riskClass: alert };
       }
       const full = appendAcuteSafetyNet(question, messageBody, layer, routed, false);
       const trimmed = message.replace(/\s+$/, "");
-      if (!full.startsWith(trimmed) || full.length === trimmed.length) return "";
-      return full.slice(trimmed.length);
+      if (!full.startsWith(trimmed) || full.length === trimmed.length) {
+        return { extra: "", riskClass: null };
+      }
+      return { extra: full.slice(trimmed.length), riskClass: null };
     });
     return {
       kind: "abstain",
@@ -609,6 +628,7 @@ export async function runChatPipeline(
       prepared.sources,
       prepared.mode,
       settledSuffix,
+      riskPromiseFor(question, box),
     );
   }
 
@@ -652,6 +672,7 @@ export async function runChatPipeline(
       sources,
       mode,
       settledSuffix,
+      riskPromiseFor(question, box),
     );
   }
 
@@ -773,6 +794,7 @@ export async function runChatPipeline(
     mode,
     stream,
     fullTextPromise,
+    riskPromise: riskPromiseFor(question, box),
   };
 }
 

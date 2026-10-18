@@ -99,6 +99,16 @@ const POSITIVE: Array<{ q: string; cls: RiskClass }> = [
     q: "Bà tiểu đường bị ngất, người không tỉnh",
     cls: "low_blood_sugar",
   },
+  { q: "Em nói sẽ quyên sinh đêm nay", cls: "self_harm" },
+  { q: "Tôi có ý định tự hại", cls: "self_harm" },
+  { q: "Cháu viết thư tuyệt mệnh rồi khóa phòng", cls: "self_harm" },
+  { q: "Anh ấy uống hết thuốc ngủ để chết", cls: "self_harm" },
+  { q: "Chẳng muốn sống nữa, ngồi một mình", cls: "self_harm" },
+  { q: "Máu phun từ vết thương ở cánh tay", cls: "bleeding" },
+  { q: "Vết mổ máu loang đẫm quần", cls: "bleeding" },
+  { q: "Ông mất nhiều máu, mặt trắng bệch", cls: "bleeding" },
+  { q: "Không thở được, môi tím tái", cls: "breathing" },
+  { q: "Máu chảy không cầm từ sáng", cls: "bleeding" },
 ];
 
 const BENIGN = [
@@ -179,6 +189,15 @@ const BENIGN = [
   "Sợ ngất vì tiếng pháo giao thừa",
   "toi muon, tu tu nghi mot lat",
   "toi muon di tu tu ra san tap",
+  "Tôi không bị đau ngực",
+  "Bé không co giật",
+  "Tôi không muốn tự tử",
+  "Hết đau ngực rồi",
+  "Đau ngực hết rồi, đi bộ chậm được không?",
+  "Tôi không bị đột quỵ",
+  "No chest pain khi đi bộ chậm",
+  "Tôi từng muốn tự tử, bây giờ ổn",
+  "Dấu hiệu đột quỵ ở người già là gì?",
 ];
 
 describe("fresh emergency set, not taken from QA", () => {
@@ -212,6 +231,16 @@ describe("fresh emergency set, not taken from QA", () => {
     expect(falseAlarms, falseAlarms.join("\n")).toEqual([]);
     expect(precision).toBe(1);
     expect(recall).toBe(1);
+    console.log(
+      JSON.stringify({
+        own_set: {
+          positive: POSITIVE.length,
+          benign: BENIGN.length,
+          precision,
+          recall,
+        },
+      }),
+    );
   });
 
   it("puts the short 115 line on symptom answers that are not emergencies", () => {

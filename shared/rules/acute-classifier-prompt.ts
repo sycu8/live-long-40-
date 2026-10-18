@@ -35,6 +35,10 @@ Rules / Quy tắc:
   Thành ngữ chết ngất, cười ngất, sợ ngất: figurative true, category none, trừ khi người đó thật sự bất tỉnh.
 - An everyday or stable symptom question is category none, acute false, even if it names the chest, the back, or a cough.
   Câu hỏi triệu chứng hàng ngày hoặc bệnh ổn định: category none, acute false.
+- Negation is not an event. không, chẳng, chưa, hết rồi, không còn, no, not, and never cancel the symptom they cover. Inability stays acute: không thở được, không muốn sống, máu không cầm.
+  Câu phủ định không phải sự việc. Không thở được, không muốn sống, máu không cầm vẫn là cấp cứu.
+- Past self-harm the speaker says is over is category none and acute false. A plan for tonight or right now is still self_harm.
+  Từng nghĩ đến tự hại mà nay đã ổn: category none, acute false. Kế hoạch tối nay vẫn là self_harm.
 
 Examples:
 

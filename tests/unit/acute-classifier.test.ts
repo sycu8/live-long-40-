@@ -4,6 +4,7 @@ import { ACUTE_CLASSIFIER_SYSTEM_PROMPT } from "../../shared/rules/acute-classif
 import {
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
+  selfHarmLooksPastStable,
   SYMPTOM_SAFETY_LINE,
 } from "../../shared/rules/safety";
 import {
@@ -58,6 +59,14 @@ describe("acute classifier JSON", () => {
     expect(parseAcuteClassifierOutput("not json")).toBeNull();
     expect(
       parseAcuteClassifierOutput(JSON.stringify({ ...NONE, acute: "true" })),
+    ).toEqual({ ...NONE, acute: true });
+    expect(
+      parseAcuteClassifierOutput(
+        `Phân loại xong: ${JSON.stringify({ ...NONE, figurative: "false" })} hết.`,
+      ),
+    ).toEqual(NONE);
+    expect(
+      parseAcuteClassifierOutput(JSON.stringify({ ...NONE, acute: "yes" })),
     ).toBeNull();
     expect(
       parseAcuteClassifierOutput(JSON.stringify({ ...NONE, note: "extra" })),
@@ -326,6 +335,26 @@ describe("acute classifier JSON", () => {
     expect(hung).toBe(1);
   });
 
+  it("does not retry when the model rejects JSON schema", async () => {
+    let calls = 0;
+    const env = {
+      AI: {
+        async run() {
+          calls += 1;
+          return {
+            error: {
+              code: 5025,
+              message: "This model doesn't support JSON Schema",
+            },
+          };
+        },
+      },
+    } as unknown as Env;
+    const failed = await classifyAcuteRisk(env, "Người già nên ngủ mấy giờ là đủ?");
+    expect(failed).toEqual({ status: "fail", reason: "unsupported" });
+    expect(calls).toBe(1);
+  });
+
   it("stores a hash key and a short TTL, not the question", async () => {
     const puts: Array<{ key: string; value: string; ttl?: number }> = [];
     const question = "Ngủ trưa mười lăm phút có lợi không?";
@@ -522,10 +551,67 @@ describe("acute classifier JSON", () => {
     expect(result.message).not.toContain("Nên làm");
   });
 
+  it("keeps a negated emergency mention off the screen", async () => {
+    for (const question of [
+      "Tôi không bị đau ngực",
+      "Bé không co giật",
+      "Tôi không muốn tự tử",
+      "Hết đau ngực rồi",
+      "Tôi không bị đột quỵ",
+    ]) {
+      const result = evaluateHighRisk(question);
+      expect(result.matched, question).toBe(false);
+    }
+    const denied = await runChatPipeline({} as Env, "Tôi không muốn tự tử");
+    expect(denied.kind).toBe("abstain");
+    if (denied.kind === "abstain") {
+      expect(denied.message).not.toContain("1900");
+      expect(denied.message).not.toContain("Nên làm");
+      expect(denied.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+    }
+    expect(evaluateHighRisk("Tôi không muốn sống nữa").riskClass).toBe("self_harm");
+    expect(evaluateHighRisk("Không thở được").riskClass).toBe("breathing");
+    expect(evaluateHighRisk("Máu chảy không cầm").riskClass).toBe("bleeding");
+    expect(evaluateHighRisk("Cháu đang giật không ngừng").riskClass).toBe("seizure");
+  });
+
+  it("routes a past self-harm thought to the support line", async () => {
+    const question = "Tôi từng muốn tự tử, bây giờ ổn";
+    expect(selfHarmLooksPastStable(question)).toBe(true);
+    expect(evaluateHighRisk(question).matched).toBe(false);
+    const result = await runChatPipeline({} as Env, question);
+    expect(result.kind).toBe("abstain");
+    if (result.kind !== "abstain") return;
+    expect(result.message).toContain(GENTLE_SUPPORT_LINE);
+    expect(result.message).toContain("1900 1267");
+    expect(result.message).not.toContain("Nên làm");
+    expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+  });
+
+  it("lets self-harm outrank a poisoning screen and keeps the hotline", () => {
+    const question = "Anh ấy uống hết thuốc ngủ để chết";
+    const result = evaluateHighRisk(question);
+    expect(result.riskClass).toBe("self_harm");
+    expect(result.message).toContain("1900 1267");
+    expect(result.message).toContain("Nên làm");
+  });
+
+  it("does not add the support line to a stroke information question", async () => {
+    const question = "Dấu hiệu đột quỵ ở người già gồm những gì?";
+    expect(evaluateHighRisk(question).matched).toBe(false);
+    const result = await runChatPipeline({} as Env, question);
+    expect(result.kind).toBe("abstain");
+    if (result.kind !== "abstain") return;
+    expect(result.message).not.toContain("1900 1267");
+    expect(result.message.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+  });
+
   it("leaves the live eval script out of CI", () => {
     const pkg = readFileSync("package.json", "utf8");
     const workflow = readFileSync(".github/workflows/deploy-cloudflare.yml", "utf8");
     expect(pkg).not.toContain("acute-live-eval");
+    expect(pkg).not.toContain("acute-classifier-smoke");
     expect(workflow).not.toContain("acute-live-eval");
+    expect(workflow).not.toContain("acute-classifier-smoke");
   });
 });

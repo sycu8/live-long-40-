@@ -122,7 +122,7 @@ describe("chat Workers AI fallback", () => {
     };
     expect(classifierInputs?.max_tokens).toBe(ACUTE_CLASSIFIER_MAX_TOKENS);
     expect(classifierInputs?.temperature).toBe(0);
-    expect(classifierInputs?.response_format?.type).toBe("json_schema");
+    expect(classifierInputs && "response_format" in classifierInputs).toBe(false);
     expect(chatCalls).toHaveLength(1);
     expect(chatCalls[0]).toHaveLength(3);
     expect(chatCalls[0]?.[0]).toBe(WORKERS_AI_TEXT_MODEL);
@@ -196,10 +196,10 @@ describe("chat Workers AI fallback", () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
     const cachedPuts = answerCachePuts(puts);
     expect(cachedPuts).toHaveLength(1);
-    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v3:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
+    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v4:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
       true,
     );
-    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v2:");
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v3:");
     const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
     expect(cached.answer).toBe(MODEL_WITH_LINE);
   });

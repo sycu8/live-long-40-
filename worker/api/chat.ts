@@ -265,18 +265,41 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
         });
         send({ type: "token", text: opening });
         let extra = "";
+        let lateRisk: string | null = null;
         try {
-          extra = await followUp;
+          const settled = await followUp;
+          extra = settled.extra;
+          lateRisk = settled.riskClass;
         } catch {
           extra = "";
+          lateRisk = null;
+        }
+        if (lateRisk) {
+          send({
+            type: "meta",
+            classification: "high_risk_health",
+            riskClass: lateRisk,
+            messagePublicId: assistantPublicId,
+          });
         }
         if (extra) send({ type: "token", text: extra });
+        if (lateRisk) {
+          try {
+            await c.env.ANALYTICS_QUEUE?.send({
+              type: "risk_routed",
+              riskClass: lateRisk,
+              at: nowIso(),
+            });
+          } catch {
+            /* optional binding */
+          }
+        }
         const full = `${opening}${extra}`;
         try {
           await c.env.DB.prepare(
             `INSERT INTO chat_messages
              (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
-             VALUES (?, ?, ?, 'assistant', ?, ?, ?, 'none', ?, 1, ?)`,
+             VALUES (?, ?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?)`,
           )
             .bind(
               assistantMsgId,
@@ -284,15 +307,17 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
               chat.id,
               chat.history_opt_in ? full : null,
               chat.history_opt_in ? 0 : 1,
-              pipeline.classification,
+              lateRisk ? "high_risk_health" : pipeline.classification,
+              lateRisk ?? "none",
               SYSTEM_PROMPT_VERSION,
+              lateRisk ? 0 : 1,
               nowIso(),
             )
             .run();
         } catch {
           /* the tokens were already sent */
         }
-        send({ type: "done", abstained: true });
+        send({ type: "done", abstained: !lateRisk });
         controller.close();
       },
     });
@@ -342,10 +367,28 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           send({ type: "token", text: value });
         }
         const full = await pipeline.fullTextPromise;
+        const lateRisk = await pipeline.riskPromise;
+        if (lateRisk) {
+          send({
+            type: "meta",
+            classification: "high_risk_health",
+            riskClass: lateRisk,
+            messagePublicId: assistantPublicId,
+          });
+          try {
+            await c.env.ANALYTICS_QUEUE?.send({
+              type: "risk_routed",
+              riskClass: lateRisk,
+              at: nowIso(),
+            });
+          } catch {
+            /* optional binding */
+          }
+        }
         await c.env.DB.prepare(
           `INSERT INTO chat_messages
            (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
-           VALUES (?, ?, ?, 'assistant', ?, ?, ?, 'none', ?, 0, ?)`,
+           VALUES (?, ?, ?, 'assistant', ?, ?, ?, ?, ?, 0, ?)`,
         )
           .bind(
             assistantMsgId,
@@ -353,7 +396,8 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             chat.id,
             chat.history_opt_in ? full : null,
             chat.history_opt_in ? 0 : 1,
-            pipeline.classification,
+            lateRisk ? "high_risk_health" : pipeline.classification,
+            lateRisk ?? "none",
             SYSTEM_PROMPT_VERSION,
             nowIso(),
           )

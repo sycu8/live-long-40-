@@ -33,7 +33,8 @@ export type AcuteVerdict = {
   figurative: boolean;
 };
 
-export type AcuteFailReason = "timeout" | "parse" | "empty" | "unavailable";
+export type AcuteFailReason =
+  "timeout" | "parse" | "empty" | "unavailable" | "unsupported";
 
 export type AcuteLayerResult =
   | { status: "ok"; verdict: AcuteVerdict; cached: boolean }
@@ -79,16 +80,54 @@ export function isAcuteClassifierInput(inputs: unknown): boolean {
   return typeof content === "string" && content.includes("ACUTE_RISK_JSON");
 }
 
-/** Strict schema. Strings "true"/"false" and extra keys are rejected. */
-export function parseAcuteClassifierOutput(raw: string): AcuteVerdict | null {
-  const text = raw.trim();
-  if (!text) return null;
+function coerceBool(value: unknown): boolean | null {
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return null;
+  const text = value.trim().toLowerCase();
+  if (text === "true") return true;
+  if (text === "false") return false;
+  return null;
+}
+
+/** First balanced object. Fences and a short preface are ignored. */
+function extractJsonObject(raw: string): string | null {
+  const text = raw.trim().replace(/^```(?:json)?\s*/i, "");
   const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
+  if (start < 0) return null;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i]!;
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === "{") depth += 1;
+    else if (ch === "}") {
+      depth -= 1;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+/**
+ * One object with the four required keys. Boolean strings are accepted.
+ * Extra keys and unknown categories are rejected.
+ */
+export function parseAcuteClassifierOutput(raw: string): AcuteVerdict | null {
+  const body = extractJsonObject(raw);
+  if (!body) return null;
   let parsed: unknown;
   try {
-    parsed = JSON.parse(text.slice(start, end + 1));
+    parsed = JSON.parse(body);
   } catch {
     return null;
   }
@@ -101,14 +140,15 @@ export function parseAcuteClassifierOutput(raw: string): AcuteVerdict | null {
   }
   if (typeof record.category !== "string" || !CATEGORY_SET.has(record.category))
     return null;
-  if (typeof record.acute !== "boolean") return null;
-  if (typeof record.intent_first_person !== "boolean") return null;
-  if (typeof record.figurative !== "boolean") return null;
+  const acute = coerceBool(record.acute);
+  const intent = coerceBool(record.intent_first_person);
+  const figurative = coerceBool(record.figurative);
+  if (acute === null || intent === null || figurative === null) return null;
   return {
     category: record.category as AcuteCategory,
-    acute: record.acute,
-    intent_first_person: record.intent_first_person,
-    figurative: record.figurative,
+    acute,
+    intent_first_person: intent,
+    figurative,
   };
 }
 
@@ -182,22 +222,12 @@ function withTimeout<T>(
   });
 }
 
-const ACUTE_RESPONSE_FORMAT = {
-  type: "json_schema",
-  json_schema: {
-    type: "object",
-    additionalProperties: false,
-    properties: {
-      category: { type: "string", enum: [...ACUTE_CATEGORIES] },
-      acute: { type: "boolean" },
-      intent_first_person: { type: "boolean" },
-      figurative: { type: "boolean" },
-    },
-    required: ["category", "acute", "intent_first_person", "figurative"],
-  },
-};
-
 type ModelRead = { raw: string } | { fail: AcuteFailReason };
+
+/** 5025 means this model has no JSON mode. Retrying the same call will fail again. */
+function isUnsupportedModelOutput(message: string): boolean {
+  return /5025|json schema|json mode/i.test(message);
+}
 
 async function readModel(
   env: Env,
@@ -219,7 +249,6 @@ async function readModel(
           stream: false,
           max_tokens: ACUTE_CLASSIFIER_MAX_TOKENS,
           temperature: 0,
-          response_format: ACUTE_RESPONSE_FORMAT,
         },
         { signal: abort.signal },
       ),
@@ -227,10 +256,15 @@ async function readModel(
       abort,
     );
     const read = readWorkersAiText(response);
-    if (!read.ok || !read.text.trim()) return { fail: "empty" };
+    if (!read.ok) {
+      if (isUnsupportedModelOutput(read.error)) return { fail: "unsupported" };
+      return { fail: "empty" };
+    }
+    if (!read.text.trim()) return { fail: "empty" };
     return { raw: read.text };
   } catch (err) {
     const message = err instanceof Error ? err.message : "";
+    if (isUnsupportedModelOutput(message)) return { fail: "unsupported" };
     if (abort.signal.aborted || message === "acute_classifier_timeout") {
       return { fail: "timeout" };
     }
@@ -267,8 +301,8 @@ export async function classifyAcuteRisk(
   );
   const deadline = Date.now() + timeoutMs;
   const first = await readModel(env, question, deadline - Date.now());
-  if ("fail" in first && first.fail === "timeout") {
-    return { status: "fail", reason: "timeout" };
+  if ("fail" in first && (first.fail === "timeout" || first.fail === "unsupported")) {
+    return { status: "fail", reason: first.fail };
   }
   const parsed = "raw" in first ? parseAcuteClassifierOutput(first.raw) : null;
   if (parsed) {
