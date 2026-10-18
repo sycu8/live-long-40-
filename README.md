@@ -18,7 +18,7 @@ Progressive Web App giúp người Việt từ tuổi **40+** chủ động chu�
 | Chữ | **Lexica Ultralegible** (OFL 1.1, tự host) — thiết kế cho người đọc chữ khó / mắt yếu; hỗ trợ tiếng Việt. Fallback: Be Vietnam Pro |
 | API | Hono trên Cloudflare Workers |
 | Dữ liệu | D1 (quan hệ), R2 (tài liệu nguồn), KV (cấu hình công khai) |
-| AI | Workers AI + AI Gateway + Cloudflare AI Search |
+| AI | Workers AI + Cloudflare AI Search |
 | Nạp liệu | Queues + Workflows |
 | Bảo vệ admin | Cloudflare Access (+ secret dự phòng local) |
 | Chống lạm dụng | Turnstile (khi cấu hình secret) |
@@ -190,7 +190,7 @@ Agent discovery (API catalog, Link headers, MCP, skills): [`docs/agent-discovery
 3. Phân loại chủ đề  
 4. Truy vấn AI Search (chỉ nguồn `active` + `approved`)  
 5. Ngưỡng điểm tối thiểu; thiếu bằng chứng → abstain  
-6. Sinh câu trả lời qua Workers AI (qua AI Gateway khi có)  
+6. Sinh câu trả lời qua Workers AI  
 7. Kiểm tra citation ID khớp retrieval  
 8. Stream SSE về trình duyệt  
 
