@@ -327,6 +327,8 @@ export async function runChatPipeline(
   question: string,
   options?: ChatPipelineOptions,
 ): Promise<ChatPipelineResult> {
+  // Emergency routing is deterministic and first: cache, retrieval,
+  // the empty-source refusal, and the model must not replace it.
   const risk = evaluateHighRisk(question);
   if (risk.matched) {
     return {

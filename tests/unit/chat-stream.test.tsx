@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { ChatPage } from "../../client/pages/ChatPage";
+import { evaluateHighRisk } from "../../shared/rules/safety";
 
 const FULL_ANSWER = "Người cao tuổi cần theo dõi huyết áp tại nhà.";
 const CITATION_TITLE = "Hướng dẫn theo dõi huyết áp";
@@ -70,6 +71,8 @@ function sseStream(events: unknown[]) {
   });
 }
 
+let streamEvents: unknown[] = STREAM_EVENTS;
+
 function installFetch() {
   vi.stubGlobal(
     "fetch",
@@ -86,7 +89,7 @@ function installFetch() {
         return jsonResponse({ chatSessionPublicId: "sess_public_1" });
       }
       if (url.endsWith("/messages") && method === "POST") {
-        return new Response(sseStream(STREAM_EVENTS), {
+        return new Response(sseStream(streamEvents), {
           status: 200,
           headers: { "Content-Type": "text/event-stream; charset=utf-8" },
         });
@@ -98,6 +101,7 @@ function installFetch() {
 
 describe("ChatPage streamed answers", () => {
   beforeEach(() => {
+    streamEvents = STREAM_EVENTS;
     Element.prototype.scrollIntoView = () => {};
     localStorage.clear();
     installFetch();
@@ -137,5 +141,48 @@ describe("ChatPage streamed answers", () => {
       MESSAGE_PUBLIC_ID,
     );
     expect(await screen.findByText("Câu trả lời này hữu ích?")).toBeTruthy();
+  });
+
+  it("renders a multi-token 115 emergency message on the stream path", async () => {
+    const message = evaluateHighRisk(
+      "Bố tôi 65 tuổi bị đau tức ngực bên trái và vã mồ hôi từ nửa tiếng nay",
+    ).message;
+    const parts = message.split(/\n\n/).filter((part) => part.length > 0);
+    expect(parts.length).toBeGreaterThanOrEqual(3);
+    streamEvents = [
+      {
+        type: "meta",
+        classification: "high_risk_health",
+        riskClass: "chest_pain",
+        messagePublicId: "msg_emergency_115",
+      },
+      ...parts.map((part, index) => ({
+        type: "token",
+        text: index === 0 ? part : `\n\n${part}`,
+      })),
+      { type: "done", abstained: false },
+    ];
+
+    render(
+      <MemoryRouter initialEntries={["/hoi"]}>
+        <ChatPage />
+      </MemoryRouter>,
+    );
+
+    const input = screen.getByLabelText("Câu hỏi của bạn");
+    await vi.waitFor(() => {
+      expect((input as HTMLInputElement).disabled).toBe(false);
+    });
+    fireEvent.change(input, { target: { value: "Đau tức ngực và vã mồ hôi" } });
+    fireEvent.submit(input.closest("form")!);
+
+    const answer = await screen.findByText(/Không chờ xem có hết không/, undefined, {
+      timeout: 4000,
+    });
+    expect(answer.textContent).toContain("Hãy gọi 115 ngay");
+    expect(answer.textContent).toBe(message);
+    expect(answer.textContent).toContain("Nên làm:");
+    expect(answer.textContent).toContain("Không nên:");
+    expect(answer.textContent).not.toContain("chưa tìm thấy đủ nguồn");
   });
 });

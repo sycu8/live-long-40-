@@ -178,12 +178,36 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
       /* optional binding */
     }
 
-    return c.json({
-      messagePublicId: assistantPublicId,
-      kind: "high_risk",
-      riskClass: pipeline.riskClass,
-      content: pipeline.message,
-      sources: [],
+    // Same SSE path as a normal answer (#43 appends every token). The 115
+    // text is already decided, so this does not wait on cache, retrieval, or the model.
+    const encoder = new TextEncoder();
+    const parts = pipeline.message.split(/\n\n/);
+    const stream = new ReadableStream({
+      start(controller) {
+        const send = (obj: unknown) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        };
+        send({
+          type: "meta",
+          classification: pipeline.classification,
+          riskClass: pipeline.riskClass,
+          messagePublicId: assistantPublicId,
+        });
+        parts.forEach((part, index) => {
+          if (!part) return;
+          send({ type: "token", text: index === 0 ? part : `\n\n${part}` });
+        });
+        send({ type: "done", abstained: false });
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store",
+        Connection: "keep-alive",
+      },
     });
   }
 
