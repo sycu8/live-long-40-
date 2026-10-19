@@ -1,14 +1,41 @@
 import { createId, nowIso, sha256Hex } from "@shared/utils/id";
 
-/** Simple semantic-ish chunking by headings and paragraph size. */
+function splitToMaxChars(paragraph: string, maxChars: number): string[] {
+  const text = paragraph.trim();
+  if (!text) return [];
+  if (text.length <= maxChars) return [text];
+  const sentences = text.split(/(?<=[.!?…])\s+/);
+  const parts: string[] = [];
+  let buffer = "";
+  for (const sentence of sentences) {
+    const next = buffer ? `${buffer} ${sentence}` : sentence;
+    if (next.length > maxChars && buffer) {
+      parts.push(buffer);
+      buffer = sentence;
+    } else {
+      buffer = next;
+    }
+  }
+  if (buffer) parts.push(buffer);
+  return parts.flatMap((part) => {
+    if (part.length <= maxChars) return [part];
+    const slices: string[] = [];
+    for (let i = 0; i < part.length; i += maxChars)
+      slices.push(part.slice(i, i + maxChars));
+    return slices;
+  });
+}
+
+/** Chunk by heading, then by paragraph and sentence, so one chunk stays on one topic. */
 export function chunkText(
   text: string,
   opts: { maxChars?: number } = {},
 ): Array<{ heading: string | null; locationRef: string; content: string }> {
-  const maxChars = opts.maxChars ?? 900;
+  const maxChars = opts.maxChars ?? 480;
   const normalized = text.normalize("NFC").replace(/\r\n/g, "\n").trim();
   const sections = normalized.split(/\n(?=#{1,3}\s)/);
-  const chunks: Array<{ heading: string | null; locationRef: string; content: string }> = [];
+  const chunks: Array<{ heading: string | null; locationRef: string; content: string }> =
+    [];
   let idx = 0;
 
   for (const section of sections) {
@@ -28,7 +55,9 @@ export function chunkText(
       continue;
     }
 
-    const paragraphs = body.split(/\n{2,}/);
+    const paragraphs = body
+      .split(/\n{2,}/)
+      .flatMap((paragraph) => splitToMaxChars(paragraph, maxChars));
     let buffer = "";
     for (const p of paragraphs) {
       if ((buffer + "\n\n" + p).length > maxChars && buffer) {

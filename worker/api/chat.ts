@@ -10,6 +10,7 @@ import { createId, nowIso } from "@shared/utils/id";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
 import { enforceRateLimit } from "../middleware/security";
+import { presentCitations } from "@shared/citations";
 import {
   logUpgradeTimeout,
   runChatPipeline,
@@ -518,6 +519,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
       const send = (obj: unknown) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
       };
+      send({ type: "status", text: "Đang soạn câu trả lời…" });
       send({
         type: "meta",
         classification: pipeline.classification,
@@ -563,6 +565,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             /* optional binding */
           }
         }
+        const presented = presentCitations(full, sources);
         await c.env.DB.prepare(
           `INSERT INTO chat_messages
            (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
@@ -572,7 +575,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             assistantMsgId,
             assistantPublicId,
             chat.id,
-            chat.history_opt_in ? full : null,
+            chat.history_opt_in ? presented.text : null,
             chat.history_opt_in ? 0 : 1,
             lateRisk ? "high_risk_health" : pipeline.classification,
             lateRisk ?? "none",
@@ -581,7 +584,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           )
           .run();
 
-        for (const s of sources) {
+        for (const s of presented.sources) {
           const realSourceId =
             s.sourceId &&
             !s.sourceId.startsWith("bank:") &&
@@ -621,7 +624,19 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           .bind(nowIso(), chat.id)
           .run();
 
-        send({ type: "done", abstained: false });
+        send({
+          type: "done",
+          abstained: false,
+          text: presented.text,
+          sources: presented.sources.map((s) => ({
+            key: s.key,
+            title: s.title,
+            issuer: s.issuer,
+            date: s.publicationDate,
+            url: s.url,
+            snippet: s.snippet,
+          })),
+        });
       } catch {
         send({
           type: "error",

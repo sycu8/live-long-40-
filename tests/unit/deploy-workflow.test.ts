@@ -29,7 +29,9 @@ describe("deploy workflow triggers", () => {
     expect(workflow).not.toContain("cursor/**");
     expect(workflow).not.toContain("cursor/");
     expect(pushBranches(workflow)).toEqual(["main"]);
-    expect(workflow).toMatch(/^ {2}pull_request:\n {4}branches:\n {6}- main\s*$/m);
+    // Build & test runs for a pull request into any base. Deploy does not.
+    expect(workflow).toMatch(/^ {2}pull_request:\s*$/m);
+    expect(workflow).not.toMatch(/^ {2}pull_request:\n {4}branches:/m);
   });
 
   it("keeps secret names and the staging/production choices", () => {

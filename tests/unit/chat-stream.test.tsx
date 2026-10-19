@@ -132,6 +132,9 @@ describe("ChatPage streamed answers", () => {
     fireEvent.change(input, { target: { value: "Huyết áp tại nhà?" } });
     fireEvent.submit(input.closest("form")!);
 
+    expect((await screen.findByRole("status")).textContent).toMatch(
+      /Đang soạn câu trả lời/,
+    );
     const answer = await screen.findByText(FULL_ANSWER, undefined, { timeout: 4000 });
     const citation = await screen.findByRole(
       "button",

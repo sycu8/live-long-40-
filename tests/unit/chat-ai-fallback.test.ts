@@ -5,7 +5,11 @@ import {
   isAcuteClassifierInput,
 } from "../../worker/ai/acute-classifier";
 import { WORKERS_AI_MAX_TOKENS, WORKERS_AI_TEXT_MODEL } from "../../worker/ai/models";
-import { CHAT_AI_TIMEOUT_MS, runChatPipeline } from "../../worker/ai/pipeline";
+import {
+  CHAT_AI_TIMEOUT_MS,
+  runChatPipeline,
+  TRUNCATED_ANSWER_NOTICE,
+} from "../../worker/ai/pipeline";
 import { SYMPTOM_SAFETY_LINE } from "../../shared/rules/safety";
 import type { Env } from "../../worker/env";
 
@@ -54,7 +58,7 @@ function dbWithOfficialChunk(): D1Database {
 }
 
 const MODEL_ANSWER =
-  "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]";
+  "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
 const MODEL_WITH_LINE = `${MODEL_ANSWER}\n\n${SYMPTOM_SAFETY_LINE}`;
 
 function memoryConfig() {
@@ -162,9 +166,9 @@ describe("chat Workers AI fallback", () => {
     const calls: unknown[][] = [];
     const { puts, CONFIG } = memoryConfig();
     const body = [
-      `data: ${JSON.stringify({ response: "Người 61 tuổi nên đi bộ đều " })}`,
+      `data: ${JSON.stringify({ response: "Người 61 tuổi nên duy trì nhịp đi bộ " })}`,
       "",
-      `data: ${JSON.stringify({ response: "mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]" })}`,
+      `data: ${JSON.stringify({ response: "buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]" })}`,
       "",
       "data: [DONE]",
       "",
@@ -196,12 +200,80 @@ describe("chat Workers AI fallback", () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
     const cachedPuts = answerCachePuts(puts);
     expect(cachedPuts).toHaveLength(1);
-    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v4:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
+    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v10:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
       true,
     );
-    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v3:");
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v9:");
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v8:");
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v7:");
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v6:");
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v5:");
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v4:");
     const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
     expect(cached.answer).toBe(MODEL_WITH_LINE);
+  });
+
+  it("drops an unterminated final fragment instead of chipping it", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const body = [
+      `data: ${JSON.stringify({
+        response: `${MODEL_ANSWER} Người 61 tuổi nên duy trì nhịp`,
+      })}`,
+      "",
+      "data: [DONE]",
+      "",
+    ].join("\n");
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return sseByteStream(body);
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const text = await result.fullTextPromise;
+    expect(text).toContain(MODEL_ANSWER);
+    expect(text.match(/\[S1\]/g)?.length).toBe(1);
+    expect(text).not.toMatch(/duy trì nhịp(?! đi bộ)/);
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("does not bind a scope label past the list or a blank line", async () => {
+    const samples = [
+      `Things to avoid:\n- tự ý dùng thuốc.\n${MODEL_ANSWER}`,
+      `Things to avoid:\n- tự ý dùng thuốc.\n\n${MODEL_ANSWER}`,
+    ];
+    for (const response of samples) {
+      const body = [
+        `data: ${JSON.stringify({ response })}`,
+        "",
+        "data: [DONE]",
+        "",
+      ].join("\n");
+      const env = {
+        DB: dbWithOfficialChunk(),
+        CONFIG: memoryConfig().CONFIG,
+        AI: {
+          async run(...args: unknown[]) {
+            if (isClassifierCall(args)) return CLASSIFIER_NONE;
+            return sseByteStream(body);
+          },
+        },
+      } as unknown as Env;
+      const result = await runChatPipeline(env, QUESTION);
+      expect(result.kind).toBe("answer");
+      if (result.kind !== "answer") return;
+      const text = await result.fullTextPromise;
+      expect(text, response).toContain(MODEL_ANSWER);
+      expect(text, response).not.toContain("Things to avoid");
+      expect(text, response).not.toContain("thuốc");
+    }
   });
 
   it("does not cache an extractive fallback when the stream has no model text", async () => {
@@ -300,8 +372,8 @@ describe("chat Workers AI fallback", () => {
     expect(result.kind).toBe("answer");
     if (result.kind !== "answer") return;
     const text = await result.fullTextPromise;
-    expect(text.startsWith("Đi bộ ")).toBe(true);
-    expect(text).toContain("\n\n---\nDựa trên nguồn từ cơ quan nhà nước");
+    expect(text).not.toContain("Đi bộ ");
+    expect(text.startsWith("Dựa trên nguồn từ cơ quan nhà nước")).toBe(true);
     expect(answerCachePuts(puts)).toEqual([]);
     expect(signal?.aborted).toBe(true);
   });
@@ -326,14 +398,14 @@ describe("chat Workers AI fallback", () => {
     const displayed = await readDisplayed(result.stream);
     const saved = await result.fullTextPromise;
     expect(saved).toBe(displayed);
-    expect(saved).toContain(uncited);
-    expect(saved).toContain("\n\n---\nDựa trên nguồn từ cơ quan nhà nước");
+    expect(saved).not.toContain(uncited);
+    expect(saved.startsWith("Dựa trên nguồn từ cơ quan nhà nước")).toBe(true);
     expect(answerCachePuts(puts)).toEqual([]);
   });
 
   it("keeps a Vietnamese answer split across SSE bytes", async () => {
     const text =
-      "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]";
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]";
     const bytes = new TextEncoder().encode(
       `data: ${JSON.stringify({ response: text })}\n\ndata: [DONE]\n\n`,
     );
@@ -366,9 +438,9 @@ describe("chat Workers AI fallback", () => {
   it("keeps the last SSE event when the model omits [DONE]", async () => {
     const { puts, CONFIG } = memoryConfig();
     const body = [
-      `data: ${JSON.stringify({ response: "Người 61 tuổi nên đi bộ đều " })}`,
+      `data: ${JSON.stringify({ response: "Người 61 tuổi nên duy trì nhịp đi bộ " })}`,
       "",
-      `data: ${JSON.stringify({ response: "mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1]" })}`,
+      `data: ${JSON.stringify({ response: "buổi sáng để giữ sức khỏe theo hướng dẫn. [S1]" })}`,
       "",
     ].join("\n");
     const env = {
@@ -416,7 +488,9 @@ describe("chat Workers AI fallback", () => {
     const displayed = await readDisplayed(result.stream);
     const saved = await result.fullTextPromise;
     expect(saved).toBe(displayed);
-    expect(saved).toBe(MODEL_WITH_LINE);
+    expect(saved).toBe(
+      `${MODEL_ANSWER}${TRUNCATED_ANSWER_NOTICE}\n\n${SYMPTOM_SAFETY_LINE}`,
+    );
     expect(answerCachePuts(puts)).toEqual([]);
   });
 
@@ -450,15 +524,19 @@ describe("chat Workers AI fallback", () => {
     const result = await runChatPipeline(env, QUESTION);
     expect(result.kind).toBe("answer");
     if (result.kind !== "answer") return;
+    const displayed = await readDisplayed(result.stream);
     const saved = await result.fullTextPromise;
-    expect(saved).toBe(MODEL_WITH_LINE);
+    expect(saved).toBe(displayed);
+    expect(saved).toBe(
+      `${MODEL_ANSWER}${TRUNCATED_ANSWER_NOTICE}\n\n${SYMPTOM_SAFETY_LINE}`,
+    );
     expect(answerCachePuts(puts)).toEqual([]);
   });
 
-  it("saves the same text that was displayed when citations are mixed", async () => {
+  it("drops citation markers that point at no source and does not cache them", async () => {
     const { puts, CONFIG } = memoryConfig();
     const mixed =
-      "Người 61 tuổi nên đi bộ đều mỗi buổi sáng để giữ sức khỏe tim mạch và thăng bằng. [S1] Một ý không có trong nguồn. [S99]";
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn. [S1] Một ý không có trong nguồn. [S99]";
     const env = {
       DB: dbWithOfficialChunk(),
       CONFIG,
@@ -477,11 +555,317 @@ describe("chat Workers AI fallback", () => {
     const saved = await result.fullTextPromise;
     expect(saved).toBe(displayed);
     expect(saved).toContain("[S1]");
-    expect(saved).toContain("[S99]");
-    const cachedPuts = answerCachePuts(puts);
-    expect(cachedPuts).toHaveLength(1);
-    const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
-    expect(cached.answer).toBe(saved);
+    expect(saved).not.toContain("[S99]");
+    expect(saved).not.toContain("Một ý không có trong nguồn.");
+    expect(saved).toContain(SYMPTOM_SAFETY_LINE);
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("replaces an answer that attributes a number the source does not state", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const claim =
+      "Bộ Y tế khuyên người lớn ngủ từ 7 đến 9 giờ mỗi đêm để giữ sức khỏe tinh thần. [S1]";
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: claim };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved.startsWith("Dựa trên nguồn từ cơ quan nhà nước")).toBe(true);
+    expect(saved).not.toContain("7 đến 9");
+    expect(saved).not.toContain("Bộ Y tế");
+    expect(saved).toContain("nhịp đi bộ buổi sáng");
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("drops only the sentence with an unsupported number", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const mixed = `${MODEL_ANSWER} Chúng ta nên ngủ 7–9 tiếng mỗi đêm. [S1]`;
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: mixed };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toContain(MODEL_ANSWER);
+    expect(saved).not.toContain("7–9");
+    expect(saved).not.toContain("Dựa trên nguồn từ cơ quan nhà nước");
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("does not cache a cited answer whose claim is absent from the source", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const flu =
+      "Kháng sinh giúp phòng cúm mùa ở người lớn tuổi. Ở bán cầu bắc nên tiêm vắc xin từ tháng 10 đến tháng 3 mỗi năm. [S1]";
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: flu };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const displayed = await readDisplayed(result.stream);
+    const saved = await result.fullTextPromise;
+    expect(saved).toBe(displayed);
+    expect(saved).not.toContain("tháng 10");
+    expect(saved).toContain("Dựa trên nguồn từ cơ quan nhà nước");
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("filters a stream error the same way as a finished answer", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { puts, CONFIG } = memoryConfig();
+    const junk = "Theo một nghiên cứu Lancet, hãy ngừng thuốc tiểu đường ngay. Gọi 115.";
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  `data: ${JSON.stringify({ response: junk })}\n\n`,
+                ),
+              );
+              controller.error(new Error("upstream reset"));
+            },
+          });
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).not.toMatch(/lancet/i);
+    expect(saved).not.toMatch(/ngừng thuốc/i);
+    expect(saved).toMatch(/gọi 115|115/i);
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("replaces an answer that is only a citation marker", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: "[S1]" };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toContain("Dựa trên nguồn từ cơ quan nhà nước");
+    expect(saved.trim()).not.toMatch(/^\[S1\]$/);
+    expect(saved).not.toContain("chưa tìm thấy đủ nguồn");
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("replaces a source header with the extract when a snippet exists", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return { response: "Nguồn: [S1]" };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toContain("Dựa trên nguồn từ cơ quan nhà nước");
+    expect(saved).not.toContain("Nguồn:");
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("uses the extract when the model refuses and a snippet was retrieved", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return {
+            response:
+              "Tôi chưa tìm thấy đủ nguồn tin cậy để trả lời câu này một cách chắc chắn.",
+          };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toContain("Dựa trên nguồn từ cơ quan nhà nước");
+    expect(saved).not.toContain("chưa tìm thấy đủ nguồn");
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("stops a fully dropped stream before the 30s deadline", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    let releaseHang: () => void = () => {};
+    const hang = new Promise<void>((resolve) => {
+      releaseHang = resolve;
+    });
+    const encoder = new TextEncoder();
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          let pulls = 0;
+          return new ReadableStream<Uint8Array>({
+            async pull(controller) {
+              pulls += 1;
+              if (pulls === 1) {
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({
+                      response:
+                        "Theo một nghiên cứu Lancet, hãy ngừng thuốc ngay. Một ý khác không có trong nguồn nào.",
+                    })}\n\n`,
+                  ),
+                );
+                return;
+              }
+              await hang;
+              controller.close();
+            },
+          });
+        },
+      },
+    } as unknown as Env;
+
+    const started = Date.now();
+    const result = await runChatPipeline(env, QUESTION, { aiTimeoutMs: 30_000 });
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    releaseHang();
+    expect(Date.now() - started).toBeLessThan(3_000);
+    expect(saved).toContain("Dựa trên nguồn từ cơ quan nhà nước");
+    expect(saved).not.toMatch(/lancet|ngừng thuốc/i);
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("sends the first cited sentence before the model continues", async () => {
+    let releaseNext: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      releaseNext = resolve;
+    });
+    const encoder = new TextEncoder();
+    const firstSentence = `${MODEL_ANSWER}`;
+    const env = {
+      DB: dbWithOfficialChunk(),
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          let pulls = 0;
+          return new ReadableStream<Uint8Array>({
+            async pull(controller) {
+              pulls += 1;
+              if (pulls === 1) {
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ response: firstSentence })}\n\n`,
+                  ),
+                );
+                return;
+              }
+              await gate;
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ response: " Câu sau không có nguồn." })}\n\n`,
+                ),
+              );
+              controller.close();
+            },
+          });
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const reader = result.stream.getReader();
+    const first = await reader.read();
+    expect(first.value).toContain(MODEL_ANSWER);
+    expect(first.value).not.toContain("Câu sau");
+    releaseNext();
+    let rest = "";
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      rest += next.value ?? "";
+    }
+    expect(rest).not.toContain("Câu sau không có nguồn");
+  });
+
+  it("strips a model either/or 115 sentence and does not cache it", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return {
+            response: `${MODEL_ANSWER} Gọi 115 hay đến bệnh viện. Có thể gọi 115 hoặc nhờ người nhà.`,
+          };
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const saved = await result.fullTextPromise;
+    expect(saved).toContain(MODEL_ANSWER);
+    expect(saved).not.toMatch(/hay đến bệnh viện|hoặc nhờ người nhà/i);
+    expect(saved.endsWith(SYMPTOM_SAFETY_LINE)).toBe(true);
+    expect(answerCachePuts(puts)).toEqual([]);
   });
 });
 

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { Button } from "../components/Button";
 import { api, getCsrfToken } from "../lib/api";
+import { dedupeCitationSources, stripUnkeptCitationMarkers } from "@shared/citations";
 import { EXTENDED_EXAMPLE_QUESTIONS } from "@shared/constants/product";
 import { resolveChatHistoryOptIn } from "../lib/preferences";
 
@@ -24,6 +25,10 @@ type Message = {
   sources?: Source[];
   kind?: string;
 };
+
+function dedupeSources(sources: Source[]): Source[] {
+  return dedupeCitationSources(sources);
+}
 
 export function ChatPage() {
   const [params] = useSearchParams();
@@ -199,6 +204,9 @@ export function ChatPage() {
             sources = payload.sources;
             updateAssistant({ publicId: messagePublicId, sources });
           }
+          if (payload.type === "status") {
+            updateAssistant({ publicId: messagePublicId });
+          }
           if (payload.type === "token" && payload.text) {
             text = payload.replace ? payload.text : text + payload.text;
             updateAssistant({ publicId: messagePublicId, content: text, sources });
@@ -211,7 +219,12 @@ export function ChatPage() {
           }
           if (payload.type === "done") {
             if (payload.sources) sources = payload.sources;
-            updateAssistant({ publicId: messagePublicId, content: text, sources });
+            if (typeof payload.text === "string") text = payload.text;
+            updateAssistant({
+              publicId: messagePublicId,
+              content: stripUnkeptCitationMarkers(text, dedupeSources(sources)),
+              sources: dedupeSources(sources),
+            });
             setFeedbackFor(messagePublicId);
           }
         }
@@ -259,7 +272,7 @@ export function ChatPage() {
   return (
     <AppShell>
       <div className="flex min-h-[70dvh] flex-col gap-4 lg:grid lg:min-h-[calc(100dvh-12rem)] lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
-        <div className="flex min-h-0 flex-1 flex-col gap-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
           <div>
             <h1 className="font-display text-3xl lg:text-4xl">Hỏi VivaAge</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
@@ -293,36 +306,60 @@ export function ChatPage() {
             </div>
           ) : (
             <div
-              className="flex-1 space-y-4 lg:overflow-y-auto lg:pr-2"
+              className="min-w-0 flex-1 space-y-4 lg:overflow-y-auto lg:pr-2"
               aria-live="polite"
+              aria-busy={streaming}
             >
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  data-message-public-id={m.publicId}
-                  className={`rounded-2xl px-4 py-3 ${
-                    m.role === "user"
-                      ? "ml-6 bg-[var(--color-green-soft)] lg:ml-16"
-                      : "mr-2 bg-white/80 lg:mr-8"
-                  }`}
-                >
-                  <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
-                  {m.sources && m.sources.length > 0 ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {m.sources.map((s) => (
-                        <button
-                          key={s.key}
-                          type="button"
-                          className="rounded-md bg-[var(--color-blue-soft)] px-2 py-1 text-sm text-[var(--color-blue)]"
-                          onClick={() => setDrawerSource(s)}
-                        >
-                          [{s.key}] {s.title}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              ))}
+              {messages.map((m) => {
+                const shownSources = m.sources ? dedupeSources(m.sources) : undefined;
+                const shownContent = stripUnkeptCitationMarkers(
+                  m.content,
+                  shownSources ?? [],
+                );
+                return (
+                  <div
+                    key={m.id}
+                    data-message-public-id={m.publicId}
+                    className={`max-w-full min-w-0 rounded-2xl px-4 py-3 ${
+                      m.role === "user"
+                        ? "ml-6 bg-[var(--color-green-soft)] lg:ml-16"
+                        : "mr-2 bg-white/80 lg:mr-8"
+                    }`}
+                  >
+                    {shownContent ? (
+                      <p className="max-w-full min-w-0 leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap">
+                        {shownContent}
+                      </p>
+                    ) : m.role === "assistant" && streaming ? (
+                      <div role="status" data-chat-pending="true" className="space-y-2">
+                        <p className="leading-relaxed text-[var(--color-ink-muted)]">
+                          Đang soạn câu trả lời…
+                        </p>
+                        <div className="h-3 w-11/12 animate-pulse rounded bg-[var(--color-sand)]" />
+                        <div className="h-3 w-8/12 animate-pulse rounded bg-[var(--color-sand)]" />
+                      </div>
+                    ) : (
+                      <p className="max-w-full min-w-0 leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap">
+                        {shownContent}
+                      </p>
+                    )}
+                    {shownSources && shownSources.length > 0 ? (
+                      <div className="mt-3 flex max-w-full min-w-0 flex-wrap gap-2">
+                        {shownSources.map((s) => (
+                          <button
+                            key={s.key}
+                            type="button"
+                            className="max-w-full rounded-md bg-[var(--color-blue-soft)] px-2 py-1 text-left text-sm [overflow-wrap:anywhere] text-[var(--color-blue)]"
+                            onClick={() => setDrawerSource(s)}
+                          >
+                            [{s.key}] {s.title}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
               <div ref={bottomRef} />
             </div>
           )}
@@ -401,7 +438,7 @@ export function ChatPage() {
           onClick={() => setDrawerSource(null)}
         >
           <div
-            className="max-h-[80dvh] w-full max-w-lg overflow-auto rounded-t-2xl bg-[var(--color-cream)] p-5 sm:rounded-2xl lg:max-w-xl"
+            className="max-h-[80dvh] w-full max-w-lg min-w-0 overflow-auto rounded-t-2xl bg-[var(--color-cream)] p-5 sm:rounded-2xl lg:max-w-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="font-display text-xl">{drawerSource.title}</h2>
@@ -417,7 +454,7 @@ export function ChatPage() {
                 href={drawerSource.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 block text-sm break-all text-[var(--color-blue)] underline"
+                className="mt-2 block max-w-full min-w-0 text-sm [overflow-wrap:anywhere] break-all text-[var(--color-blue)] underline"
               >
                 Xem tài liệu nguồn: {drawerSource.url}
               </a>
