@@ -230,4 +230,42 @@ describe("ChatPage streamed answers", () => {
     expect(await screen.findByText("Câu trả lời này hữu ích?")).toBeTruthy();
     expect(screen.getByText(/Ở lại bên cạnh/)).toBeTruthy();
   });
+
+  it("replaces the first screen so the crisis block comes first", async () => {
+    streamEvents = [
+      {
+        type: "meta",
+        classification: "high_risk_health",
+        riskClass: "poisoning",
+        messagePublicId: "msg_ord",
+      },
+      { type: "token", text: "Không tự gây nôn trước khi xác nhận." },
+      { type: "ready" },
+      {
+        type: "token",
+        replace: true,
+        text: "Ở lại bên cạnh người bệnh.\n\nKhông tự gây nôn.",
+      },
+      { type: "done", abstained: false },
+    ];
+
+    render(
+      <MemoryRouter initialEntries={["/hoi"]}>
+        <ChatPage />
+      </MemoryRouter>,
+    );
+    const input = screen.getByLabelText("Câu hỏi của bạn");
+    await vi.waitFor(() => {
+      expect((input as HTMLInputElement).disabled).toBe(false);
+    });
+    fireEvent.change(input, { target: { value: "Ông nuốt cả vỉ thuốc" } });
+    fireEvent.submit(input.closest("form")!);
+
+    const answer = await screen.findByText(/Ở lại bên cạnh/, undefined, {
+      timeout: 4000,
+    });
+    const text = answer.textContent ?? "";
+    expect(text.indexOf("Ở lại bên cạnh")).toBeLessThan(text.indexOf("Không tự gây nôn"));
+    expect(text).not.toContain("trước khi xác nhận");
+  });
 });

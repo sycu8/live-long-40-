@@ -182,6 +182,7 @@ export function ChatPage() {
           const payload = JSON.parse(line.slice(5).trim()) as {
             type: string;
             text?: string;
+            replace?: boolean;
             messagePublicId?: string;
             sources?: Source[];
             message?: string;
@@ -199,7 +200,7 @@ export function ChatPage() {
             updateAssistant({ publicId: messagePublicId, sources });
           }
           if (payload.type === "token" && payload.text) {
-            text += payload.text;
+            text = payload.replace ? payload.text : text + payload.text;
             updateAssistant({ publicId: messagePublicId, content: text, sources });
           }
           if (payload.type === "ready" && turnRef.current === turn) {

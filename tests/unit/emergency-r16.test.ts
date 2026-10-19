@@ -113,7 +113,7 @@ describe("emergency r16", () => {
   });
 
   it("reverts the classifier prompt to the r14 text and keeps the verifier", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.8");
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.9");
     expect(ACUTE_CLASSIFIER_SYSTEM_PROMPT).not.toContain(
       "Indirect first-person intent is self_harm even without",
     );

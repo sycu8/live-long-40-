@@ -1,6 +1,6 @@
 import { foldVietnamese } from "../utils/vietnamese";
 
-export const SAFETY_RULESET_VERSION = "v1.8.8";
+export const SAFETY_RULESET_VERSION = "v1.8.9";
 
 export type RiskClass =
   | "chest_pain"
@@ -1448,7 +1448,33 @@ function seizureStillAcute(folded: string): boolean {
   return false;
 }
 
+/**
+ * A first seizure that has already finished.
+ * This is decided before the still-acute check, so "lên cơn" plus "đã hết"
+ * gets the calm hospital line. Someone still not awake, not breathing,
+ * seizing again, pregnant, or past five minutes stays on the acute screen.
+ */
+function firstEpisodeAlreadyOver(folded: string): boolean {
+  if (!/\b(lan dau|lan dau tien)\b/.test(folded)) return false;
+  if (!/\b(co giat|dong kinh|len con)\b/.test(folded)) return false;
+  if (
+    !/\b(da het|het roi|xong roi|da qua|da xong|da dung|gio het|bay gio het)\b/.test(
+      folded,
+    )
+  )
+    return false;
+  if (
+    /\b(chua tinh|khong tinh|chua day|khong day|khong tho|ngung tho|hon 5 phut|qua 5 phut|tren 5 phut|mang thai|co thai|dang mang bau|giat lai|len con lai|bat dau lai|lai co giat)\b/.test(
+      folded,
+    )
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function seizureHasResolved(tokens: SafetyToken[], folded: string): boolean {
+  if (firstEpisodeAlreadyOver(folded)) return true;
   if (seizureStillAcute(folded)) return false;
   if (
     /\b(dang giat|dang co giat|giat khong ngung|giat khong dung|giat lien|sui bot|co cung|cung nguoi|len con)\b/.test(
@@ -1583,10 +1609,31 @@ function matchBurn(folded: string): boolean {
   return false;
 }
 
+function hasIngestionWord(folded: string): boolean {
+  return /\b(uong|nuot|an|ngo)\b/.test(folded);
+}
+
 function matchPoison(folded: string): boolean {
-  return /\b(uong nham|qua lieu|ngo doc|thuoc tru sau|thuoc diet co|thuoc diet chuot|thuoc chuot|ca vi thuoc|uong ca vi|uong het vi|het vi thuoc|uong het thuoc)\b/.test(
-    folded,
-  );
+  const named =
+    /\b(uong nham|qua lieu|ngo doc|thuoc tru sau|thuoc diet co|thuoc diet chuot|thuoc chuot|ca vi thuoc|uong ca vi|uong het vi|het vi thuoc|uong het thuoc)\b/.test(
+      folded,
+    );
+  if (!named) return false;
+  return hasIngestionWord(folded);
+}
+
+/** A swallowed dose the verifier should see: on purpose, or a large amount. */
+export function ingestionIsDeliberateOrLarge(question: string): boolean {
+  const { folded } = analyzeQuestion(question);
+  if (!hasIngestionWord(folded) && !matchPoison(folded)) return false;
+  if (
+    /\b(ca vi|het vi|uong het|nuot het|qua lieu|nhieu vien|ca hop|hang chuc vien|mot vi)\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  return /\b(co y|co tinh|chu dich|tu uong|dinh uong)\b/.test(folded);
 }
 
 function matchBleeding(folded: string): boolean {
@@ -2109,7 +2156,19 @@ export function refineClassifierRisk(
   const masked = applyNegationMask(tokens);
   const maskedFolded = masked.map((token) => token.folded).join(" ");
   const past = selfHarmIsPastStable(tokens, folded);
-  const cardiac = matchChest(folded) || /\b(tim|nguc|mo hoi|toat mo hoi)\b/.test(folded);
+  const ruled = evaluateHighRisk(question);
+  if (ruled.matched && ruled.riskClass !== "none") return ruled.riskClass;
+  if (classFullyNegated(tokens, modelClass)) return null;
+  if (
+    (modelClass === "chest_pain" ||
+      modelClass === "seizure" ||
+      modelClass === "unconscious") &&
+    hasExplicitFigurativeMarker(question)
+  ) {
+    return null;
+  }
+  const cardiac =
+    matchChest(maskedFolded) || /\b(tim|nguc|mo hoi|toat mo hoi)\b/.test(maskedFolded);
   if (modelClass === "chest_pain" && !cardiac) {
     if (breathingSignal(folded) && !chestPainPicture(folded)) return "breathing";
     if (matchStroke(folded)) return "stroke";
@@ -2213,6 +2272,9 @@ export function refineClassifierRisk(
     return "seizure";
   }
   if (breathingSignal(folded) && !chestPainPicture(folded) && lower) return "breathing";
+  if (modelClass === "poisoning" && !hasIngestionWord(folded) && !matchPoison(folded)) {
+    return null;
+  }
   return modelClass;
 }
 
@@ -2236,7 +2298,6 @@ function pickAcuteClass(
   const chest = matchChest(folded);
   const choking = matchChoking(tokens, folded);
   const breathing = matchBreathing(folded);
-  const chestPicture = chestPainPicture(folded);
   if (
     take(
       matchAllergy(folded) || (allergySignal(folded) && (poison || unconscious || chest)),
@@ -2265,22 +2326,26 @@ function pickAcuteClass(
   ) {
     return "seizure";
   }
-  if (take(breathing && !chestPicture, "breathing")) return "breathing";
+  const chestWords = chest || /\b(nguc|dau tim|that nguc|tuc nguc)\b/.test(folded);
+  // A named symptom outranks choking and unconscious. Chest outranks breathing
+  // when a chest word is present, even without sweating or pain down the arm.
+  if (take(Boolean(chest && chestWords), "chest_pain")) return "chest_pain";
+  if (take(breathing && !chestWords, "breathing")) return "breathing";
+  if (take(matchStroke(folded), "stroke")) return "stroke";
+  if (take(matchBleeding(folded), "bleeding")) return "bleeding";
+  if (take(matchBurn(folded), "burn")) return "burn";
+  if (take(matchHead(folded), "head_injury")) return "head_injury";
+  if (take(matchFall(tokens, folded), "fall_emergency")) return "fall_emergency";
+  if (take(poison, "poisoning")) return "poisoning";
   if (take(choking, "choking")) return "choking";
-  if (take(chest, "chest_pain")) return "chest_pain";
+  if (take(unconscious, "unconscious")) return "unconscious";
   if (take(breathing, "breathing")) return "breathing";
+  if (take(chest, "chest_pain")) return "chest_pain";
   if (
-    take(breathingSignal(folded) && !chestPicture && (poison || unconscious), "breathing")
+    take(breathingSignal(folded) && !chestWords && (poison || unconscious), "breathing")
   ) {
     return "breathing";
   }
-  if (take(matchBurn(folded), "burn")) return "burn";
-  if (take(poison, "poisoning")) return "poisoning";
-  if (take(matchBleeding(folded), "bleeding")) return "bleeding";
-  if (take(matchHead(folded), "head_injury")) return "head_injury";
-  if (take(unconscious, "unconscious")) return "unconscious";
-  if (take(matchStroke(folded), "stroke")) return "stroke";
-  if (take(matchFall(tokens, folded), "fall_emergency")) return "fall_emergency";
   return null;
 }
 
@@ -2391,7 +2456,13 @@ export function evaluateHighRisk(question: string): SafetyMatch {
   }
   // "hết" can hide the seizure word, and "chưa tỉnh" can be masked as a negator.
   // A restart, a long seizure, or someone still not awake stays on the acute screen.
-  if (!riskClass && seizureStillAcute(folded) && /\b(co giat|dong kinh)\b/.test(folded)) {
+  if (
+    !riskClass &&
+    !seizureHasResolved(tokens, folded) &&
+    !classFullyNegated(tokens, "seizure") &&
+    seizureStillAcute(folded) &&
+    /\b(co giat|dong kinh)\b/.test(folded)
+  ) {
     riskClass = "seizure";
   }
 
@@ -2466,6 +2537,15 @@ function indirectFirstPersonIntent(tokens: SafetyToken[], joined: string): boole
   ) {
     return true;
   }
+  // Passive or euphemistic first person: ending a life, or not waking up.
+  // These stay cues. They are not added to the instant list.
+  if (
+    /\b(khong bao gio thuc|khong bao gio tinh|mot giac khong|giac ngu khong day|ngu khong day|khong con tinh lai|uoc duoc chet|muon duoc chet|mong duoc chet|duoc giai thoat khoi cuoc|roi khoi cuoc doi|bien mat khoi cuoc doi|cuoc doi minh dung|doi minh dung lai|duoc cho ket thuc|de mac chet|cho cuoc doi ket thuc)\b/.test(
+      joined,
+    )
+  ) {
+    return true;
+  }
   if (!/\b(muon|dinh|tinh|toan|se|sap|dang|chi)\b/.test(joined)) return false;
   return /\b(cuoc doi|cuoc song|doi minh|ban than|ket lieu|giet minh|giet ban than|bien mat|buong xuoi|giai thoat|cham dut|khong muon ton tai|khong muon tiep|ngu mai|ngu luon|bo cuoc|ket thuc tat ca|ket thuc moi thu|ra di mai|ra di luon|khong tinh lai|khong tro ve|trut bo|roi bo)\b/.test(
     joined,
@@ -2496,13 +2576,127 @@ function splitSentences(question: string): string[] {
   return parts.length > 0 ? parts : [question];
 }
 
+function isNegatedSubject(tokens: SafetyToken[], index: number): boolean {
+  const token = tokens[index];
+  if (!token) return false;
+  const next = foldedAt(tokens, index + 1);
+  if (
+    (token.folded === "khong" ||
+      token.folded === "chang" ||
+      token.folded === "cha" ||
+      token.folded === "no") &&
+    next === "ai"
+  ) {
+    return true;
+  }
+  if (token.folded === "nobody") return true;
+  if (token.folded === "no" && (next === "one" || next === "body")) return true;
+  return false;
+}
+
+/** Fixed distress. These do not deny the intent verb. */
+function isFixedDistress(tokens: SafetyToken[], index: number): boolean {
+  const a = foldedAt(tokens, index);
+  const b = foldedAt(tokens, index + 1);
+  const c = foldedAt(tokens, index + 2);
+  if (a === "khong" && b === "loi" && c === "thoat") return true;
+  if (a === "no" && b === "way" && foldedAt(tokens, index + 2) === "out") return true;
+  if (
+    (a === "khong" || a === "chang" || a === "cha") &&
+    b === "chiu" &&
+    (c === "noi" || c === "dung")
+  ) {
+    return true;
+  }
+  if (a === "khong" && b === "the" && c === "chiu") return true;
+  if ((a === "cant" || a === "cannot") && b === "bear") return true;
+  if (a === "can" && b === "not" && c === "bear") return true;
+  return false;
+}
+
+const INTENT_LEAD = new Set([
+  "muon",
+  "dinh",
+  "tinh",
+  "nghi",
+  "tu",
+  "quyen",
+  "tuyet",
+  "ket",
+]);
+const NEGATION_SKIP = new Set([
+  "he",
+  "con",
+  "bao",
+  "gio",
+  "tung",
+  "the",
+  "co",
+  "y",
+  "dinh",
+  "nao",
+  "lam",
+  "den",
+  "viec",
+  "mot",
+  "cai",
+]);
+
+/** The negator sits on the intent verb, not on another phrase in the sentence. */
+function governsIntentVerb(tokens: SafetyToken[], index: number): boolean {
+  const cues = selfHarmEvidence(tokens);
+  if (cues.length === 0) return false;
+  let start = index + 1;
+  const word = tokens[index]?.folded;
+  if (word === "chua" && foldedAt(tokens, index + 1) === "tung") start = index + 2;
+  else if (
+    word === "chua" &&
+    foldedAt(tokens, index + 1) === "bao" &&
+    foldedAt(tokens, index + 2) === "gio"
+  ) {
+    start = index + 3;
+  } else if (word === "khong" && foldedAt(tokens, index + 1) === "he") start = index + 2;
+  else if (word === "khong" && foldedAt(tokens, index + 1) === "con") start = index + 2;
+  else if (
+    word === "khong" &&
+    foldedAt(tokens, index + 1) === "bao" &&
+    foldedAt(tokens, index + 2) === "gio"
+  ) {
+    start = index + 3;
+  }
+  let cursor = start;
+  while (
+    cursor < tokens.length &&
+    !tokens[cursor]?.clauseStart &&
+    NEGATION_SKIP.has(foldedAt(tokens, cursor))
+  ) {
+    cursor += 1;
+  }
+  if (cursor >= tokens.length) return false;
+  if (tokens[cursor]?.clauseStart && cursor !== start) return false;
+  const lead = foldedAt(tokens, cursor);
+  if (!cues.includes(cursor) && !INTENT_LEAD.has(lead)) return false;
+  return cues.some(
+    (cue) => cue >= cursor && cue - cursor <= 3 && sharesClause(tokens, index, cue),
+  );
+}
+
 /**
- * A negator counts as a denial unless it is the distress phrase itself.
- * "chưa" does not count. "không còn sức" does not count. "không còn muốn" does.
+ * A negator counts only when it governs the intent verb.
+ * A negated subject and fixed distress phrases do not.
+ * Bare "chưa" does not. "chưa bao giờ" and "chưa từng" do.
  */
 function isDemotionNegator(tokens: SafetyToken[], index: number): boolean {
   const token = tokens[index];
-  if (!token || !isSimpleNegator(token) || token.folded === "chua") return false;
+  if (!token) return false;
+  if (isNegatedSubject(tokens, index) || isFixedDistress(tokens, index)) return false;
+  if (token.folded === "chua") {
+    const next = foldedAt(tokens, index + 1);
+    const third = foldedAt(tokens, index + 2);
+    if (!(next === "tung" || (next === "bao" && third === "gio"))) return false;
+    return governsIntentVerb(tokens, index);
+  }
+  if (!isSimpleNegator(token)) return false;
   const next = foldedAt(tokens, index + 1);
   const third = foldedAt(tokens, index + 2);
   const fourth = foldedAt(tokens, index + 3);
@@ -2512,13 +2706,13 @@ function isDemotionNegator(tokens: SafetyToken[], index: number): boolean {
   if (next === "chiu" && (third === "noi" || third === "dung")) return false;
   // "không còn muốn" denies a plan. "không còn sức" and "chẳng còn ý nghĩa" do not.
   if (next === "con") {
-    return (
+    const denies =
       third === "muon" ||
       third === "nghi" ||
       third === "dinh" ||
       third === "tinh" ||
-      third === "tu"
-    );
+      third === "tu";
+    if (!denies) return false;
   }
   // "không dậy" / "không thở" is the outcome, not a denial of the plan.
   if (
@@ -2533,7 +2727,7 @@ function isDemotionNegator(tokens: SafetyToken[], index: number): boolean {
   ) {
     return false;
   }
-  return true;
+  return governsIntentVerb(tokens, index);
 }
 
 function sharesClause(tokens: SafetyToken[], a: number, b: number): boolean {
@@ -2687,8 +2881,25 @@ export function selfHarmLooksAmbiguous(question: string): boolean {
  * "mệt/cười/nóng muốn chết", other intensifiers, work/heat/laughing hyperbole,
  * "chết ngất", or unaccented "từ từ" meaning slowly.
  */
+function thirdPersonIntensifier(folded: string): boolean {
+  const subject =
+    /\b(no|anh ay|chi ay|ong ay|ba ay|co ay|em be|cau be|dua be|con be|nguoi ta|thang be)\b/.test(
+      folded,
+    );
+  if (!subject) return false;
+  if (
+    /\b(met|dau|buon|doi|khat|cuoi|nong|ret|so|chan|ghet|tuc|kho|ngai|phien|gian|soc|nung|khoc)\s+(?:\w+\s+){0,2}muon chet\b/.test(
+      folded,
+    )
+  ) {
+    return true;
+  }
+  return /\b(met|dau|buon|doi|cuoi|nong|so|khoc)\s+chet\s+(di|duoc|mat)\b/.test(folded);
+}
+
 export function hasExplicitFigurativeMarker(question: string): boolean {
   const { tokens, folded } = analyzeQuestion(question);
+  if (thirdPersonIntensifier(folded)) return true;
   for (let i = 0; i < tokens.length - 1; i++) {
     if (!matchesTarget(tokens[i]!, "muốn") || !matchesTarget(tokens[i + 1]!, "chết"))
       continue;

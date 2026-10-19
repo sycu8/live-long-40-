@@ -16,6 +16,7 @@ import {
   GENTLE_SUPPORT_LINE,
   hasAcuteCue,
   hasSelfHarmCue,
+  ingestionIsDeliberateOrLarge,
   instantCrisisDemoted,
   presentAcuteScreen,
   selfHarmIntentContext,
@@ -492,6 +493,30 @@ function classifierFailed(layer: AcuteLayerResult | null): boolean {
   return layer?.status === "fail";
 }
 
+/** A refusal or a reply that is not a verdict. A timeout keeps the first screen. */
+function classifierUnreadable(layer: AcuteLayerResult | null): boolean {
+  return (
+    layer?.status === "fail" &&
+    (layer.reason === "parse" ||
+      layer.reason === "empty" ||
+      layer.reason === "unsupported")
+  );
+}
+
+async function readVerifier(
+  verify: (question: string) => Promise<VerifierAnswer>,
+  question: string,
+): Promise<boolean | "failed"> {
+  try {
+    const answer = await verify(question);
+    if (answer === true) return true;
+    if (answer === false) return false;
+  } catch {
+    return "failed";
+  }
+  return "failed";
+}
+
 export function resolveAcuteScreen(
   question: string,
   layer: AcuteLayerResult | null,
@@ -513,21 +538,41 @@ async function finishDecision(
   const view = !layer || layer.status !== "ok" ? null : classifierView(question, layer);
   let decision = decide(rules, view, failed);
   const maskedCue = hasSelfHarmCue(question) && !selfHarmIntentContext(question);
-  const poisonPicture =
-    decision.kind === "screen" &&
-    (decision.riskClass === "poisoning" || view?.class === "poisoning");
-  if ((decision.kind === "verify" && view) || (maskedCue && poisonPicture && view)) {
-    let verified: boolean | "failed" = "failed";
-    try {
-      const answer = await verify(question);
-      if (answer === true) verified = true;
-      else if (answer === false) verified = false;
-    } catch {
-      verified = "failed";
-    }
-    if (decision.kind === "verify") {
+  const cued = hasSelfHarmCue(question);
+  const unreadable = classifierUnreadable(layer);
+  const intentFlag = layer?.status === "ok" && layer.verdict.intent_first_person;
+  const heavy = ingestionIsDeliberateOrLarge(question);
+  const crisisLike = Boolean(view && (view.class === "self_harm" || view.crisis));
+  const poisonScreen =
+    (decision.kind === "screen" && decision.riskClass === "poisoning") ||
+    view?.class === "poisoning" ||
+    rules.class === "poisoning";
+  const verifyForPoison = poisonScreen && (intentFlag || heavy);
+  const verifyForMask =
+    maskedCue && (crisisLike || unreadable || (poisonScreen && view !== null));
+  const verifyForCue = cued && unreadable;
+  if (
+    (decision.kind === "verify" && view) ||
+    verifyForPoison ||
+    verifyForMask ||
+    verifyForCue
+  ) {
+    const verified = await readVerifier(verify, question);
+    if (decision.kind === "verify" && view) {
       decision = decide(rules, { ...view, verified }, false);
-    } else if (verified === true) {
+    }
+    const tableCrisis = crisisLike && (verified === true || verified === "failed");
+    const refusalCrisis = cued && unreadable && verified !== false;
+    const poisonCrisis = verifyForPoison && verified === true;
+    if (maskedCue && tableCrisis) return { kind: "screen", riskClass: "self_harm" };
+    if (refusalCrisis && decision.kind !== "screen") {
+      return { kind: "screen", riskClass: "self_harm" };
+    }
+    if (refusalCrisis && decision.kind === "screen" && decision.riskClass === "urgent") {
+      return { kind: "screen", riskClass: "self_harm" };
+    }
+    if (poisonCrisis) return { kind: "screen", riskClass: "self_harm" };
+    if (maskedCue && poisonScreen && verified === true) {
       return { kind: "screen", riskClass: "self_harm" };
     }
   }
@@ -654,6 +699,7 @@ function shouldRunAcuteClassifier(question: string, classification: string): boo
 function shouldAttachUpgrade(question: string, presented: string): boolean {
   if (presented === "self_harm") return false;
   if (presented === "unconscious" || presented === "urgent") return true;
+  if (presented === "poisoning" && ingestionIsDeliberateOrLarge(question)) return true;
   if (!hasSelfHarmCue(question) || selfHarmIntentContext(question)) return false;
   return presented !== "none";
 }
@@ -695,11 +741,16 @@ function startRuleUpgrade(
     const maskedCue = hasSelfHarmCue(question) && !selfHarmIntentContext(question);
     const crisisLike = Boolean(view && (view.class === "self_harm" || view.crisis));
     const poisonLike = view?.class === "poisoning" || rules.class === "poisoning";
+    const unreadable = classifierUnreadable(layer);
+    const intentFlag = layer?.status === "ok" && layer.verdict.intent_first_person;
+    const heavy = ingestionIsDeliberateOrLarge(question);
     const unconsciousUpgrade =
-      (rules.class === "unconscious" || rules.class === "urgent") && crisisLike;
-    if (!view || (!unconsciousUpgrade && !(maskedCue && (crisisLike || poisonLike)))) {
-      return null;
-    }
+      (rules.class === "unconscious" || rules.class === "urgent") &&
+      crisisLike &&
+      Boolean(view);
+    const poisonVerify = poisonLike && (intentFlag || heavy);
+    const maskedVerify = maskedCue && (crisisLike || unreadable || poisonLike);
+    if (!unconsciousUpgrade && !poisonVerify && !maskedVerify) return null;
     if (left() <= 0) {
       logUpgradeTimeout(gate);
       return null;
@@ -720,7 +771,7 @@ function startRuleUpgrade(
       logUpgradeTimeout(gate);
       return null;
     }
-    if (rules.class === "unconscious" || rules.class === "urgent") {
+    if (view && (rules.class === "unconscious" || rules.class === "urgent")) {
       const upgraded = mayUpgrade(rules, { ...view, verified });
       if (upgraded?.kind === "screen") {
         return {
@@ -729,33 +780,36 @@ function startRuleUpgrade(
         };
       }
     }
-    if (maskedCue && verified === true && (crisisLike || poisonLike)) {
-      const acute =
-        rules.class && rules.class !== "urgent" && rules.class !== "self_harm"
-          ? rules.class
-          : view.class === "poisoning"
-            ? "poisoning"
-            : null;
-      if (
-        acute === "chest_pain" ||
-        acute === "poisoning" ||
-        acute === "seizure" ||
-        acute === "unconscious" ||
-        acute === "bleeding"
-      ) {
-        return {
-          message: `\n\n${crisisUpgradeText()}`,
-          riskClass: "self_harm",
-          finalMessage: composeCrisisFirst(acute),
-        };
-      }
+    const tableCrisis =
+      maskedCue && crisisLike && (verified === true || verified === "failed");
+    const refusalCrisis = maskedCue && unreadable && verified !== false;
+    const poisonYes = poisonVerify && verified === true;
+    const maskedYes = maskedCue && poisonLike && verified === true;
+    if (!tableCrisis && !refusalCrisis && !poisonYes && !maskedYes) return null;
+    const acute =
+      rules.class && rules.class !== "urgent" && rules.class !== "self_harm"
+        ? rules.class
+        : poisonLike
+          ? "poisoning"
+          : null;
+    if (
+      acute === "chest_pain" ||
+      acute === "poisoning" ||
+      acute === "seizure" ||
+      acute === "unconscious" ||
+      acute === "bleeding"
+    ) {
       return {
-        message: `\n\n${emergencyMessage("self_harm")}`,
+        message: `\n\n${crisisUpgradeText()}`,
         riskClass: "self_harm",
-        finalMessage: emergencyMessage("self_harm"),
+        finalMessage: composeCrisisFirst(acute),
       };
     }
-    return null;
+    return {
+      message: `\n\n${emergencyMessage("self_harm")}`,
+      riskClass: "self_harm",
+      finalMessage: emergencyMessage("self_harm"),
+    };
   };
   return Object.assign(
     run().catch(() => null),

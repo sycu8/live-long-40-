@@ -8,6 +8,7 @@ import {
 import {
   evaluateHighRisk,
   GENTLE_SUPPORT_LINE,
+  ingestionIsDeliberateOrLarge,
   seizureLooksResolved,
 } from "../../shared/rules/safety";
 import type { AcuteFailReason } from "../../worker/ai/acute-classifier";
@@ -87,7 +88,11 @@ describe("emergency precedence r11", () => {
           return crisisVerdict;
         },
       });
-      if (rules.class === "unconscious" || rules.class === "urgent") {
+      if (
+        rules.class === "unconscious" ||
+        rules.class === "urgent" ||
+        ingestionIsDeliberateOrLarge(question)
+      ) {
         expect(calls, id).toBe(1);
       } else {
         expect(calls, id).toBe(0);

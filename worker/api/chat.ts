@@ -352,24 +352,37 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           send({ type: "token", text: index === 0 ? part : `\n\n${part}` });
         });
         send({ type: "ready" });
-        let settled: { riskClass: string; extra: string | null } = {
+        let settled: {
+          riskClass: string;
+          extra: string | null;
+          finalMessage: string | null;
+        } = {
           riskClass: pipeline.riskClass,
           extra: null,
+          finalMessage: null,
         };
         try {
           const outcome = await finishUpgrade();
-          settled = { riskClass: outcome.riskClass, extra: outcome.extra };
+          settled = {
+            riskClass: outcome.riskClass,
+            extra: outcome.extra,
+            finalMessage: outcome.finalMessage,
+          };
         } catch {
-          settled = { riskClass: pipeline.riskClass, extra: null };
+          settled = { riskClass: pipeline.riskClass, extra: null, finalMessage: null };
         }
-        if (settled.extra) {
+        if (settled.finalMessage || settled.extra) {
           send({
             type: "meta",
             classification: "high_risk_health",
             riskClass: settled.riskClass,
             messagePublicId: assistantPublicId,
           });
-          send({ type: "token", text: settled.extra });
+          if (settled.finalMessage) {
+            send({ type: "token", text: settled.finalMessage, replace: true });
+          } else if (settled.extra) {
+            send({ type: "token", text: settled.extra });
+          }
         }
         send({ type: "done", abstained: false });
         controller.close();

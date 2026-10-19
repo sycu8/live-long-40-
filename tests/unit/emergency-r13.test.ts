@@ -17,8 +17,8 @@ const cases = JSON.parse(
 ) as Array<{ id: string; q: string }>;
 
 describe("emergency precedence r13", () => {
-  it("is ruleset v1.8.8 and restores the verifier prompt", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.8");
+  it("is ruleset v1.8.9 and restores the verifier prompt", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.9");
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).toContain("You may escalate");
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).toContain("You may not dismiss a real plan");
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).not.toContain("third-party news");

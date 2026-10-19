@@ -131,8 +131,8 @@ describe("emergency r15", () => {
     vi.useRealTimers();
   });
 
-  it("is ruleset v1.8.8 and keeps the reverted verifier prompt", () => {
-    expect(SAFETY_RULESET_VERSION).toBe("v1.8.8");
+  it("is ruleset v1.8.9 and keeps the reverted verifier prompt", () => {
+    expect(SAFETY_RULESET_VERSION).toBe("v1.8.9");
     expect(UPGRADE_WAIT_MS).toBe(6000);
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).toContain("You may escalate");
     expect(ACUTE_VERIFIER_SYSTEM_PROMPT).toContain("You may not dismiss a real plan");
