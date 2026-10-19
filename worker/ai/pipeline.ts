@@ -362,7 +362,7 @@ export const TRUNCATED_ANSWER_NOTICE =
 function splitReadySentences(
   buffer: string,
   flush: boolean,
-): { ready: string[]; rest: string } {
+): { ready: string[]; rest: string; droppedFragment: boolean } {
   const ready: string[] = [];
   let start = 0;
   for (let i = 0; i < buffer.length; i += 1) {
@@ -391,6 +391,7 @@ function splitReadySentences(
     if (!flush && after.length > 0 && !/^\s/.test(after)) continue;
     const sentence = buffer.slice(start, j).trim();
     if (sentence) ready.push(sentence);
+    if (ch === "\n" && /^\s*\n/.test(buffer.slice(j))) ready.push("");
     let k = j;
     while (k < buffer.length && /\s/.test(buffer[k] ?? "")) k += 1;
     start = k;
@@ -398,10 +399,10 @@ function splitReadySentences(
   }
   const rest = buffer.slice(start);
   if (flush && rest.trim()) {
-    ready.push(rest.trim());
-    return { ready, rest: "" };
+    // The tail never ended a sentence. Do not ground it or attach a chip.
+    return { ready, rest: "", droppedFragment: true };
   }
-  return { ready, rest };
+  return { ready, rest, droppedFragment: false };
 }
 
 export type ChatPipelineOptions = {
@@ -1245,6 +1246,11 @@ export async function runChatPipeline(
         const release = (flush: boolean) => {
           const split = splitReadySentences(pending, flush);
           pending = split.rest;
+          if (split.droppedFragment) {
+            droppedAny = true;
+            dropped += 1;
+            if (firstDropAt === 0) firstDropAt = Date.now();
+          }
           for (const sentence of split.ready) emitSentence(sentence);
           if (flush || !pending.trim()) return;
           if (/https?:\/\/\S*$/.test(pending)) return;

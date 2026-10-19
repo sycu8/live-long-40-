@@ -200,9 +200,10 @@ describe("chat Workers AI fallback", () => {
     expect(options.signal).toBeInstanceOf(AbortSignal);
     const cachedPuts = answerCachePuts(puts);
     expect(cachedPuts).toHaveLength(1);
-    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v9:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
+    expect(cachedPuts[0]?.key.startsWith(`ans_cache:v10:${WORKERS_AI_TEXT_MODEL}:`)).toBe(
       true,
     );
+    expect(cachedPuts[0]?.key).not.toContain("ans_cache:v9:");
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v8:");
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v7:");
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v6:");
@@ -210,6 +211,69 @@ describe("chat Workers AI fallback", () => {
     expect(cachedPuts[0]?.key).not.toContain("ans_cache:v4:");
     const cached = JSON.parse(cachedPuts[0]?.value ?? "{}") as { answer?: string };
     expect(cached.answer).toBe(MODEL_WITH_LINE);
+  });
+
+  it("drops an unterminated final fragment instead of chipping it", async () => {
+    const { puts, CONFIG } = memoryConfig();
+    const body = [
+      `data: ${JSON.stringify({
+        response: `${MODEL_ANSWER} Người 61 tuổi nên duy trì nhịp`,
+      })}`,
+      "",
+      "data: [DONE]",
+      "",
+    ].join("\n");
+    const env = {
+      DB: dbWithOfficialChunk(),
+      CONFIG,
+      AI: {
+        async run(...args: unknown[]) {
+          if (isClassifierCall(args)) return CLASSIFIER_NONE;
+          return sseByteStream(body);
+        },
+      },
+    } as unknown as Env;
+
+    const result = await runChatPipeline(env, QUESTION);
+    expect(result.kind).toBe("answer");
+    if (result.kind !== "answer") return;
+    const text = await result.fullTextPromise;
+    expect(text).toContain(MODEL_ANSWER);
+    expect(text.match(/\[S1\]/g)?.length).toBe(1);
+    expect(text).not.toMatch(/duy trì nhịp(?! đi bộ)/);
+    expect(answerCachePuts(puts)).toEqual([]);
+  });
+
+  it("does not bind a scope label past the list or a blank line", async () => {
+    const samples = [
+      `Things to avoid:\n- tự ý dùng thuốc.\n${MODEL_ANSWER}`,
+      `Things to avoid:\n- tự ý dùng thuốc.\n\n${MODEL_ANSWER}`,
+    ];
+    for (const response of samples) {
+      const body = [
+        `data: ${JSON.stringify({ response })}`,
+        "",
+        "data: [DONE]",
+        "",
+      ].join("\n");
+      const env = {
+        DB: dbWithOfficialChunk(),
+        CONFIG: memoryConfig().CONFIG,
+        AI: {
+          async run(...args: unknown[]) {
+            if (isClassifierCall(args)) return CLASSIFIER_NONE;
+            return sseByteStream(body);
+          },
+        },
+      } as unknown as Env;
+      const result = await runChatPipeline(env, QUESTION);
+      expect(result.kind).toBe("answer");
+      if (result.kind !== "answer") return;
+      const text = await result.fullTextPromise;
+      expect(text, response).toContain(MODEL_ANSWER);
+      expect(text, response).not.toContain("Things to avoid");
+      expect(text, response).not.toContain("thuốc");
+    }
   });
 
   it("does not cache an extractive fallback when the stream has no model text", async () => {

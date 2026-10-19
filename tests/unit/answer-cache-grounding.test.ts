@@ -723,7 +723,7 @@ describe("answer cache source relevance", () => {
         store.set(key, value);
       },
     };
-    const stale = cacheKeyForQuestion(QUESTION).replace("ans_cache:v9:", "ans_cache:v8:");
+    const stale = cacheKeyForQuestion(QUESTION).replace("ans_cache:v10:", "ans_cache:v9:");
     store.set(
       stale,
       JSON.stringify({
@@ -755,7 +755,7 @@ describe("answer cache source relevance", () => {
     const streamLike = (sample: string) => {
       const state = { label: null as string | null };
       const parts: string[] = [];
-      for (const line of sample.split(/\n+/)) {
+      for (const line of sample.split(/\n/)) {
         const consumed = consumeModelLine(line, state);
         state.label = consumed.label;
         if (!consumed.emit) continue;
@@ -773,10 +773,10 @@ describe("answer cache source relevance", () => {
       expect(finished, sample).not.toMatch(/:\s*\[S1\]/);
       expect(answerFailsCache(finished, [WALKING]), sample).toBe(false);
     }
-    const bound = streamLike(`**X**:\n${claim}`);
-    expect(bound).toBe(supportedAnswerText(`**X**:\n${claim}`, [WALKING], QUESTION));
-    expect(bound).toContain("X:");
-    expect(bound).toContain("hướng dẫn");
+    const unbound = streamLike(`**X**:\n${claim}`);
+    expect(unbound).toBe(supportedAnswerText(`**X**:\n${claim}`, [WALKING], QUESTION));
+    expect(unbound).not.toContain("X:");
+    expect(unbound).toContain("hướng dẫn");
     expect(supportedAnswerText(`Cảm ơn bạn đã hỏi. [S1]\n${claim}`, [WALKING], QUESTION)).toContain(
       "hướng dẫn",
     );
@@ -819,17 +819,17 @@ describe("answer cache source relevance", () => {
 
   it("shows and caches a care sentence only when it copies one cited sentence", async () => {
     const ambulance = "Call an ambulance when unable to stand.";
-    const hospital = "Đến bệnh viện khi người bệnh không tự đứng được.";
     const source: CachedSource = {
       ...WALKING,
-      snippet: `${WALKING.snippet} ${ambulance} ${hospital}`,
+      snippet: `${WALKING.snippet} ${ambulance}`,
     };
     const k18 = `${ambulance} [S1]`;
-    const k13 = `${hospital} [S1]`;
+    const k13 = "Nên đến bệnh viện nếu người bệnh không tự đứng.";
     expect(isExtractiveCareSentence(k18, [source]), "K18").toBe(true);
-    expect(isExtractiveCareSentence(k13, [source]), "K13").toBe(true);
+    expect(isExtractiveCareSentence(k13, [source]), "K13").toBe(false);
     expect(groundedSentence(k18, [source], QUESTION), "K18").toContain("ambulance");
-    expect(groundedSentence(k13, [source], QUESTION), "K13").toContain("bệnh viện");
+    expect(groundedSentence(k13, [source], QUESTION), "K13").toBe("");
+    expect(answerFailsCache(`${k18}\n${k13}`, [source]), "K13").toBe(true);
     expect(supportedAnswerText(k18, [source], QUESTION), "K18").toBe(
       groundedSentence(k18, [source], QUESTION),
     );
@@ -845,7 +845,7 @@ describe("answer cache source relevance", () => {
       expect(supportedAnswerText(`${row.text} [S1]`, [source], QUESTION), row.id).toBe("");
       expect(answerFailsCache(`${k18} ${row.text}`, [source]), row.id).toBe(true);
     }
-    const cachedCare = `${k13}\n${k18}\n${k13}`;
+    const cachedCare = `${k18}\n${k18}\n${k18}`;
     expect(answerFailsCache(cachedCare, [source])).toBe(false);
     const { puts, CONFIG } = memoryConfig();
     await writeAnswerCache({ CONFIG } as unknown as Env, QUESTION, {
@@ -935,8 +935,48 @@ describe("answer cache source relevance", () => {
     const scopedWalk =
       "patients with kidney disease:\nNgười 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn.";
     const scopedShown = supportedAnswerText(scopedWalk, [WALKING], QUESTION);
-    expect(scopedShown.startsWith("Người 61")).toBe(false);
-    if (scopedShown.includes("hướng dẫn")) expect(scopedShown).toContain("kidney");
+    expect(scopedShown).toContain("hướng dẫn");
+    expect(scopedShown.toLowerCase()).not.toContain("kidney");
+  });
+
+  it("ends a scope label at a blank line and does not bind it to a non-list sentence", () => {
+    const walking =
+      "Người 61 tuổi nên duy trì nhịp đi bộ buổi sáng để giữ sức khỏe theo hướng dẫn.";
+    const afterBlank = supportedAnswerText(
+      `Things to avoid:\n- tự ý dùng thuốc.\n\n${walking}`,
+      [WALKING],
+      QUESTION,
+    );
+    expect(afterBlank).toContain("hướng dẫn");
+    expect(afterBlank).not.toContain("Things to avoid");
+    expect(afterBlank).not.toContain("thuốc");
+    const afterList = supportedAnswerText(
+      `Không nên:\n- bỏ khám.\n${walking}`,
+      [WALKING],
+      QUESTION,
+    );
+    expect(afterList).toContain("hướng dẫn");
+    expect(afterList).not.toContain("Không nên");
+    expect(afterList).not.toContain("khám");
+    const prose = supportedAnswerText(`Tránh:\n${walking}`, [WALKING], QUESTION);
+    expect(prose).toContain("hướng dẫn");
+    expect(prose).not.toContain("Tránh");
+  });
+
+  it("requires order-aware overlap and an equal operator multiset", () => {
+    const sentence = "Call an ambulance when unable to stand.";
+    const source = [{ ...WALKING, title: "Reading", snippet: sentence }];
+    expect(isExtractiveCareSentence(sentence, source)).toBe(true);
+    const reordered = "Stand to unable when ambulance an call.";
+    expect(isExtractiveCareSentence(reordered, source)).toBe(false);
+    expect(groundedSentence(`${reordered} [S1]`, source, QUESTION)).toBe("");
+    const long =
+      "Hãy đến bệnh viện khi người bệnh không tự đứng được vào buổi sáng hôm nay sau khi nghỉ.";
+    const longSource = [{ ...WALKING, title: "Reading", snippet: long }];
+    expect(isExtractiveCareSentence(long, longSource)).toBe(true);
+    const droppedModal = long.replace(/^Hãy\s+/i, "");
+    expect(isExtractiveCareSentence(droppedModal, longSource)).toBe(false);
+    expect(answerFailsCache(droppedModal, longSource)).toBe(true);
   });
 
   it("removes a trailing issuer line and an ordinal lead-in", async () => {

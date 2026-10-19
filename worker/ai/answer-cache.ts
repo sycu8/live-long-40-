@@ -44,8 +44,8 @@ export type CachedAnswer = {
   cachedAt: string;
 };
 
-// v9 does not read v8. Care-downgrade answers stored under v8 stay until TTL.
-const CACHE_PREFIX = "ans_cache:v9:";
+// v10 does not read v9. Earlier care answers stay until TTL and are never replayed.
+const CACHE_PREFIX = "ans_cache:v10:";
 /** New writes expire in 7 days. Older keys are never read. */
 export const CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
 
@@ -495,18 +495,29 @@ function extractiveTokens(text: string): string[] {
     .filter(Boolean);
 }
 
-function multisetOverlap(model: string[], source: string[]): number {
-  if (model.length === 0 || source.length === 0) return 0;
-  const counts = new Map<string, number>();
-  for (const token of source) counts.set(token, (counts.get(token) ?? 0) + 1);
-  let hits = 0;
-  for (const token of model) {
-    const left = counts.get(token) ?? 0;
-    if (left <= 0) continue;
-    hits += 1;
-    counts.set(token, left - 1);
+/** Order-aware overlap. A bag of the same tokens in another order does not pass. */
+function longestCommonSubsequence(left: string[], right: string[]): number {
+  const cols = right.length + 1;
+  let prev = new Array<number>(cols).fill(0);
+  let curr = new Array<number>(cols).fill(0);
+  for (let i = 1; i <= left.length; i += 1) {
+    curr[0] = 0;
+    for (let j = 1; j < cols; j += 1) {
+      curr[j] =
+        left[i - 1] === right[j - 1]
+          ? (prev[j - 1] ?? 0) + 1
+          : Math.max(prev[j] ?? 0, curr[j - 1] ?? 0);
+    }
+    const swap = prev;
+    prev = curr;
+    curr = swap;
   }
-  return hits / Math.max(model.length, source.length);
+  return prev[cols - 1] ?? 0;
+}
+
+function sequenceOverlap(model: string[], source: string[]): number {
+  if (model.length === 0 || source.length === 0) return 0;
+  return longestCommonSubsequence(model, source) / Math.max(model.length, source.length);
 }
 
 /** Operator tokens in order, so an inserted copy of a token the source already has still counts. */
@@ -531,28 +542,20 @@ function operatorTokens(text: string): string[] {
 }
 
 /**
- * v1.9 operator rule, kept on top of the overlap test.
- * A negator, modal, time word, or limiter that the source sentence does not
- * already contain makes the care sentence non-extractive.
+ * The operator multiset must match the cited sentence exactly.
+ * An added negator, modal, time word, or limiter fails, and so does dropping one.
  */
-function operatorsAdded(model: string, source: string): boolean {
-  const counts = new Map<string, number>();
-  for (const token of operatorTokens(source)) {
-    counts.set(token, (counts.get(token) ?? 0) + 1);
-  }
-  for (const token of operatorTokens(model)) {
-    const left = counts.get(token) ?? 0;
-    if (left <= 0) return true;
-    counts.set(token, left - 1);
-  }
-  return false;
+function sameOperatorMultiset(model: string, source: string): boolean {
+  const left = operatorTokens(model).slice().sort();
+  const right = operatorTokens(source).slice().sort();
+  return left.length === right.length && left.every((token, index) => token === right[index]);
 }
 
 type ExtractiveSource = { key?: string; title: string; snippet: string };
 
 /**
  * A care sentence may be shown and cached only when it is one cited source
- * sentence: token overlap at least 0.9, and no added operator token.
+ * sentence: token-sequence overlap (LCS) at least 0.9, and the same operator multiset.
  */
 export function isExtractiveCareSentence(
   sentence: string,
@@ -570,8 +573,8 @@ export function isExtractiveCareSentence(
     const blob = `${source.title}. ${source.snippet}`;
     for (const part of answerSentences(blob)) {
       const sourceTokens = extractiveTokens(part);
-      if (multisetOverlap(modelTokens, sourceTokens) < 0.9) continue;
-      if (operatorsAdded(sentence, part)) continue;
+      if (sequenceOverlap(modelTokens, sourceTokens) < 0.9) continue;
+      if (!sameOperatorMultiset(sentence, part)) continue;
       return true;
     }
   }
@@ -1062,28 +1065,36 @@ function stripListMarker(line: string): string {
   return line.replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "").trim();
 }
 
+function isListItem(line: string): boolean {
+  return /^\s*(?:[-*•]|\d+[.)])\s+\S/.test(line);
+}
+
 export type ModelLineState = { label: string | null };
 
 /**
  * One model line. Allow-list headers are removed. A scope label on its own
- * line binds to each following item. Other labels stay on their content.
+ * line binds only to following list items. A blank line or a non-list sentence
+ * ends that list, and the label is not applied to the sentence.
  */
 export function consumeModelLine(
   line: string,
   state: ModelLineState,
 ): { emit: string | null; label: string | null } {
+  if (!line.trim()) return { emit: null, label: null };
   let trimmed = stripStrayLead(stripUnclosedBold(line.trim()));
-  if (!trimmed) return { emit: null, label: state.label };
+  if (!trimmed) return { emit: null, label: null };
   if (isAllowHeaderOnly(trimmed)) return { emit: null, label: null };
   const peeled = peelAllowPrefix(trimmed);
   if (!peeled) return { emit: null, label: null };
   if (isBareScopeLabel(peeled)) {
     return { emit: null, label: normalizeScopeLabel(peeled) };
   }
-  let body = stripOrdinalLeadIn(stripTrailingIssuer(peeled));
-  if (!body) return { emit: null, label: state.label };
-  if (state.label) body = `${state.label}: ${stripListMarker(body)}`;
-  return { emit: body, label: state.label };
+  const body = stripOrdinalLeadIn(stripTrailingIssuer(peeled));
+  if (!body) return { emit: null, label: null };
+  if (state.label && isListItem(body)) {
+    return { emit: `${state.label}: ${stripListMarker(body)}`, label: state.label };
+  }
+  return { emit: body, label: null };
 }
 
 function prepareSentence(text: string): { body: string; droppedHeader: boolean } {
@@ -1283,12 +1294,14 @@ export function supportedAnswerText(
 ): string {
   const state: ModelLineState = { label: null };
   const kept: string[] = [];
-  for (const sentence of answerSentences(answer)) {
-    const consumed = consumeModelLine(sentence, state);
+  for (const rawLine of answer.split(/\n/)) {
+    const consumed = consumeModelLine(rawLine, state);
     state.label = consumed.label;
     if (!consumed.emit) continue;
-    const grounded = groundedSentence(consumed.emit, sources, question);
-    if (grounded && !isCitationOnly(grounded)) kept.push(grounded);
+    for (const sentence of answerSentences(consumed.emit)) {
+      const grounded = groundedSentence(sentence, sources, question);
+      if (grounded && !isCitationOnly(grounded)) kept.push(grounded);
+    }
   }
   return kept.join(" ").replace(/[ \t]{2,}/g, " ").trim();
 }
