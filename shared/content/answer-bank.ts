@@ -166,13 +166,13 @@ VivaAge **không** khuyên bạn mua sản phẩm tiết kiệm hay bảo hiểm
 1. Nói chuyện nhẹ: họ còn tỉnh, trả lời được không? [S1]
 2. Xem chỗ nào đau nhiều, xương/khớp có lệch không, có chảy máu hay khó thở không.
 3. **Đừng kéo hoặc đỡ mạnh** nếu nghi bị thương nặng. [S1]
-4. Gọi cấp cứu hoặc đưa đi bệnh viện nếu họ không đứng dậy được, đau nhiều, đập đầu, nói lắp/lẫn, hoặc bạn không chắc. [S1][S2]
+4. Gọi 115 hoặc đưa đi bệnh viện nếu họ không đứng dậy được, đau nhiều, đập đầu, nói lắp/lẫn, hoặc bạn không chắc. [S1][S2]
 
 **Để giảm ngã lần sau**
 - Lối đi thông thoáng, đủ đèn; gọn dây điện, thảm trơn. [S1]
 - Đi dép chống trượt; đồ hay dùng để trong tầm với.
 
-Đây là hướng dẫn tham khảo theo tờ thông tin **Ngã ở người cao tuổi** của Tổ chức Y tế Thế giới và bài Bộ Y tế về chăm sóc người cao tuổi, **không thay** cấp cứu. Khi tình trạng nặng: gọi cấp cứu địa phương ngay. [S2]`,
+Đây là hướng dẫn tham khảo theo tờ thông tin **Ngã ở người cao tuổi** của Tổ chức Y tế Thế giới và bài Bộ Y tế về chăm sóc người cao tuổi, **không thay** cấp cứu. Khi tình trạng nặng: gọi 115 ngay. [S2]`,
   },
   {
     id: "aging-documents",

@@ -1,10 +1,111 @@
 import { Hono } from "hono";
-import { CreateChatSessionSchema, ChatMessageSchema, FeedbackSchema } from "@shared/schemas/api";
+import type { Context } from "hono";
+import {
+  CreateChatSessionSchema,
+  ChatMessageSchema,
+  FeedbackSchema,
+} from "@shared/schemas/api";
+import { strictlyMoreSevere, type ScreenClass } from "@shared/rules/precedence";
 import { createId, nowIso } from "@shared/utils/id";
 import type { Env, AppVariables } from "../env";
 import { jsonError } from "../lib/errors";
 import { enforceRateLimit } from "../middleware/security";
-import { runChatPipeline, SYSTEM_PROMPT_VERSION } from "../ai/pipeline";
+import {
+  logUpgradeTimeout,
+  runChatPipeline,
+  SYSTEM_PROMPT_VERSION,
+  UPGRADE_BUDGET_MS,
+} from "../ai/pipeline";
+
+/** How long the first screen stays open for a later escalation. */
+export const UPGRADE_WAIT_MS = UPGRADE_BUDGET_MS;
+
+type UpgradePayload = {
+  message: string;
+  riskClass: string;
+  finalMessage?: string;
+};
+
+const SCREEN_CLASSES = new Set<string>([
+  "self_harm",
+  "choking",
+  "breathing",
+  "severe_allergy",
+  "seizure",
+  "low_blood_sugar",
+  "chest_pain",
+  "stroke",
+  "bleeding",
+  "unconscious",
+  "poisoning",
+  "head_injury",
+  "burn",
+  "fall_emergency",
+  "urgent",
+]);
+
+function isScreenClass(value: string): value is ScreenClass {
+  return SCREEN_CLASSES.has(value);
+}
+
+/**
+ * Wait for an upgrade without aborting it. A later class is applied only when
+ * it is strictly more severe. A missed deadline keeps the first screen.
+ */
+export async function takeUpgrade(
+  current: string,
+  upgrade: (Promise<UpgradePayload | null> & { timeoutGate?: object }) | undefined,
+  waitMs: number,
+): Promise<{
+  riskClass: string;
+  extra: string | null;
+  finalMessage: string | null;
+  timedOut: boolean;
+}> {
+  if (!upgrade) {
+    return { riskClass: current, extra: null, finalMessage: null, timedOut: false };
+  }
+  const gate = upgrade.timeoutGate ?? upgrade;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const raced = await Promise.race([
+      upgrade.then((value) => ({ kind: "value" as const, value })),
+      new Promise<{ kind: "timeout" }>((resolve) => {
+        timer = setTimeout(() => resolve({ kind: "timeout" }), waitMs);
+      }),
+    ]);
+    if (raced.kind === "timeout") {
+      logUpgradeTimeout(gate);
+      return { riskClass: current, extra: null, finalMessage: null, timedOut: true };
+    }
+    const value = raced.value;
+    const accepted =
+      value &&
+      isScreenClass(value.riskClass) &&
+      ((isScreenClass(current) && strictlyMoreSevere(value.riskClass, current)) ||
+        (!isScreenClass(current) && value.riskClass === "self_harm"));
+    if (accepted && value) {
+      return {
+        riskClass: value.riskClass,
+        extra: value.message,
+        finalMessage: value.finalMessage ?? null,
+        timedOut: false,
+      };
+    }
+    return { riskClass: current, extra: null, finalMessage: null, timedOut: false };
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+function keepAlive(c: Context, task: Promise<unknown>): void {
+  const pending = task.catch(() => undefined);
+  try {
+    c.executionCtx?.waitUntil?.(pending);
+  } catch {
+    /* unit tests have no execution context */
+  }
+}
 
 export const chatRoutes = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -91,7 +192,12 @@ chatRoutes.get("/chat/sessions/latest", async (c) => {
 chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
   const ok = await enforceRateLimit(c, "chat", 30, 3600);
   if (!ok) {
-    return jsonError(c, 429, "RATE_LIMITED", "Bạn đã gửi quá nhiều câu hỏi. Thử lại sau.");
+    return jsonError(
+      c,
+      429,
+      "RATE_LIMITED",
+      "Bạn đã gửi quá nhiều câu hỏi. Thử lại sau.",
+    );
   }
 
   const chatPublicId = c.req.param("id");
@@ -167,50 +273,238 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
       )
       .run();
 
-    // Privacy-safe analytics event (no question text)
-    try {
-      await c.env.ANALYTICS_QUEUE?.send({
-        type: "risk_routed",
-        riskClass: pipeline.riskClass,
-        at: nowIso(),
+    const accept = c.req.header("accept") ?? "";
+    const wantsJson =
+      accept.includes("application/json") && !accept.includes("text/event-stream");
+
+    const finishUpgrade = async (): Promise<{
+      riskClass: string;
+      extra: string | null;
+      finalMessage: string | null;
+    }> => {
+      const outcome = await takeUpgrade(
+        pipeline.riskClass,
+        pipeline.upgrade,
+        UPGRADE_WAIT_MS,
+      );
+      if (outcome.timedOut && pipeline.upgrade) keepAlive(c, pipeline.upgrade);
+      if (outcome.extra && outcome.riskClass !== pipeline.riskClass) {
+        try {
+          await c.env.DB.prepare(
+            `UPDATE chat_messages SET classification = ?, risk_class = ? WHERE id = ?`,
+          )
+            .bind("high_risk_health", outcome.riskClass, assistantMsgId)
+            .run();
+        } catch {
+          /* the first screen was already stored */
+        }
+      }
+      if (isScreenClass(outcome.riskClass)) {
+        try {
+          await c.env.ANALYTICS_QUEUE?.send({
+            type: "risk_routed",
+            riskClass: outcome.riskClass,
+            at: nowIso(),
+          });
+        } catch {
+          /* optional binding */
+        }
+      }
+      return {
+        riskClass: outcome.riskClass,
+        extra: outcome.extra,
+        finalMessage: outcome.finalMessage,
+      };
+    };
+
+    if (wantsJson) {
+      const settled = await finishUpgrade();
+      const content =
+        settled.finalMessage ??
+        (settled.extra ? `${pipeline.message}${settled.extra}` : pipeline.message);
+      return c.json({
+        messagePublicId: assistantPublicId,
+        kind: "high_risk",
+        content,
+        classification:
+          settled.riskClass === "none" ? pipeline.classification : "high_risk_health",
+        riskClass: settled.riskClass,
       });
-    } catch {
-      /* optional binding */
     }
 
-    return c.json({
-      messagePublicId: assistantPublicId,
-      kind: "high_risk",
-      riskClass: pipeline.riskClass,
-      content: pipeline.message,
-      sources: [],
+    // The first screen goes out at once. The stream stays open so a later
+    // escalation can still arrive. The composer unlocks on the ready event.
+    const encoder = new TextEncoder();
+    const parts = pipeline.message.split(/\n\n/);
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (obj: unknown) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        };
+        send({
+          type: "meta",
+          classification: pipeline.classification,
+          riskClass: pipeline.riskClass,
+          messagePublicId: assistantPublicId,
+        });
+        parts.forEach((part, index) => {
+          if (!part) return;
+          send({ type: "token", text: index === 0 ? part : `\n\n${part}` });
+        });
+        send({ type: "ready" });
+        let settled: {
+          riskClass: string;
+          extra: string | null;
+          finalMessage: string | null;
+        } = {
+          riskClass: pipeline.riskClass,
+          extra: null,
+          finalMessage: null,
+        };
+        try {
+          const outcome = await finishUpgrade();
+          settled = {
+            riskClass: outcome.riskClass,
+            extra: outcome.extra,
+            finalMessage: outcome.finalMessage,
+          };
+        } catch {
+          settled = { riskClass: pipeline.riskClass, extra: null, finalMessage: null };
+        }
+        if (settled.finalMessage || settled.extra) {
+          send({
+            type: "meta",
+            classification: "high_risk_health",
+            riskClass: settled.riskClass,
+            messagePublicId: assistantPublicId,
+          });
+          if (settled.finalMessage) {
+            send({ type: "token", text: settled.finalMessage, replace: true });
+          } else if (settled.extra) {
+            send({ type: "token", text: settled.extra });
+          }
+        }
+        send({ type: "done", abstained: false });
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store",
+        Connection: "keep-alive",
+      },
     });
   }
 
   if (pipeline.kind === "abstain") {
-    await c.env.DB.prepare(
-      `INSERT INTO chat_messages
-       (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
-       VALUES (?, ?, ?, 'assistant', ?, ?, ?, 'none', ?, 1, ?)`,
-    )
-      .bind(
-        assistantMsgId,
-        assistantPublicId,
-        chat.id,
-        chat.history_opt_in ? pipeline.message : null,
-        chat.history_opt_in ? 0 : 1,
-        pipeline.classification,
-        SYSTEM_PROMPT_VERSION,
-        nowIso(),
+    if (!pipeline.followUp) {
+      await c.env.DB.prepare(
+        `INSERT INTO chat_messages
+         (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
+         VALUES (?, ?, ?, 'assistant', ?, ?, ?, 'none', ?, 1, ?)`,
       )
-      .run();
+        .bind(
+          assistantMsgId,
+          assistantPublicId,
+          chat.id,
+          chat.history_opt_in ? pipeline.message : null,
+          chat.history_opt_in ? 0 : 1,
+          pipeline.classification,
+          SYSTEM_PROMPT_VERSION,
+          nowIso(),
+        )
+        .run();
 
-    return c.json({
-      messagePublicId: assistantPublicId,
-      kind: "abstain",
-      content: pipeline.message,
-      sources: pipeline.sources,
-      classification: pipeline.classification,
+      return c.json({
+        messagePublicId: assistantPublicId,
+        kind: "abstain",
+        content: pipeline.message,
+        sources: pipeline.sources,
+        classification: pipeline.classification,
+      });
+    }
+
+    // The refusal is the first token. A late alert is more tokens, not a dropped block.
+    const encoder = new TextEncoder();
+    const opening = pipeline.message;
+    const followUp = pipeline.followUp;
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (obj: unknown) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        };
+        send({
+          type: "meta",
+          classification: pipeline.classification,
+          riskClass: "none",
+          messagePublicId: assistantPublicId,
+        });
+        send({ type: "token", text: opening });
+        let extra = "";
+        let lateRisk: string | null = null;
+        try {
+          const settled = await followUp;
+          extra = settled.extra;
+          lateRisk = settled.riskClass;
+        } catch {
+          extra = "";
+          lateRisk = null;
+        }
+        if (lateRisk) {
+          send({
+            type: "meta",
+            classification: "high_risk_health",
+            riskClass: lateRisk,
+            messagePublicId: assistantPublicId,
+          });
+        }
+        if (extra) send({ type: "token", text: extra });
+        if (lateRisk) {
+          try {
+            await c.env.ANALYTICS_QUEUE?.send({
+              type: "risk_routed",
+              riskClass: lateRisk,
+              at: nowIso(),
+            });
+          } catch {
+            /* optional binding */
+          }
+        }
+        const full = `${opening}${extra}`;
+        try {
+          await c.env.DB.prepare(
+            `INSERT INTO chat_messages
+             (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
+             VALUES (?, ?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?)`,
+          )
+            .bind(
+              assistantMsgId,
+              assistantPublicId,
+              chat.id,
+              chat.history_opt_in ? full : null,
+              chat.history_opt_in ? 0 : 1,
+              lateRisk ? "high_risk_health" : pipeline.classification,
+              lateRisk ?? "none",
+              SYSTEM_PROMPT_VERSION,
+              lateRisk ? 0 : 1,
+              nowIso(),
+            )
+            .run();
+        } catch {
+          /* the tokens were already sent */
+        }
+        send({ type: "done", abstained: !lateRisk });
+        controller.close();
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store",
+        Connection: "keep-alive",
+      },
     });
   }
 
@@ -251,10 +545,28 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
           send({ type: "token", text: value });
         }
         const full = await pipeline.fullTextPromise;
+        const lateRisk = await pipeline.riskPromise;
+        if (lateRisk) {
+          send({
+            type: "meta",
+            classification: "high_risk_health",
+            riskClass: lateRisk,
+            messagePublicId: assistantPublicId,
+          });
+          try {
+            await c.env.ANALYTICS_QUEUE?.send({
+              type: "risk_routed",
+              riskClass: lateRisk,
+              at: nowIso(),
+            });
+          } catch {
+            /* optional binding */
+          }
+        }
         await c.env.DB.prepare(
           `INSERT INTO chat_messages
            (id, public_id, chat_session_id, role, content, content_redacted, classification, risk_class, prompt_version, abstained, created_at)
-           VALUES (?, ?, ?, 'assistant', ?, ?, ?, 'none', ?, 0, ?)`,
+           VALUES (?, ?, ?, 'assistant', ?, ?, ?, ?, ?, 0, ?)`,
         )
           .bind(
             assistantMsgId,
@@ -262,7 +574,8 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             chat.id,
             chat.history_opt_in ? full : null,
             chat.history_opt_in ? 0 : 1,
-            pipeline.classification,
+            lateRisk ? "high_risk_health" : pipeline.classification,
+            lateRisk ?? "none",
             SYSTEM_PROMPT_VERSION,
             nowIso(),
           )
@@ -304,9 +617,7 @@ chatRoutes.post("/chat/sessions/:id/messages", async (c) => {
             .run();
         }
 
-        await c.env.DB.prepare(
-          `UPDATE chat_sessions SET updated_at = ? WHERE id = ?`,
-        )
+        await c.env.DB.prepare(`UPDATE chat_sessions SET updated_at = ? WHERE id = ?`)
           .bind(nowIso(), chat.id)
           .run();
 

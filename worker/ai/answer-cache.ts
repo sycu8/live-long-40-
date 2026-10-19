@@ -28,7 +28,7 @@ export type CachedAnswer = {
   cachedAt: string;
 };
 
-const CACHE_PREFIX = "ans_cache:v3:";
+const CACHE_PREFIX = "ans_cache:v4:";
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 45; // ~45 days
 
 function djb2(input: string): string {
@@ -41,8 +41,7 @@ function djb2(input: string): string {
 
 export function cacheKeyForQuestion(question: string): string {
   const folded = foldVietnamese(question).replace(/\s+/g, " ").trim();
-  const slug = folded.slice(0, 48).replace(/\s+/g, "_");
-  return `${CACHE_PREFIX}${WORKERS_AI_TEXT_MODEL}:${djb2(folded)}_${slug}`;
+  return `${CACHE_PREFIX}${WORKERS_AI_TEXT_MODEL}:${djb2(folded)}`;
 }
 
 function aliasScore(foldedQuery: string, alias: string): number {

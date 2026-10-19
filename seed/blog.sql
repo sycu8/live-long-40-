@@ -1562,7 +1562,7 @@ Có thể nói: “Con làm được A và B; việc C cần thêm người.” 
 
 ## Giới hạn
 
-Bài viết không thay cấp cứu, không thay điều dưỡng tại gia. Khi tình trạng nặng — gọi cấp cứu địa phương ngay.',
+Bài viết không thay cấp cứu, không thay điều dưỡng tại gia. Khi tình trạng nặng — gọi 115 ngay.',
   'published',
   '2026-08-15',
   '2026-08-15T02:00:00.000Z',

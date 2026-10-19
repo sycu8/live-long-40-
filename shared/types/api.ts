@@ -14,7 +14,18 @@ export type ReadyinessPillarView = {
 
 export type StreamEvent =
   | { type: "meta"; classification: string; riskClass: string; messagePublicId: string }
-  | { type: "token"; text: string }
-  | { type: "sources"; sources: Array<{ key: string; title: string; issuer: string; date?: string; url?: string; snippet?: string }> }
+  | { type: "token"; text: string; replace?: boolean }
+  | { type: "ready" }
+  | {
+      type: "sources";
+      sources: Array<{
+        key: string;
+        title: string;
+        issuer: string;
+        date?: string;
+        url?: string;
+        snippet?: string;
+      }>;
+    }
   | { type: "done"; abstained: boolean }
   | { type: "error"; code: string; message: string };

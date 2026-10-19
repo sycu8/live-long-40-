@@ -38,6 +38,7 @@ export function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoSentRef = useRef(false);
   const sendRef = useRef<(question?: string) => Promise<void>>(async () => {});
+  const turnRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,6 +103,7 @@ export function ChatPage() {
   async function send(question?: string) {
     const content = (question ?? input).trim();
     if (!content || !sessionId || streaming) return;
+    const turn = ++turnRef.current;
     setInput("");
     setError(null);
     setMessages((m) => [...m, { id: `u-${Date.now()}`, role: "user", content }]);
@@ -180,6 +182,7 @@ export function ChatPage() {
           const payload = JSON.parse(line.slice(5).trim()) as {
             type: string;
             text?: string;
+            replace?: boolean;
             messagePublicId?: string;
             sources?: Source[];
             message?: string;
@@ -197,8 +200,11 @@ export function ChatPage() {
             updateAssistant({ publicId: messagePublicId, sources });
           }
           if (payload.type === "token" && payload.text) {
-            text += payload.text;
+            text = payload.replace ? payload.text : text + payload.text;
             updateAssistant({ publicId: messagePublicId, content: text, sources });
+          }
+          if (payload.type === "ready" && turnRef.current === turn) {
+            setStreaming(false);
           }
           if (payload.type === "error") {
             throw new Error(payload.message ?? "Luồng trả lời lỗi.");
@@ -224,7 +230,7 @@ export function ChatPage() {
         ),
       );
     } finally {
-      setStreaming(false);
+      if (turnRef.current === turn) setStreaming(false);
     }
   }
 
@@ -252,14 +258,14 @@ export function ChatPage() {
 
   return (
     <AppShell>
-      <div className="flex min-h-[70dvh] flex-col gap-4 lg:min-h-[calc(100dvh-12rem)] lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
+      <div className="flex min-h-[70dvh] flex-col gap-4 lg:grid lg:min-h-[calc(100dvh-12rem)] lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
         <div className="flex min-h-0 flex-1 flex-col gap-4">
           <div>
             <h1 className="font-display text-3xl lg:text-4xl">Hỏi VivaAge</h1>
             <p className="mt-2 text-[var(--color-ink-muted)]">
-              Câu trả lời dựa trên nguồn từ Bộ Y tế, Bảo hiểm xã hội Việt Nam, Ngân
-              hàng Nhà nước Việt Nam hoặc Tổ chức Y tế Thế giới. Bạn có thể gõ tiếng
-              Việt không dấu.
+              Câu trả lời dựa trên nguồn từ Bộ Y tế, Bảo hiểm xã hội Việt Nam, Ngân hàng
+              Nhà nước Việt Nam hoặc Tổ chức Y tế Thế giới. Bạn có thể gõ tiếng Việt không
+              dấu.
             </p>
             <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
               {historyOptIn
@@ -300,7 +306,7 @@ export function ChatPage() {
                       : "mr-2 bg-white/80 lg:mr-8"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                  <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
                   {m.sources && m.sources.length > 0 ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {m.sources.map((s) => (
@@ -411,7 +417,7 @@ export function ChatPage() {
                 href={drawerSource.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 block break-all text-sm text-[var(--color-blue)] underline"
+                className="mt-2 block text-sm break-all text-[var(--color-blue)] underline"
               >
                 Xem tài liệu nguồn: {drawerSource.url}
               </a>
@@ -419,7 +425,11 @@ export function ChatPage() {
             <p className="mt-4 whitespace-pre-wrap text-[var(--color-ink)]">
               {drawerSource.snippet}
             </p>
-            <Button className="mt-4" variant="secondary" onClick={() => setDrawerSource(null)}>
+            <Button
+              className="mt-4"
+              variant="secondary"
+              onClick={() => setDrawerSource(null)}
+            >
               Đóng
             </Button>
           </div>
