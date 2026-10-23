@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BRAND,
   INDEXABLE_ROUTES,
+  PERSON_ID,
   absoluteUrl,
   pageTitle,
   homeJsonLdGraph,
@@ -39,12 +40,18 @@ describe("brand identity", () => {
   it("emits Organization + FAQ JSON-LD for GEO", () => {
     const graph = homeJsonLdGraph();
     const types = graph["@graph"].map((n) => n["@type"]);
+    expect(types).toContain("Person");
     expect(types).toContain("Organization");
     expect(types).toContain("WebApplication");
     expect(types).toContain("FAQPage");
+    expect(JSON.stringify(graph)).toContain(`"@id":"${PERSON_ID}"`);
 
     const faq = faqPageJsonLd();
     expect(faq.mainEntity.length).toBeGreaterThanOrEqual(4);
     expect(faq.mainEntity[0]?.acceptedAnswer?.text.length).toBeGreaterThan(20);
+    expect(faq.mainEntity.some((q) => q.name === "VivaAge là gì?")).toBe(true);
+    expect(faq.mainEntity.some((q) => q.name === "What is VivaAge?")).toBe(true);
+    const falls = faq.mainEntity.find((q) => q.name === "Làm gì khi cha mẹ bị ngã?");
+    expect(falls?.acceptedAnswer.text).toContain("giữ bình tĩnh");
   });
 });

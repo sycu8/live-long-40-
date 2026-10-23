@@ -25,10 +25,7 @@ export const BLOG_AUTHOR_DEFAULT = "Biên tập VivaAge";
 export function clampBlogPageSize(raw: unknown): number {
   const n = Number(raw);
   if (!Number.isFinite(n)) return BLOG_PAGE_SIZE_DEFAULT;
-  return Math.min(
-    BLOG_PAGE_SIZE_MAX,
-    Math.max(BLOG_PAGE_SIZE_MIN, Math.round(n)),
-  );
+  return Math.min(BLOG_PAGE_SIZE_MAX, Math.max(BLOG_PAGE_SIZE_MIN, Math.round(n)));
 }
 
 export function clampBlogPage(raw: unknown): number {
@@ -38,8 +35,7 @@ export function clampBlogPage(raw: unknown): number {
 }
 
 /** Fallback public origin when PUBLIC_SITE_URL is unset. */
-export const DEFAULT_PUBLIC_SITE_URL =
-  "https://song-an-40.sycu-lee.workers.dev";
+export const DEFAULT_PUBLIC_SITE_URL = "https://vivaage.orangecloud.vn";
 
 export const BLOG_THEMES = [
   "tinh-than",

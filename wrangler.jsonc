@@ -1,6 +1,10 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "song-an-40",
+  // Keep workers.dev so the old host can 301 HTML to the custom domain.
+  // API routes stay on that host and send X-Robots-Tag: noindex.
+  "workers_dev": true,
+  "routes": [{ "pattern": "vivaage.orangecloud.vn", "custom_domain": true }],
   "main": "./worker/index.ts",
   "compatibility_date": "2026-08-04",
   "compatibility_flags": ["nodejs_compat"],
@@ -42,7 +46,7 @@
     "PLAN_RULESET_VERSION": "v1.0.1",
     // Local/staging QA only. Leave empty in production — use Cloudflare Access.
     "LOCAL_QA_ADMIN_TOKEN": "",
-    "PUBLIC_SITE_URL": "https://song-an-40.sycu-lee.workers.dev"
+    "PUBLIC_SITE_URL": "https://vivaage.orangecloud.vn"
   },
   "d1_databases": [
     {
@@ -127,7 +131,7 @@
         "SCORING_RULESET_VERSION": "v1.0.1",
         "SAFETY_RULESET_VERSION": "v1.0.0",
         "PLAN_RULESET_VERSION": "v1.0.1",
-        "PUBLIC_SITE_URL": "https://song-an-40.sycu-lee.workers.dev"
+        "PUBLIC_SITE_URL": "https://vivaage.orangecloud.vn"
       }
     }
   }

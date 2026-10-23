@@ -3,6 +3,7 @@ import { BottomNav } from "./BottomNav";
 import { SideNav } from "./SideNav";
 import { BrandLogo } from "./BrandLogo";
 import { DISCLAIMER } from "@shared/constants/product";
+import { SiteFooterLinks } from "./SiteFooterLinks";
 
 /**
  * Responsive app chrome:
@@ -39,9 +40,7 @@ export function AppShell({
               <BrandLogo size="md" />
             </div>
             <p className="ml-auto max-w-[55%] text-right text-xs text-[var(--color-ink-muted)] lg:max-w-none lg:text-sm">
-              <span className="lg:hidden">
-                Thông tin tham khảo, không thay bác sĩ
-              </span>
+              <span className="lg:hidden">Thông tin tham khảo, không thay bác sĩ</span>
               <span className="hidden lg:inline">
                 Phiên bản máy tính · Thông tin tham khảo, không thay bác sĩ
               </span>
@@ -67,6 +66,7 @@ export function AppShell({
           )}
         >
           {DISCLAIMER}
+          <SiteFooterLinks />
         </footer>
       </div>
 

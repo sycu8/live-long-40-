@@ -6,27 +6,27 @@ VivaAge provides education and planning tools only. It does not diagnose disease
 
 ## Docs
 
-- [OpenAPI](https://song-an-40.sycu-lee.workers.dev/openapi.json): Machine-readable public HTTP API description
-- [API catalog](https://song-an-40.sycu-lee.workers.dev/.well-known/api-catalog): RFC 9727 linkset for automated API discovery
-- [auth.md](https://song-an-40.sycu-lee.workers.dev/auth.md): How agents authenticate with anonymous sessions
-- [Agent skills index](https://song-an-40.sycu-lee.workers.dev/.well-known/agent-skills/index.json): Discoverable skills with SHA-256 digests
-- [MCP server card](https://song-an-40.sycu-lee.workers.dev/.well-known/mcp/server-card.json): Model Context Protocol entrypoint
-- [AI catalog](https://song-an-40.sycu-lee.workers.dev/.well-known/ai-catalog.json): ARD capability manifest (MCP, OpenAPI, skills, API catalog)
-- [Sitemap](https://song-an-40.sycu-lee.workers.dev/sitemap.xml): Crawlable product, library, and blog URLs
-- [llms-full.txt](https://song-an-40.sycu-lee.workers.dev/llms-full.txt): Expanded link list for larger context windows
+- [OpenAPI](https://vivaage.orangecloud.vn/openapi.json): Machine-readable public HTTP API description
+- [API catalog](https://vivaage.orangecloud.vn/.well-known/api-catalog): RFC 9727 linkset for automated API discovery
+- [auth.md](https://vivaage.orangecloud.vn/auth.md): How agents authenticate with anonymous sessions
+- [Agent skills index](https://vivaage.orangecloud.vn/.well-known/agent-skills/index.json): Discoverable skills with SHA-256 digests
+- [MCP server card](https://vivaage.orangecloud.vn/.well-known/mcp/server-card.json): Model Context Protocol entrypoint
+- [AI catalog](https://vivaage.orangecloud.vn/.well-known/ai-catalog.json): ARD capability manifest (MCP, OpenAPI, skills, API catalog)
+- [Sitemap](https://vivaage.orangecloud.vn/sitemap.xml): Crawlable product, library, and blog URLs
+- [llms-full.txt](https://vivaage.orangecloud.vn/llms-full.txt): Expanded link list for larger context windows
 
 ## Product
 
-- [Home](https://song-an-40.sycu-lee.workers.dev/): Brand story, pillars, FAQ, and primary CTAs
-- [Readiness assessment](https://song-an-40.sycu-lee.workers.dev/danh-gia): About 7 minutes; health, finance, and caregiving readiness
-- [30-day plan](https://song-an-40.sycu-lee.workers.dev/ke-hoach): Small weekly actions based on assessment gaps
-- [Ask VivaAge](https://song-an-40.sycu-lee.workers.dev/hoi): Educational Q&A with citations when sources exist
-- [Library](https://song-an-40.sycu-lee.workers.dev/thu-vien): Short lessons on midlife health, money, and caregiving
-- [Today](https://song-an-40.sycu-lee.workers.dev/hom-nay): Progress and next small actions after onboarding
+- [Home](https://vivaage.orangecloud.vn/): Brand story, pillars, FAQ, and primary CTAs
+- [Readiness assessment](https://vivaage.orangecloud.vn/danh-gia): About 7 minutes; health, finance, and caregiving readiness
+- [30-day plan](https://vivaage.orangecloud.vn/ke-hoach): Small weekly actions based on assessment gaps
+- [Ask VivaAge](https://vivaage.orangecloud.vn/hoi): Educational Q&A with citations when sources exist
+- [Library](https://vivaage.orangecloud.vn/thu-vien): Short lessons on midlife health, money, and caregiving
+- [Today](https://vivaage.orangecloud.vn/hom-nay): Progress and next small actions after onboarding
 
 ## Optional
 
-- [Motivational blog](https://song-an-40.sycu-lee.workers.dev/blog): Daily encouragement posts for adults 40+
-- [Profile & privacy](https://song-an-40.sycu-lee.workers.dev/ho-so): Session, privacy, and disclaimer notes
-- [robots.txt](https://song-an-40.sycu-lee.workers.dev/robots.txt): Crawl rules and Content Signals
-- [Atom feed](https://song-an-40.sycu-lee.workers.dev/feed.xml): Published blog posts for feed readers and agents
+- [Motivational blog](https://vivaage.orangecloud.vn/blog): Daily encouragement posts for adults 40+
+- [Profile & privacy](https://vivaage.orangecloud.vn/ho-so): Session, privacy, and disclaimer notes
+- [robots.txt](https://vivaage.orangecloud.vn/robots.txt): Crawl rules and Content Signals
+- [Atom feed](https://vivaage.orangecloud.vn/feed.xml): Published blog posts for feed readers and agents

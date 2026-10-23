@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/Button";
 import { BrandLogo } from "../components/BrandLogo";
 import { BRAND } from "@shared/brand";
+import { ShortAnswers } from "../components/ShortAnswers";
+import { SiteFooterLinks } from "../components/SiteFooterLinks";
 import {
   LANDING_AGE40,
   LANDING_ASK,
@@ -52,7 +54,7 @@ export function LandingPage() {
         <img
           src="/hero-scene.svg"
           alt=""
-          className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover object-[center_30%] hero-drift lg:object-[center_40%]"
+          className="hero-drift pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover object-[center_30%] lg:object-[center_40%]"
           decoding="async"
           fetchPriority="high"
         />
@@ -61,14 +63,14 @@ export function LandingPage() {
           aria-hidden="true"
         />
         <div
-          className={`${shell} flex min-h-[100dvh] flex-col justify-between pb-12 pt-8 lg:min-h-[min(100dvh,820px)] lg:justify-center lg:pb-20 lg:pt-28`}
+          className={`${shell} flex min-h-[100dvh] flex-col justify-between pt-8 pb-12 lg:min-h-[min(100dvh,820px)] lg:justify-center lg:pt-28 lg:pb-20`}
         >
           <header className="fade-in lg:hidden">
             <BrandLogo size="lg" to="/" />
           </header>
 
           <div className="fade-up max-w-xl py-8 lg:max-w-2xl lg:py-0">
-            <p className="mb-2 font-display text-4xl leading-none text-[var(--color-green)] sm:text-5xl lg:text-6xl">
+            <p className="font-display mb-2 text-4xl leading-none text-[var(--color-green)] sm:text-5xl lg:text-6xl">
               {BRAND.name}
             </p>
             <p className="mb-5 text-sm text-[var(--color-ink-muted)] lg:text-base">
@@ -115,7 +117,7 @@ export function LandingPage() {
             <li>{LANDING_NAME_STORY.viva}</li>
             <li>{LANDING_NAME_STORY.age}</li>
           </ul>
-          <p className="mt-6 font-display text-xl text-[var(--color-green)] lg:text-2xl">
+          <p className="font-display mt-6 text-xl text-[var(--color-green)] lg:text-2xl">
             {LANDING_NAME_STORY.tagline}
           </p>
         </div>
@@ -163,7 +165,7 @@ export function LandingPage() {
                   <p className="text-sm font-medium tracking-wide text-[var(--color-green)]">
                     0{index + 1}
                   </p>
-                  <h3 className="mt-2 font-display text-2xl text-[var(--color-ink)] lg:text-3xl">
+                  <h3 className="font-display mt-2 text-2xl text-[var(--color-ink)] lg:text-3xl">
                     {pillar.title}
                   </h3>
                   <p className="mt-3 leading-relaxed text-[var(--color-ink-muted)] lg:text-lg">
@@ -171,9 +173,7 @@ export function LandingPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-[var(--color-ink-muted)]">
-                    {pillar.pointsIntro}
-                  </p>
+                  <p className="text-[var(--color-ink-muted)]">{pillar.pointsIntro}</p>
                   <ul className="mt-3 list-disc space-y-2 pl-5 text-[var(--color-ink)]">
                     {pillar.points.map((p) => (
                       <li key={p}>{p}</li>
@@ -201,14 +201,14 @@ export function LandingPage() {
           <h2 className="font-display text-2xl text-[var(--color-ink)] lg:text-4xl">
             {LANDING_ASK.title}
           </h2>
-          <p className="mt-2 font-display text-xl text-[var(--color-green)] lg:text-2xl">
+          <p className="font-display mt-2 text-xl text-[var(--color-green)] lg:text-2xl">
             {LANDING_ASK.subtitle}
           </p>
           <p className="mt-4 max-w-3xl text-lg text-[var(--color-ink-muted)]">
             {LANDING_ASK.lead}
           </p>
           <p className="mt-6 text-[var(--color-ink-muted)]">{LANDING_ASK.prompt}</p>
-          <ul className="mt-4 space-y-2 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:gap-y-2 lg:space-y-0">
+          <ul className="mt-4 space-y-2 lg:grid lg:grid-cols-2 lg:space-y-0 lg:gap-x-10 lg:gap-y-2">
             {LANDING_ASK.examples.map((q) => (
               <li key={q}>
                 <Link
@@ -245,7 +245,7 @@ export function LandingPage() {
             <h2 className="font-display text-2xl text-[var(--color-ink)] lg:text-4xl">
               {LANDING_READINESS.title}
             </h2>
-            <p className="mt-2 font-display text-xl text-[var(--color-green)] lg:text-2xl">
+            <p className="font-display mt-2 text-xl text-[var(--color-green)] lg:text-2xl">
               {LANDING_READINESS.subtitle}
             </p>
             <p className="mt-4 text-lg text-[var(--color-ink-muted)]">
@@ -341,6 +341,8 @@ export function LandingPage() {
         </div>
       </section>
 
+      <ShortAnswers />
+
       <section className="py-14 lg:py-20">
         <div className={`${shell} max-w-3xl`}>
           <h2 className="font-display text-2xl text-[var(--color-ink)] lg:text-4xl">
@@ -349,9 +351,7 @@ export function LandingPage() {
           <dl className="mt-8 space-y-8">
             {LANDING_FAQ.map((item) => (
               <div key={item.q}>
-                <dt className="font-display text-xl text-[var(--color-ink)]">
-                  {item.q}
-                </dt>
+                <dt className="font-display text-xl text-[var(--color-ink)]">{item.q}</dt>
                 <dd className="mt-2 leading-relaxed text-[var(--color-ink-muted)]">
                   {item.a}
                 </dd>
@@ -363,9 +363,7 @@ export function LandingPage() {
 
       <section className="bg-[var(--color-ink)] py-16 text-[var(--color-cream)] lg:py-24">
         <div className={`${shell} text-center lg:max-w-3xl`}>
-          <h2 className="font-display text-2xl lg:text-4xl">
-            {LANDING_CLOSING.title}
-          </h2>
+          <h2 className="font-display text-2xl lg:text-4xl">{LANDING_CLOSING.title}</h2>
           <p className="mx-auto mt-4 max-w-[40ch] text-[var(--color-cream)]/80 lg:max-w-xl lg:text-lg">
             {LANDING_CLOSING.body}
           </p>
@@ -384,6 +382,9 @@ export function LandingPage() {
           <p className="mt-10 text-left text-xs leading-relaxed text-[var(--color-cream)]/65 lg:mx-auto lg:max-w-3xl">
             {LANDING_CLOSING.disclaimer}
           </p>
+          <div className="mt-8 text-left text-xs leading-relaxed text-[var(--color-cream)]/80 lg:mx-auto lg:max-w-3xl">
+            <SiteFooterLinks />
+          </div>
         </div>
       </section>
     </div>

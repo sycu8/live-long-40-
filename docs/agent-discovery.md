@@ -41,7 +41,7 @@ Also advertised by homepage `Link` headers, `<link rel="ai-catalog">` / `<link r
 
 The scanner looks up ServiceMode `SVCB` and `HTTPS` records for `_index._agents`, `_a2a._agents`, and `_mcp._agents` over DNS-over-HTTPS, then requires the answer to be DNSSEC-validated (`AD=true`).
 
-On `song-an-40.sycu-lee.workers.dev`, Cloudflare already synthesizes `HTTPS` answers (`alpn=h3,h2`) for those names. `workers.dev` has no DS record, so validating resolvers do not set `AD`. Customers cannot add `SVCB` records or turn on DNSSEC in that zone. The live check therefore stays: records found, DNSSEC not validated.
+The canonical origin is `https://vivaage.orangecloud.vn`. `workers.dev` has no DS record, so a validating resolver will not set `AD` for `song-an-40.sycu-lee.workers.dev`. Publish the record set on `vivaage.orangecloud.vn` before the DNSSEC check can pass.
 
 Record definitions live in `dns/dns-aid.mjs` (ServiceMode priority 1, `alpn="h3,h2"`, `port=443`, plus a `_catalog._agents` TXT pointer). To publish them on a domain you control:
 
@@ -54,14 +54,14 @@ CLOUDFLARE_API_TOKEN=… node scripts/publish-dns-aid.mjs \
 
 Leave the `_agents` names DNS-only. Cloudflare does not serve a manual `HTTPS` record when another record on the same name is proxied. Add the printed DS record at the registrar if the domain is not registered at Cloudflare.
 
-Until that custom domain is the scanned origin, agents should use the HTTP well-known documents and homepage `Link` headers.
+Agents should use the HTTP well-known documents and homepage `Link` headers on `https://vivaage.orangecloud.vn`.
 
 ## Validate
 
 ```bash
-curl -sSI https://song-an-40.sycu-lee.workers.dev/ | grep -i '^link:'
-curl -sS https://song-an-40.sycu-lee.workers.dev/.well-known/api-catalog | head
+curl -sSI https://vivaage.orangecloud.vn/ | grep -i '^link:'
+curl -sS https://vivaage.orangecloud.vn/.well-known/api-catalog | head
 curl -sS -X POST https://isitagentready.com/api/scan \
   -H 'Content-Type: application/json' \
-  -d '{"url":"https://song-an-40.sycu-lee.workers.dev"}'
+  -d '{"url":"https://vivaage.orangecloud.vn"}'
 ```
