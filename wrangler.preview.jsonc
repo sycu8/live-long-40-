@@ -45,7 +45,7 @@
     "SAFETY_RULESET_VERSION": "v1.0.0",
     "PLAN_RULESET_VERSION": "v1.0.1",
     "LOCAL_QA_ADMIN_TOKEN": "",
-    "PUBLIC_SITE_URL": "https://song-an-40.sycu-lee.workers.dev"
+    "PUBLIC_SITE_URL": "https://vivaage.orangecloud.vn"
   },
   // Preview: same daily blog schedule as production when triggers are supported.
   "triggers": {

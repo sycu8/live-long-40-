@@ -1,4 +1,9 @@
 import { createMiddleware } from "hono/factory";
+import {
+  canonicalHostname,
+  htmlCanonicalRedirect,
+  robotsTagForHost,
+} from "@shared/brand/identity";
 import type { Env, AppVariables } from "../env";
 import { createId, nowIso, addDaysIso, timingSafeEqualString } from "@shared/utils/id";
 import { jsonError } from "../lib/errors";
@@ -17,15 +22,29 @@ export const requestContext = createMiddleware<{
   await next();
 });
 
-export const securityHeaders = createMiddleware(async (c, next) => {
+export const securityHeaders = createMiddleware<{ Bindings: Env }>(async (c, next) => {
+  const redirectTo = htmlCanonicalRedirect({
+    method: c.req.method,
+    requestUrl: c.req.url,
+    accept: c.req.header("accept"),
+    canonicalOrigin: c.env.PUBLIC_SITE_URL,
+  });
+  if (redirectTo) {
+    return c.redirect(redirectTo, 301);
+  }
+
   await next();
+  try {
+    const requestHost = new URL(c.req.url).hostname;
+    const tag = robotsTagForHost(requestHost, canonicalHostname(c.env.PUBLIC_SITE_URL));
+    if (tag) c.res.headers.set("X-Robots-Tag", tag);
+  } catch {
+    /* ignore a malformed request URL */
+  }
   c.res.headers.set("X-Content-Type-Options", "nosniff");
   c.res.headers.set("X-Frame-Options", "DENY");
   c.res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  c.res.headers.set(
-    "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()",
-  );
+  c.res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   c.res.headers.set(
     "Content-Security-Policy",
     [
@@ -56,10 +75,7 @@ export const securityHeaders = createMiddleware(async (c, next) => {
     path.startsWith("/.well-known/");
   const isBlogCover = path.startsWith("/api/v1/blog/covers/");
   if (isHashedAsset) {
-    c.res.headers.set(
-      "Cache-Control",
-      "public, max-age=31536000, immutable",
-    );
+    c.res.headers.set("Cache-Control", "public, max-age=31536000, immutable");
   } else if (isBlogCover) {
     if (!c.res.headers.has("Cache-Control")) {
       c.res.headers.set("Cache-Control", "public, max-age=86400");
@@ -122,12 +138,7 @@ export const anonymousSession = createMiddleware<{
   Variables: AppVariables;
 }>(async (c, next) => {
   if (!c.env.DB) {
-    return jsonError(
-      c,
-      503,
-      "BINDING_MISSING",
-      "Cơ sở dữ liệu D1 chưa được cấu hình.",
-    );
+    return jsonError(c, 503, "BINDING_MISSING", "Cơ sở dữ liệu D1 chưa được cấu hình.");
   }
   await ensureSession(c);
   await next();

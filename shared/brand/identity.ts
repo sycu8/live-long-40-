@@ -17,8 +17,7 @@ export const BRAND = {
   },
   description:
     "VivaAge giúp bạn hiểu rõ những gì cần chuẩn bị cho tương lai, từ sức khỏe, tài chính đến kỹ năng chăm sóc bản thân và gia đình.",
-  descriptionShort:
-    "Chủ động từ tuổi 40 — khỏe mạnh và tự chủ về sau.",
+  descriptionShort: "Chủ động từ tuổi 40 — khỏe mạnh và tự chủ về sau.",
   heroHeadline: "Chủ động từ tuổi 40, sống khỏe và tự chủ về sau",
   locale: "vi_VN",
   language: "vi-VN",
@@ -27,7 +26,7 @@ export const BRAND = {
   countryName: "Việt Nam",
   themeColor: "#1f5c45",
   backgroundColor: "#f7f4ef",
-  siteUrl: "https://song-an-40.sycu-lee.workers.dev",
+  siteUrl: "https://vivaage.orangecloud.vn",
   /** Open Graph / social share image (1200×630). */
   ogImagePath: "/og-image.jpg",
   ogImageWidth: 1200,
@@ -135,3 +134,101 @@ export const INDEXABLE_ROUTES: PageSeo[] = [
 ];
 
 export const NOINDEX_ROUTES = ["/admin"] as const;
+
+/** Same person entity as the Orange Cloud hub JSON-LD. */
+export const PERSON_ID = "https://orangecloud.vn/#person";
+
+export const HUB_SITE = {
+  href: "https://orangecloud.vn/",
+  nameVi: "Orange Cloud",
+  nameEn: "Orange Cloud",
+} as const;
+
+/** Other public projects by the same person. */
+export const SIBLING_SITES = [
+  {
+    href: "https://onboarding.orangecloud.vn/",
+    nameVi: "Học Cloudflare",
+    nameEn: "Cloudflare Starter Hub",
+  },
+  {
+    href: "https://ready.orangecloud.vn/",
+    nameVi: "CF Ready",
+    nameEn: "Go-live readiness",
+  },
+  {
+    href: "https://blog.orangecloud.vn/",
+    nameVi: "OrangeCloud Insights",
+    nameEn: "Notes on security, cloud, and AI",
+  },
+] as const;
+
+export function canonicalHostname(siteUrl?: string): string {
+  const raw = siteUrl?.trim() || BRAND.siteUrl;
+  try {
+    return new URL(raw).hostname.toLowerCase();
+  } catch {
+    return new URL(BRAND.siteUrl).hostname.toLowerCase();
+  }
+}
+
+/** Non-canonical hosts (workers.dev, previews, localhost) should not be indexed. */
+export function robotsTagForHost(
+  requestHost: string,
+  canonicalHost = canonicalHostname(),
+): string | null {
+  const host = requestHost.trim().toLowerCase().replace(/\.$/, "");
+  if (!host || host === canonicalHost) return null;
+  return "noindex, nofollow";
+}
+
+/** Production workers.dev name and Wrangler preview hosts share this suffix. */
+export function isWorkersDevHost(hostname: string): boolean {
+  const host = hostname.trim().toLowerCase().replace(/\.$/, "");
+  return host === "workers.dev" || host.endsWith(".workers.dev");
+}
+
+function canonicalOrigin(siteUrl?: string): string {
+  const raw = siteUrl?.trim() || BRAND.siteUrl;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return new URL(BRAND.siteUrl).origin;
+  }
+}
+
+/**
+ * GET/HEAD HTML on workers.dev or a preview host moves to the same path on
+ * the canonical origin. API, JSON, and other machine responses stay put.
+ */
+export function htmlCanonicalRedirect(input: {
+  method: string;
+  requestUrl: string;
+  accept?: string | null;
+  canonicalOrigin?: string;
+}): string | null {
+  let url: URL;
+  try {
+    url = new URL(input.requestUrl);
+  } catch {
+    return null;
+  }
+
+  const method = input.method.toUpperCase();
+  if (method !== "GET" && method !== "HEAD") return null;
+  if (!isWorkersDevHost(url.hostname)) return null;
+
+  const path = url.pathname;
+  if (path === "/api" || path.startsWith("/api/")) return null;
+  if (path === "/mcp" || path.startsWith("/mcp/")) return null;
+  if (path.startsWith("/.well-known/")) return null;
+  const leaf = path.slice(path.lastIndexOf("/") + 1);
+  if (leaf.includes(".") && !/\.html?$/i.test(leaf)) return null;
+
+  const accept = (input.accept ?? "").toLowerCase();
+  if (accept.includes("application/json") && !accept.includes("text/html")) return null;
+
+  const origin = canonicalOrigin(input.canonicalOrigin);
+  if (url.hostname.toLowerCase() === new URL(origin).hostname.toLowerCase()) return null;
+  return `${origin}${path}${url.search}`;
+}

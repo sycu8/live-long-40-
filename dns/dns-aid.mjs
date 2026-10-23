@@ -12,7 +12,7 @@
  * isitagentready dnsAid check can pass.
  */
 
-export const DEFAULT_HOSTNAME = "song-an-40.sycu-lee.workers.dev";
+export const DEFAULT_HOSTNAME = "vivaage.orangecloud.vn";
 
 /** Owner-name labels the scanner queries (SVCB, then HTTPS). */
 export const DNS_AID_LABELS = ["_index._agents", "_a2a._agents", "_mcp._agents"];

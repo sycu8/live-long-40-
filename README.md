@@ -4,7 +4,7 @@
 
 Progressive Web App giúp người Việt từ tuổi **40+** chủ động chuẩn bị sức khỏe, tài chính và kỹ năng chăm sóc — qua đánh giá mức độ sẵn sàng, kế hoạch 30 ngày, thư viện giáo dục và chatbot trả lời có nguồn.
 
-- **Live:** https://song-an-40.sycu-lee.workers.dev
+- **Live:** [https://vivaage.orangecloud.vn](https://vivaage.orangecloud.vn)
 - **Tên:** “Viva” gợi sức sống; “Age” gắn healthy aging.
 - **Repo:** https://github.com/sycu8/live-long-40-
 

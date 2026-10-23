@@ -1,5 +1,6 @@
 import { EXAMPLE_QUESTIONS, DISCLAIMER } from "../constants/product";
-import { BRAND, absoluteUrl, type PageSeo } from "./identity";
+import { shortAnswerEntities } from "./aeo";
+import { BRAND, PERSON_ID, absoluteUrl, type PageSeo } from "./identity";
 
 /** FAQ answers kept short & educational for GEO / rich results */
 const FAQ_ANSWERS: Record<(typeof EXAMPLE_QUESTIONS)[number], string> = {
@@ -27,7 +28,20 @@ export function organizationJsonLd() {
       name: BRAND.countryName,
     },
     inLanguage: BRAND.language,
+    founder: { "@id": PERSON_ID },
     ...(BRAND.sameAs.length ? { sameAs: [...BRAND.sameAs] } : {}),
+  };
+}
+
+/** Joins the person node published at https://orangecloud.vn/#person */
+export function personJsonLd() {
+  return {
+    "@type": "Person",
+    "@id": PERSON_ID,
+    name: "Cường Lê Sỹ",
+    alternateName: ["Cuong Le Sy", "Cuong Le", "Sycule"],
+    url: "https://orangecloud.vn/about/",
+    sameAs: ["https://github.com/sycu8"],
   };
 }
 
@@ -53,6 +67,7 @@ export function webApplicationJsonLd() {
       name: BRAND.name,
       url: absoluteUrl("/"),
     },
+    author: { "@id": PERSON_ID },
     about: [
       "Healthy aging",
       "Sức khỏe trung niên",
@@ -83,6 +98,7 @@ export function websiteJsonLd() {
       "@type": "Organization",
       name: BRAND.name,
     },
+    author: { "@id": PERSON_ID },
   };
 }
 
@@ -90,14 +106,17 @@ export function faqPageJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: EXAMPLE_QUESTIONS.map((q) => ({
-      "@type": "Question",
-      name: q,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: FAQ_ANSWERS[q],
-      },
-    })),
+    mainEntity: [
+      ...shortAnswerEntities(),
+      ...EXAMPLE_QUESTIONS.map((q) => ({
+        "@type": "Question",
+        name: q,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: FAQ_ANSWERS[q],
+        },
+      })),
+    ],
   };
 }
 
@@ -138,6 +157,7 @@ export function homeJsonLdGraph() {
   return {
     "@context": "https://schema.org",
     "@graph": [
+      personJsonLd(),
       organizationJsonLd(),
       webApplicationJsonLd(),
       websiteJsonLd(),
